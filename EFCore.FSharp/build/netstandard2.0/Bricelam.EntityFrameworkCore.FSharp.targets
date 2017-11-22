@@ -1,0 +1,18 @@
+<Project>
+  <Choose>
+    <When Condition="'$(Language)' == 'F#'">
+      <Choose>
+        <When Condition="'$(OutputType)' == 'Exe' OR '$(OutputType)' == 'WinExe'">
+          <ItemGroup>
+            <CompileBefore Include="$(MSBuildThisFileDirectory)EFCoreFSharp.fs" />
+          </ItemGroup>
+        </When>
+        <Otherwise>
+          <ItemGroup>
+            <CompileAfter Include="$(MSBuildThisFileDirectory)EFCoreFSharp.fs" />
+          </ItemGroup>
+        </Otherwise>
+      </Choose>
+    </When>
+  </Choose>
+</Project>
