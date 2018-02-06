@@ -25,6 +25,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Utilities\IndentedStringBuilderUtilities.fs" />
+    <Compile Include="Scaffolding\FSharpDbContextGenerator.fs" />
+    <Compile Include="Scaffolding\FSharpEntityTypeGenerator.fs" />
     <Compile Include="FSharpMigrationsGenerator.fs" />
     <Compile Include="FSharpModelGenerator.fs" />
     <Compile Include="EFCoreFSharpServices.fs" />

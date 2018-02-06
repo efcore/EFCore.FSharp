@@ -60,7 +60,8 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
 
         sb
             |> writeNamespaces defaultNamespaces
-
+            // TODO: implement
+            |> appendLine "// Metadata"
             |> string
 
     override this.GenerateSnapshot(modelSnapshotNamespace: string, contextType: Type, modelSnapshotName: string, model: IModel) =
@@ -78,5 +79,6 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
 
         sb
             |> writeNamespaces defaultNamespaces
-
+            // TODO: implement
+            |> appendLine "// Snapshot"
             |> string

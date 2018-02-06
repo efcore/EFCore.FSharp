@@ -10,6 +10,13 @@ module internal IndentedStringBuilderUtilities =
     let appendLine (text:string) (sb:IndentedStringBuilder) =
         sb.AppendLine(text)
 
+    let appendLines message skipFinalNewLine (sb:IndentedStringBuilder) =    
+        sb.AppendLines(message, skipFinalNewLine)
+
+    let appendLineIndent message (sb:IndentedStringBuilder) =
+        using (sb.Indent())
+            (fun _ -> sb.AppendLine(message))    
+
     let indent (sb:IndentedStringBuilder) =
         sb.IncrementIndent()
 
