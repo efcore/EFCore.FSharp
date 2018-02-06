@@ -11,7 +11,7 @@
     <PackageTags>EFCore</PackageTags>
     <RepositoryUrl>https://github.com/bricelam/EFCore.FSharp.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Copyright>© 2017 Brice Lambson. All rights reserved.</Copyright>
+    <Copyright>© 2018 Brice Lambson. All rights reserved.</Copyright>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
     <LangVersion>latest</LangVersion>
