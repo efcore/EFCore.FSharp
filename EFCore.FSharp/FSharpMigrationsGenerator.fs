@@ -9,12 +9,6 @@ open Microsoft.EntityFrameworkCore.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 
-module FSharpMigrationOperationGenerator =
-    let Generate (builderName:string) (operations: IReadOnlyList<MigrationOperation>) (sb:IndentedStringBuilder) =
-        // TODO: implement
-        sb
-
-
 type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies) =
     inherit MigrationsCodeGenerator(dependencies)
     
