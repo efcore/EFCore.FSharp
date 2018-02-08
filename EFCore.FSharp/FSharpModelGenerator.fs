@@ -8,7 +8,7 @@ open Microsoft.EntityFrameworkCore.Scaffolding
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes
 
-type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies) =
+type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextGenerator: IFSharpDbContextGenerator) =
     inherit ModelCodeGenerator(dependencies)
  
     let fileExtension = ".fs"
@@ -18,7 +18,7 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies) =
     override this.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, dataAnnotations: bool) =
         let resultingFiles = ScaffoldedModel()
 
-        let generatedCode = FSharpDbContextGenerator.WriteCode model ``namespace`` contextName connectionString dataAnnotations //options.SuppressConnectionStringWarning
+        let generatedCode = contextGenerator.WriteCode(model, ``namespace``, contextName, connectionString, dataAnnotations)
 
         let dbContextFileName = contextName + fileExtension;
 
