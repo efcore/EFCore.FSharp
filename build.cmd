@@ -1,1 +1,2 @@
-@powershell.exe -File build.ps1 %*
+.paket\paket.exe restore
+packages\FAKE\tools\FAKE.exe build.fsx %*

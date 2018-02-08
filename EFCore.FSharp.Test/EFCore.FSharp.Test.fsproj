@@ -12,4 +12,5 @@
   <ItemGroup>
     <ProjectReference Include="..\EFCore.FSharp\EFCore.FSharp.fsproj" />
   </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

@@ -6,3 +6,7 @@ nuget Microsoft.EntityFrameworkCore.Design >= 2.1.0-preview1-0
 nuget Microsoft.EntityFrameworkCore.Sqlite 2.0.1
 nuget xunit 2.3.1
 nuget xunit.runner.visualstudio 2.3.1
+
+group Main
+source https://api.nuget.org/v3/index.json
+nuget Fake
