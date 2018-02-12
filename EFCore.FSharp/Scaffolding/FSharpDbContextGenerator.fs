@@ -7,12 +7,19 @@ open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open Bricelam.EntityFrameworkCore.FSharp.Internal
+open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
+open Microsoft.EntityFrameworkCore.Infrastructure
+open Microsoft.EntityFrameworkCore.Design
 
 type IFSharpDbContextGenerator =
     inherit Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator
 
 
-type FSharpDbContextGenerator(providerCodeGenerator: IProviderCodeGenerator, legacyProviderCodeGenerator: IScaffoldingProviderCodeGenerator) =
+type FSharpDbContextGenerator
+    (providerCodeGenerator: IProviderCodeGenerator,
+        legacyProviderCodeGenerator: IScaffoldingProviderCodeGenerator,
+        annotationCodeGenerator : IAnnotationCodeGenerator) =
 
     let entityLambdaIdentifier = "entity";
     let language = "FSharp";
@@ -86,7 +93,6 @@ type FSharpDbContextGenerator(providerCodeGenerator: IProviderCodeGenerator, leg
                 | true -> sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
                 | false -> sprintf "optionsBuilder.%s(%s)" providerCodeGenerator.UseProviderMethod connectionString
             
-
         sb
             |> appendLine "override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) ="
             |> indent
@@ -97,9 +103,61 @@ type FSharpDbContextGenerator(providerCodeGenerator: IProviderCodeGenerator, leg
             |> unindent
             |> unindent
 
+    let removeAnnotation (annotationToRemove : string) (annotations : IAnnotation seq) =
+        annotations |> Seq.filter (fun a -> a.Name <> annotationToRemove)
+
+    let checkAnnotation (model:IModel) (annotation: IAnnotation) =
+        match annotationCodeGenerator.IsHandledByConvention(model, annotation) with
+        | true -> (annotation |> Some, None)
+        | false ->
+            let methodCall = annotationCodeGenerator.GenerateFluentApi(model, annotation)
+            let line =
+                match isNull methodCall with
+                | true -> annotationCodeGenerator.GenerateFluentApi(model, annotation, language)
+                | false -> FSharpUtilities.generate(methodCall)
+
+            match isNull line with
+                | false -> (annotation |> Some, line |> Some)
+                | _ -> (None, None)
+
+    let generateAnnotations (annotations: IAnnotation seq) =
+        annotations
+        |> Seq.map (fun a ->
+            let name = FSharpUtilities.delimitString(a.Name)
+            let literal = FSharpUtilities.generateLiteral(a.Value)
+            sprintf ".HasAnnotation(%s, %s,)" name literal)
+
     let generateOnModelCreating (model:IModel) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
         sb.AppendLine("override this.OnModelCreating(modelBuilder: ModelBuilder) =")
             |> appendLineIndent "base.OnModelCreating(modelBuilder)"
+            |> ignore
+
+        let annotations =
+            model.GetAnnotations()
+            |> removeAnnotation ChangeDetector.SkipDetectChangesAnnotation
+            |> removeAnnotation RelationalAnnotationNames.MaxIdentifierLength
+            |> removeAnnotation ScaffoldingAnnotationNames.DatabaseName
+            |> removeAnnotation ScaffoldingAnnotationNames.EntityTypeErrors
+            |> Seq.toList
+
+        let annotationsToRemove =
+            annotations
+            |> Seq.filter(fun a -> a.Name.StartsWith(RelationalAnnotationNames.SequencePrefix, StringComparison.Ordinal))
+
+        let checkedAnnotations =
+            annotations
+            |> Seq.map(fun a -> a |> checkAnnotation model)
+
+        let moreAnnotaionsToRemove = checkedAnnotations |> Seq.map(fun (a, _) -> a) |> Seq.filter(fun x -> x.IsSome) |> Seq.map(fun x -> x.Value)
+        let lines = checkedAnnotations |> Seq.map(fun (_, l) -> l) |> Seq.filter(fun x -> x.IsSome) |> Seq.map(fun x -> x.Value)
+
+        let toRemove = annotationsToRemove |> Seq.append moreAnnotaionsToRemove
+
+        
+        let lines' = lines |> Seq.append ((annotations |> Seq.except toRemove) |> generateAnnotations)
+
+
+        sb
             
 
     let generateClass (model:IModel) (contextName: string)  (connectionString: string) (useDataAnnotations: bool) (sb:IndentedStringBuilder) =
