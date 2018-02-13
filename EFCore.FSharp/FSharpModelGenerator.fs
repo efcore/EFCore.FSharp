@@ -4,14 +4,38 @@ open System.IO
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
+open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes
+open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open Microsoft.EntityFrameworkCore.Internal
 
-type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextGenerator: IFSharpDbContextGenerator) =
+type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextGenerator: ICSharpDbContextGenerator) =
     inherit ModelCodeGenerator(dependencies)
  
     let fileExtension = ".fs"
+
+    let createDomainFileContent (``namespace``:string) domainFileName =
+
+        let defaultNamespaces = [
+            "System";
+            "Microsoft.EntityFrameworkCore";
+            "Microsoft.EntityFrameworkCore.Metadata";
+        ]
+
+        let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
+            sb
+                |> append "namespace " |> appendLine ``namespace``
+                |> appendLine ""
+                |> writeNamespaces defaultNamespaces
+                |> appendLine ""
+
+        IndentedStringBuilder()
+                |> writeNamespaces ``namespace``
+                |> append "module " |> append domainFileName |> appendLine "= "
+                |> appendLine ""
+                |> indent
 
     override this.Language = "F#"
 
@@ -27,21 +51,22 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
         contextFile.Path <- Path.Combine(contextDir, dbContextFileName)
         resultingFiles.ContextFile <- contextFile
 
-        let files =
-            model.GetEntityTypes()
-            |> Seq.map(fun entityType -> 
-                let entityCode = FSharpEntityTypeGenerator.WriteCode entityType ``namespace`` dataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes
+        let domainFileName = contextName.Replace("Context", "Domain")
 
-                // output EntityType poco .fs file
-                let entityTypeFileName = (entityType |> EntityTypeExtensions.DisplayName) + fileExtension;
-                let additionalFile = ScaffoldedFile()
-                additionalFile.Path <- entityTypeFileName
-                additionalFile.Code <- entityCode
+        let domainFile = ScaffoldedFile()
+        domainFile.Path <- (domainFileName + fileExtension)
 
-                additionalFile                
+        let domainFileBuilder = createDomainFileContent ``namespace`` domainFileName
+
+        model.GetEntityTypes()
+            |> Seq.iter(fun entityType -> 
+                domainFileBuilder
+                    |> FSharpEntityTypeGenerator.WriteCode entityType dataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes
+                    |> ignore
             )
+        domainFile.Code <- (domainFileBuilder |> string)
 
-        files |> Seq.iter(fun f -> resultingFiles.AdditionalFiles.Add(f))
+        resultingFiles.AdditionalFiles.Add(domainFile)
 
-        resultingFiles        
+        resultingFiles
 

@@ -12,12 +12,9 @@ open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Design
 
-type IFSharpDbContextGenerator =
-    inherit Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator
-
-
+#nowarn "0044"
 type FSharpDbContextGenerator
-    (providerCodeGenerator: IProviderCodeGenerator,
+    (//TODO - correct method of injection for providerCodeGenerator: ProviderCodeGenerator,
         legacyProviderCodeGenerator: IScaffoldingProviderCodeGenerator,
         annotationCodeGenerator : IAnnotationCodeGenerator) =
 
@@ -37,14 +34,17 @@ type FSharpDbContextGenerator
             |> writeNamespaces defaultNamespaces
             |> appendLine ""
 
-    let generateType contextName (sb:IndentedStringBuilder) =
+    let generateType (contextName:string) (sb:IndentedStringBuilder) =
         sb
+            |> append "open " |> appendLine (contextName.Replace("Context", "Domain"))
+            |> appendLine ""
             |> append "type " |> append contextName |> appendLine " ="
             |> indent
             |> appendLine "inherit DbContext"
             |> appendLine ""
             |> appendLine "new() = { inherit DbContext() }"
-            |> appendLine "new(options : DbContextOptions<DatabaseContext>) = { inherit DbContext(options) }"
+            |> append"new(options : DbContextOptions<" |> append contextName |> appendLine ">) ="
+            |> appendLineIndent "{ inherit DbContext(options) }"
             |> appendLine ""
 
     let generateDbSet (sb:IndentedStringBuilder) (entityType : IEntityType) =
@@ -88,18 +88,19 @@ type FSharpDbContextGenerator
 
     let generateOnConfiguring (connectionString:string) (sb:IndentedStringBuilder) =      
 
-        let connStringLine =
-            match isNull providerCodeGenerator with
-                | true -> sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
-                | false -> sprintf "optionsBuilder.%s(%s)" providerCodeGenerator.UseProviderMethod connectionString
+        let connStringLine = sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
+            // match isNull providerCodeGenerator with
+            //     | true -> sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
+            //     | false -> sprintf "optionsBuilder.%s(%s)" providerCodeGenerator.UseProviderMethod connectionString
             
         sb
             |> appendLine "override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) ="
             |> indent
             |> appendLine "if not optionsBuilder.IsConfigured then"
             |> indent
-            |> append "#warning" |> appendLine DesignStrings.SensitiveInformationWarning
             |> appendLine connStringLine
+            |> appendLine "()"
+            |> appendLine ""
             |> unindent
             |> unindent
 
@@ -156,11 +157,9 @@ type FSharpDbContextGenerator
         
         let lines' = lines |> Seq.append ((annotations |> Seq.except toRemove) |> generateAnnotations)
 
+        sb            
 
-        sb
-            
-
-    let generateClass (model:IModel) (contextName: string)  (connectionString: string) (useDataAnnotations: bool) (sb:IndentedStringBuilder) =
+    let generateClass model contextName connectionString useDataAnnotations sb =
         sb
             |> generateType contextName
             |> generateDbSets model
@@ -168,10 +167,11 @@ type FSharpDbContextGenerator
             |> generateOnConfiguring connectionString
             |> generateOnModelCreating model useDataAnnotations
 
-    interface IFSharpDbContextGenerator with
-        member this.WriteCode (model: IModel, ``namespace``: string, contextName: string, connectionString: string, useDataAnnotations: bool) =
-            IndentedStringBuilder()
+    interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator with
+        member this.WriteCode (model, ``namespace``, contextName, connectionString, useDataAnnotations) =
+            let sb = 
+                IndentedStringBuilder()
                 |> writeNamespaces ``namespace``
                 |> indent
                 |> generateClass model contextName connectionString useDataAnnotations
-                |> string
+            sb.ToString()

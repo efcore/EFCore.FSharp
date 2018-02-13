@@ -23,7 +23,7 @@ module FSharpEntityTypeGenerator =
     primitiveTypeNames.Add(typedefof<sbyte>, "sbyte")
     primitiveTypeNames.Add(typedefof<int>, "int")
     primitiveTypeNames.Add(typedefof<char>, "char")
-    primitiveTypeNames.Add(typedefof<float>, "float")
+    primitiveTypeNames.Add(typedefof<float32>, "float32")
     primitiveTypeNames.Add(typedefof<double>, "double")
     primitiveTypeNames.Add(typedefof<string>, "string")
     primitiveTypeNames.Add(typedefof<decimal>, "decimal")
@@ -42,7 +42,7 @@ module FSharpEntityTypeGenerator =
                 let genericTypeDefName = t.Name.Substring(0, t.Name.IndexOf('`'));
                 let genericTypeArguments = String.Join(", ", t.GenericTypeArguments |> Seq.map(fun t' -> getTypeName optionOrNullable t'))
                 genericTypeDefName + "<" + genericTypeArguments + ">";
-
+      
         else
             match primitiveTypeNames.TryGetValue t with
             | true, value -> value
@@ -88,12 +88,13 @@ module FSharpEntityTypeGenerator =
             |> appendLine ("type " + entityType.Name + " = {")
             |> indent
             |> appendLines properties true
-            |> appendLine " }"
             |> unindent
+            |> appendLine "}"
+            |> appendLine ""
+            
 
-    let WriteCode (entityType: IEntityType) (``namespace``: string) (useDataAnnotation: bool) createTypesAs optionOrNullable =
-        let sb = IndentedStringBuilder()
-
+    let WriteCode (entityType: IEntityType) (useDataAnnotation: bool) createTypesAs optionOrNullable (sb:IndentedStringBuilder) =
+        
         let generate =
             match createTypesAs with
             | ClassType -> GenerateClass
@@ -101,4 +102,3 @@ module FSharpEntityTypeGenerator =
         
         sb
             |> generate entityType optionOrNullable
-            |> string

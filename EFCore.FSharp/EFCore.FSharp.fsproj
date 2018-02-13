@@ -18,9 +18,9 @@
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <TimestampUrl>http://time.certum.pl</TimestampUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <WindowsSdkDir Condition=" '$(WindowsSdkDir)' == '' ">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@InstallationFolder)</WindowsSdkDir>
+    <!-- <WindowsSdkDir Condition=" '$(WindowsSdkDir)' == '' ">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@InstallationFolder)</WindowsSdkDir>
     <WindowsSDKVersion Condition=" '$(WindowsSDKVersion)' == '' ">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)\</WindowsSDKVersion>
-    <SignToolCommand>"$(WindowsSdkDir)bin\$(WindowsSDKVersion)x86\signtool.exe" sign /t $(TimestampUrl) /q</SignToolCommand>
+    <SignToolCommand>"$(WindowsSdkDir)bin\$(WindowsSDKVersion)x86\signtool.exe" sign /t $(TimestampUrl) /q</SignToolCommand> -->
     <Version>1.0.0-beta1</Version>
   </PropertyGroup>
   <ItemGroup>
