@@ -8,18 +8,80 @@ open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open Bricelam.EntityFrameworkCore.FSharp.Internal
+open System.Security.Cryptography.X509Certificates
+open Microsoft.EntityFrameworkCore.Infrastructure
 
 module FSharpMigrationOperationGenerator =
 
-    type OperationWriter =
+    type OperationWriter =        
+
+        static member private writeParameter name value sb =
+            sb
+                |> appendLine ","
+                |> append name |> append " = " |> appendLine (value |> FSharpHelper.Literal)
+
+        static member private writeParameterIfTrue trueOrFalse name value sb =
+            match trueOrFalse with
+            | true -> sb |> OperationWriter.writeParameter name value
+            | false -> sb
+
+        static member private writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
+            sb |> OperationWriter.writeParameterIfTrue (isNull value |> not) name value
+
+        static member private writeNullableBool name (nullableParameter: Nullable<bool>) sb =
+            let truth = (nullableParameter.HasValue && not nullableParameter.Value)
+            sb |> OperationWriter.writeParameterIfTrue truth name nullableParameter.Value
+
+        static member private writeNullableInt name (nullableParamter: Nullable<int>) sb =
+            sb |> OperationWriter.writeParameterIfTrue nullableParamter.HasValue name nullableParamter.Value
+
+        static member Annotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
+            annotations
+                |> Seq.iter(fun a ->
+                    sb
+                    |> appendLine ""
+                    |> append ".Annotation("
+                    |> append (FSharpHelper.LiteralWriter.Literal a.Name)
+                    |> append ", "
+                    |> append (FSharpHelper.LiteralWriter.UnknownLiteral a.Value)
+                    |> append ")"
+                    |> ignore
+                )
 
         static member Generate (operation:MigrationOperation, sb:IndentedStringBuilder) :unit =
             // TODO: implement        
             invalidOp ((operation.GetType()) |> DesignStrings.UnknownOperation)
 
         static member Generate (operation:AddColumnOperation, sb:IndentedStringBuilder) =
-            // TODO: implement        
-            ()
+            
+            sb
+                |> append ".AddColumn<"
+                |> append (operation.ClrType |> FSharpHelper.Reference)
+                |> appendLine ">("
+                |> indent
+                |> OperationWriter.writeParameter "name" operation.Name
+                |> OperationWriter.writeOptionalParameter "schema" operation.Schema
+                |> OperationWriter.writeParameter "table" operation.Table
+                |> OperationWriter.writeOptionalParameter "type" operation.ColumnType
+                |> OperationWriter.writeNullableBool "unicode" operation.IsUnicode
+                |> OperationWriter.writeNullableInt "maxLength" operation.MaxLength
+                |> OperationWriter.writeParameterIfTrue operation.IsRowVersion "rowVersion" true
+                |> OperationWriter.writeParameter "nullable" operation.IsNullable
+                |>
+                    if not(isNull operation.DefaultValueSql) then
+                        OperationWriter.writeParameter "defaultValueSql" operation.DefaultValueSql
+                    elif not(isNull operation.ComputedColumnSql) then
+                        OperationWriter.writeParameter "computedColumnSql" operation.ComputedColumnSql
+                    elif not(isNull operation.DefaultValue) then
+                        OperationWriter.writeParameter "defaultValue" operation.DefaultValue
+                    else
+                        append ""
+                |> append ")"                                                                              
+
+                |> OperationWriter.Annotations (operation.GetAnnotations())
+
+
 
         static member Generate (operation:AddForeignKeyOperation, sb:IndentedStringBuilder) =
             // TODO: implement        

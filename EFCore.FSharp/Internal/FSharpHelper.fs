@@ -327,6 +327,9 @@ module FSharpHelper =
 
         builder.Append(")") |> string
 
+    let Literal (o:obj) =
+        o |> LiteralWriter.Literal    
+
     
 
 
