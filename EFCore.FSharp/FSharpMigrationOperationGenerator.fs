@@ -2,6 +2,7 @@ namespace Bricelam.EntityFrameworkCore.FSharp
 
 open System
 open System.Collections.Generic
+open Microsoft.FSharp.Linq.NullableOperators
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Migrations.Operations
@@ -29,10 +30,6 @@ module FSharpMigrationOperationGenerator =
         static member private writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
             sb |> OperationWriter.writeParameterIfTrue (isNull value |> not) name value
 
-        static member private writeNullableBool name (nullableParameter: Nullable<bool>) sb =
-            let truth = (nullableParameter.HasValue && not nullableParameter.Value)
-            sb |> OperationWriter.writeParameterIfTrue truth name nullableParameter.Value
-
         static member private writeNullableInt name (nullableParamter: Nullable<int>) sb =
             sb |> OperationWriter.writeParameterIfTrue nullableParamter.HasValue name nullableParamter.Value
 
@@ -50,11 +47,10 @@ module FSharpMigrationOperationGenerator =
                 )
 
         static member Generate (operation:MigrationOperation, sb:IndentedStringBuilder) :unit =
-            // TODO: implement        
             invalidOp ((operation.GetType()) |> DesignStrings.UnknownOperation)
 
         static member Generate (operation:AddColumnOperation, sb:IndentedStringBuilder) =
-            
+
             sb
                 |> append ".AddColumn<"
                 |> append (operation.ClrType |> FSharpHelper.Reference)
@@ -64,7 +60,7 @@ module FSharpMigrationOperationGenerator =
                 |> OperationWriter.writeOptionalParameter "schema" operation.Schema
                 |> OperationWriter.writeParameter "table" operation.Table
                 |> OperationWriter.writeOptionalParameter "type" operation.ColumnType
-                |> OperationWriter.writeNullableBool "unicode" operation.IsUnicode
+                |> OperationWriter.writeParameterIfTrue (operation.IsUnicode ?= false) "unicode" "false"
                 |> OperationWriter.writeNullableInt "maxLength" operation.MaxLength
                 |> OperationWriter.writeParameterIfTrue operation.IsRowVersion "rowVersion" true
                 |> OperationWriter.writeParameter "nullable" operation.IsNullable
@@ -77,7 +73,8 @@ module FSharpMigrationOperationGenerator =
                         OperationWriter.writeParameter "defaultValue" operation.DefaultValue
                     else
                         append ""
-                |> append ")"                                                                              
+                |> append ")"
+                |> unindent
 
                 |> OperationWriter.Annotations (operation.GetAnnotations())
 

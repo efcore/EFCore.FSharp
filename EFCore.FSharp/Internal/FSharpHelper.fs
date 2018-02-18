@@ -328,10 +328,26 @@ module FSharpHelper =
         builder.Append(")") |> string
 
     let Literal (o:obj) =
-        o |> LiteralWriter.Literal    
-
-    
+        o |> LiteralWriter.Literal   
 
 
+    let IdentifierWithScope (name:string) (scope:IReadOnlyList<string>) =
+         ""
 
+    let Identifier (name:string) =
+         IdentifierWithScope name [||]
+
+    let Namespace ([<ParamArray>]name: string array) =
+
+         let join (ns': string array) = String.Join(".", ns')
+
+         let ns =
+             name
+             |> Array.filter(fun n -> not (String.IsNullOrEmpty(n)))
+             |> Array.collect(fun n -> n.Split([|'.'|], StringSplitOptions.RemoveEmptyEntries))
+             |> Array.map(Identifier)
+             |> Array.filter(fun n -> not(String.IsNullOrEmpty(n)))
+             |> join
+
+         if String.IsNullOrEmpty ns then "_" else ns
         

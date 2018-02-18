@@ -3,10 +3,14 @@ namespace Bricelam.EntityFrameworkCore.FSharp.Scaffolding
 open System
 open System.Collections.Generic
 open System.Reflection
+open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Internal
 
+open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
+
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open Bricelam.EntityFrameworkCore.FSharp.Internal
 
 module ScaffoldingTypes =
     type RecordOrType = | ClassType | RecordType
@@ -15,6 +19,20 @@ module ScaffoldingTypes =
 open ScaffoldingTypes
 
 module FSharpEntityTypeGenerator =
+
+    type private AttributeWriter(name:string) =
+
+        let parameters = List<string>()
+
+        member this.AddParameter p =
+            parameters.Add p
+
+        override this.ToString() =
+            match parameters |> Seq.isEmpty with
+            | true -> sprintf "[<%s>]" name
+            | false -> sprintf "[<%s(%s)>]" name (String.Join(", ", parameters))
+
+    let createAttributeQuick = AttributeWriter >> string
 
     let private primitiveTypeNames = new Dictionary<Type, string>()
     primitiveTypeNames.Add(typedefof<bool>, "bool")
@@ -48,12 +66,52 @@ module FSharpEntityTypeGenerator =
             | true, value -> value
             | _ -> t.Name
 
+    let private generatePrimaryKeyAttribute (p:IProperty) (sb:IndentedStringBuilder) =
 
-    let GenerateTableAttribute (entityType : IEntityType) (sb:IndentedStringBuilder) =
+        let key = (p :?> Microsoft.EntityFrameworkCore.Metadata.Internal.Property).PrimaryKey
+
+        if isNull key || key.Properties.Count <> 1 then
+            sb
+        else
+            sb |> appendLine ("KeyAttribute" |> createAttributeQuick)
+
+    let private generateRequiredAttribute (p:IProperty) (sb:IndentedStringBuilder) =
+
+        let isNullableOrOptionType (t:Type) =
+            let typeInfo = t.GetTypeInfo()
+            (typeInfo.IsValueType |> not) ||
+                (typeInfo.IsGenericType && (typeInfo.GetGenericTypeDefinition() = typedefof<Nullable<_>> || typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>))
+
+        if (not p.IsNullable) && (p.ClrType |> isNullableOrOptionType) && (p.IsPrimaryKey() |> not) then
+            sb |> appendLine ("RequiredAttribute" |> createAttributeQuick)
+        else
+            sb
+
+    let private generateColumnAttribute (p:IProperty) (sb:IndentedStringBuilder) =
+        sb
+
+    let private generateMaxLengthAttribute (p:IProperty) (sb:IndentedStringBuilder) =
+
+        let ml = p.GetMaxLength()
+
+        if ml.HasValue then
+            let attrName = 
+               match p.ClrType = typedefof<string> with
+                | true -> "StringLengthAttribute"
+                | false -> "MaxLengthAttribute"
+
+            let a = AttributeWriter(attrName)
+            a.AddParameter (FSharpHelper.LiteralWriter.Literal ml.Value)
+
+            sb |> append (a |> string)
+        else
+            sb
+
+    let private generateTableAttribute (entityType : IEntityType) (sb:IndentedStringBuilder) =
         sb
 
     let GenerateEntityTypeDataAnnotations entityType =
-        entityType |> GenerateTableAttribute
+        entityType |> generateTableAttribute
 
 
     let GenerateConstructor (entityType : IEntityType) (sb:IndentedStringBuilder) =
@@ -66,7 +124,7 @@ module FSharpEntityTypeGenerator =
     let GenerateNavigationProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) (sb:IndentedStringBuilder) =
         sb |> appendLine "// NavigationProperties"
 
-    let GenerateClass (entityType : IEntityType) (optionOrNullable:OptionOrNullable) (sb:IndentedStringBuilder) =
+    let GenerateClass (entityType : IEntityType) (useDataAnnotations:bool) (optionOrNullable:OptionOrNullable) (sb:IndentedStringBuilder) =
 
         sb
             |> appendLine ("type " + entityType.Name + "() =")
@@ -76,20 +134,44 @@ module FSharpEntityTypeGenerator =
             |> GenerateNavigationProperties entityType optionOrNullable
             |> unindent   
 
-    let private generateRecordTypeEntry optionOrNullable (p: IProperty) =
-        // TODO: add key etc.
-        p.Name + ": " + (getTypeName optionOrNullable p.ClrType)
+    let private generateRecordTypeEntry useDataAnnotations optionOrNullable (p: IProperty) sb =
 
-    let GenerateRecord (entityType : IEntityType) optionOrNullable (sb:IndentedStringBuilder) =
+        if useDataAnnotations then
+            sb
+                |> generatePrimaryKeyAttribute p
+                |> generateRequiredAttribute p
+                |> generateColumnAttribute p
+                |> generateMaxLengthAttribute p
+                |> ignore
+        
+        sb |> append p.Name |> append ": " |> appendLine (getTypeName optionOrNullable p.ClrType)
+        
 
-        let properties = entityType.GetProperties() |> Seq.map(fun p -> generateRecordTypeEntry optionOrNullable p)
+    let private generateRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
+        sb
+
+    let GenerateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable (sb:IndentedStringBuilder) =
+
+        let properties =
+            entityType.GetProperties()
+            |> Seq.map(fun p -> generateRecordTypeEntry useDataAnnotations optionOrNullable p)
+            |> Seq.map(string)
+
+        let navProperties =
+            entityType
+                    |> EntityTypeExtensions.GetNavigations
+                    |> Seq.sortBy(fun n -> ((if n.IsDependentToPrincipal() then 0 else 1), (if n.IsCollection() then 1 else 0)))
+
+
+
+        let navsIsEmpty = navProperties |> Seq.isEmpty
 
         sb
             |> appendLine ("type " + entityType.Name + " = {")
             |> indent
-            |> appendLines properties true
+            |> appendLines properties navsIsEmpty
+            |> appendLine " }"
             |> unindent
-            |> appendLine "}"
             |> appendLine ""
             
 
@@ -101,4 +183,4 @@ module FSharpEntityTypeGenerator =
             | RecordType -> GenerateRecord
         
         sb
-            |> generate entityType optionOrNullable
+            |> generate entityType useDataAnnotation optionOrNullable

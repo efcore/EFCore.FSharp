@@ -33,7 +33,7 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
 
         IndentedStringBuilder()
                 |> writeNamespaces ``namespace``
-                |> append "module " |> append domainFileName |> appendLine "= "
+                |> append "module rec " |> append domainFileName |> appendLine " ="
                 |> appendLine ""
                 |> indent
 

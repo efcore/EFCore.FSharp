@@ -54,7 +54,7 @@ type FSharpDbContextGenerator
 
         sb
             |> appendLine "[<DefaultValue>]"
-            |> append "val mutable " |> append mutableName |> append " : DbSet<" |> append entityType.Name |> appendLine ">"
+            |> append "val mutable private " |> append mutableName |> append " : DbSet<" |> append entityType.Name |> appendLine ">"
             |> append "member this." |> appendLine scaffolding.DbSetName
             |> indent
             |> append "with get() = this." |> appendLine mutableName

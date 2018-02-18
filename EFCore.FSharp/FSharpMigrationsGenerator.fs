@@ -8,6 +8,7 @@ open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open Bricelam.EntityFrameworkCore.FSharp.Internal
 
 type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies) =
     inherit MigrationsCodeGenerator(dependencies)
@@ -21,14 +22,14 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
     override this.GenerateMigration(migrationNamespace: string, migrationName: string, upOperations: IReadOnlyList<MigrationOperation>, downOperations: IReadOnlyList<MigrationOperation>) =
         let sb = IndentedStringBuilder()
 
-        sb.AppendLine("namespace " + migrationNamespace) |> ignore //TODO: implement Code.Namespace(modelSnapshotNamespace)
-
         let defaultNamespaces =
             seq { yield "System";
                      yield "System.Collections.Generic";
                      yield "Microsoft.EntityFrameworkCore.Migrations"; }
 
         sb
+            |> append "namespace " |> appendLine (FSharpHelper.Namespace migrationNamespace)
+            |> appendLine ""
             |> writeNamespaces (defaultNamespaces |> Seq.append (upOperations |> Seq.append downOperations |> getNamespaces))
             |> append "type " |> appendLine migrationName
             |> indent |> appendLine "inherit Migration"
@@ -42,8 +43,6 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
     override this.GenerateMetadata(migrationNamespace: string, contextType: Type, migrationName: string, migrationId: string, targetModel: IModel) =
         let sb = IndentedStringBuilder()
 
-        sb.AppendLine("namespace " + migrationNamespace) |> ignore //TODO: implement Code.Namespace(modelSnapshotNamespace)
-
         let defaultNamespaces =
             ["System";
              "Microsoft.EntityFrameworkCore";
@@ -53,6 +52,8 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
              contextType.Namespace]
 
         sb
+            |> append "namespace " |> appendLine (FSharpHelper.Namespace migrationNamespace)
+            |> appendLine ""
             |> writeNamespaces defaultNamespaces
             // TODO: implement
             |> appendLine "// Metadata"
@@ -61,8 +62,6 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
     override this.GenerateSnapshot(modelSnapshotNamespace: string, contextType: Type, modelSnapshotName: string, model: IModel) =
         let sb = IndentedStringBuilder()
 
-        sb.AppendLine("namespace " + modelSnapshotNamespace) |> ignore //TODO: implement Code.Namespace(modelSnapshotNamespace)
-
         let defaultNamespaces =
             ["System";
              "Microsoft.EntityFrameworkCore";
@@ -72,6 +71,8 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
              contextType.Namespace]
 
         sb
+            |> append "namespace " |> appendLine (FSharpHelper.Namespace modelSnapshotNamespace)
+            |> appendLine ""
             |> writeNamespaces defaultNamespaces
             // TODO: implement
             |> appendLine "// Snapshot"
