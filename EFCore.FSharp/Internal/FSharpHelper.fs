@@ -10,6 +10,7 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open System.Globalization
 open Bricelam.EntityFrameworkCore.FSharp
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open System.Collections
 
 module FSharpHelper =
 
@@ -330,9 +331,93 @@ module FSharpHelper =
     let Literal (o:obj) =
         o |> LiteralWriter.Literal   
 
+    let private isLetterChar cat =
+        match cat with
+        | UnicodeCategory.UppercaseLetter -> true
+        | UnicodeCategory.LowercaseLetter -> true
+        | UnicodeCategory.TitlecaseLetter -> true
+        | UnicodeCategory.ModifierLetter -> true
+        | UnicodeCategory.OtherLetter -> true
+        | UnicodeCategory.LetterNumber -> true
+        | _ -> false
 
-    let IdentifierWithScope (name:string) (scope:IReadOnlyList<string>) =
-         ""
+
+    let private isIdentifierPartCharacter ch =
+        if ch < 'a' then
+            if ch < 'A' then
+                ch >= '0' && ch <= '9'
+            else
+                ch <= 'Z' || ch = '_'
+        elif ch <= 'z' then
+            true
+        elif ch <= '\u007F' then
+            false
+        else
+            let cat = ch |> CharUnicodeInfo.GetUnicodeCategory
+
+            if cat |> isLetterChar then
+                true
+            else
+                match cat with
+                | UnicodeCategory.DecimalDigitNumber -> true
+                | UnicodeCategory.ConnectorPunctuation -> true
+                | UnicodeCategory.NonSpacingMark -> true
+                | UnicodeCategory.SpacingCombiningMark -> true
+                | UnicodeCategory.Format -> true
+                | _ -> false
+                            
+    let private isIdentifierStartCharacter ch =
+        if ch < 'a' then
+            if ch < 'A' then
+                false
+            else
+                ch <= 'Z' || ch = '_'
+        elif ch <= 'z' then
+            true
+        elif ch <= '\u007F' then
+            false
+        else
+            ch |> CharUnicodeInfo.GetUnicodeCategory |> isLetterChar
+
+    let private handleScope (scope:ICollection<string>) (sb:StringBuilder) =
+        if scope |> Seq.isEmpty then
+            sb |> string
+        else
+            let baseId = sb |> string
+            let mutable uniqueId = sb |> string
+            let mutable qualifier = 0
+
+            while scope |> Seq.contains uniqueId do
+                qualifier <- qualifier + 1
+                uniqueId <- sprintf "%s%d" baseId qualifier
+
+            uniqueId |> scope.Add
+            uniqueId
+        
+    let IdentifierWithScope (name:string) (scope:ICollection<string>) =
+
+        let sb = StringBuilder()
+        let mutable partStart = 0
+
+        for i = partStart to name.Length do
+            if name.[i] |> isIdentifierPartCharacter |> not then
+                if partStart <> i then
+                    sb.Append(name.Substring(partStart, (i - partStart))) |> ignore
+
+                partStart <- i + 1
+
+        if partStart <> name.Length then
+            sb.Append(name.Substring(partStart)) |> ignore
+
+        if sb.Length = 0 || sb.[0] |> isIdentifierStartCharacter |> not then
+            sb.Insert(0, "_") |> ignore        
+
+        let identifier = sb |> handleScope scope
+
+        if _keywords |> Seq.contains identifier then
+            sprintf"``%s``" identifier
+        else
+            identifier
 
     let Identifier (name:string) =
          IdentifierWithScope name [||]
@@ -343,10 +428,10 @@ module FSharpHelper =
 
          let ns =
              name
-             |> Array.filter(fun n -> not (String.IsNullOrEmpty(n)))
+             |> Array.filter(String.IsNullOrEmpty >> not)
              |> Array.collect(fun n -> n.Split([|'.'|], StringSplitOptions.RemoveEmptyEntries))
              |> Array.map(Identifier)
-             |> Array.filter(fun n -> not(String.IsNullOrEmpty(n)))
+             |> Array.filter(String.IsNullOrEmpty >> not)
              |> join
 
          if String.IsNullOrEmpty ns then "_" else ns

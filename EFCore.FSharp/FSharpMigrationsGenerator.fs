@@ -28,7 +28,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
                      yield "Microsoft.EntityFrameworkCore.Migrations"; }
 
         sb
-            |> append "namespace " |> appendLine (FSharpHelper.Namespace migrationNamespace)
+            |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
             |> appendLine ""
             |> writeNamespaces (defaultNamespaces |> Seq.append (upOperations |> Seq.append downOperations |> getNamespaces))
             |> append "type " |> appendLine migrationName
@@ -52,7 +52,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
              contextType.Namespace]
 
         sb
-            |> append "namespace " |> appendLine (FSharpHelper.Namespace migrationNamespace)
+            |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
             |> appendLine ""
             |> writeNamespaces defaultNamespaces
             // TODO: implement
@@ -71,7 +71,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
              contextType.Namespace]
 
         sb
-            |> append "namespace " |> appendLine (FSharpHelper.Namespace modelSnapshotNamespace)
+            |> append "namespace " |> appendLine (FSharpHelper.Namespace [|modelSnapshotNamespace|])
             |> appendLine ""
             |> writeNamespaces defaultNamespaces
             // TODO: implement
