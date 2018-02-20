@@ -1,4 +1,4 @@
-#r @"packages\Fake\tools\FakeLib.dll"
+#r @"packages\Build\Fake\tools\FakeLib.dll"
 open Fake
 let target = getBuildParam "target"
 let configuration = getBuildParamOrDefault "configuration" "Release"

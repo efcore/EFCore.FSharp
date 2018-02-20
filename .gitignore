@@ -286,3 +286,4 @@ tools/**
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+/packages/

@@ -1,2 +1,2 @@
 .paket\paket.exe restore
-packages\FAKE\tools\FAKE.exe build.fsx %*
+packages\Build\FAKE\tools\FAKE.exe build.fsx %*
