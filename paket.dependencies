@@ -1,4 +1,3 @@
-group Main
 source https://dotnet.myget.org/F/aspnetcore-release/api/v3/index.json
 source https://api.nuget.org/v3/index.json
 
