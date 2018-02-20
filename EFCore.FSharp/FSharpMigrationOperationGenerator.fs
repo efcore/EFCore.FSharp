@@ -10,7 +10,6 @@ open Microsoft.EntityFrameworkCore.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
-open System.Security.Cryptography.X509Certificates
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Migrations
 
@@ -34,7 +33,7 @@ module FSharpMigrationOperationGenerator =
         static member private writeNullable name (nullableParamter: Nullable<_>) sb =
             sb |> OperationWriter.writeParameterIfTrue nullableParamter.HasValue name nullableParamter.Value
 
-        static member Annotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
+        static member private Annotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
             annotations
                 |> Seq.iter(fun a ->
                     sb
@@ -48,7 +47,7 @@ module FSharpMigrationOperationGenerator =
                 )
             sb
 
-        static member OldAnnotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
+        static member private OldAnnotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
             annotations
                 |> Seq.iter(fun a ->
                     sb
@@ -93,8 +92,6 @@ module FSharpMigrationOperationGenerator =
 
                 |> OperationWriter.Annotations (op.GetAnnotations())
                 |> unindent
-
-
 
         static member Generate (op:AddForeignKeyOperation, sb:IndentedStringBuilder) =
 
@@ -214,80 +211,215 @@ module FSharpMigrationOperationGenerator =
                 |> unindent
 
         static member Generate (op:AlterTableOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".AlterTable("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> OperationWriter.OldAnnotations (op.OldTable.GetAnnotations())
+                |> unindent
 
         static member Generate (op:CreateIndexOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".CreateIndex("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> OperationWriter.writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
+                |> OperationWriter.writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+                |> OperationWriter.writeParameterIfTrue op.IsUnique "unique" "true"
+                |> OperationWriter.writeOptionalParameter "filter" op.Filter
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:EnsureSchemaOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".EnsureSchema("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:CreateSequenceOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> append ".CreateSequence"
+                |>
+                    if op.ClrType <> typedefof<Int64> then
+                        append (sprintf "<%s>" (op.ClrType |> FSharpHelper.Reference))
+                    else
+                        append ""
+                |> appendLine "("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameterIfTrue (op.StartValue <> 1L) "startValue" op.StartValue
+                |> OperationWriter.writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
+                |> OperationWriter.writeNullable "minValue " op.MinValue
+                |> OperationWriter.writeNullable "maxValue " op.MaxValue
+                |> OperationWriter.writeParameterIfTrue op.IsCyclic "cyclic" "true"
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
+
 
         static member Generate (op:CreateTableOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
+            //TODO: implement
             sb
 
         static member Generate (op:DropColumnOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropColumn("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:DropForeignKeyOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropForeignKey("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:DropIndexOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropIndex("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:DropPrimaryKeyOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropPrimaryKey("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:DropSchemaOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropSchema("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:DropSequenceOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropSequence("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:DropTableOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropTable("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:DropUniqueConstraintOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".DropUniqueConstraint("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:RenameColumnOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".RenameColumn("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> OperationWriter.writeParameter "newName" op.NewName
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:RenameIndexOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".RenameIndex("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "table" op.Table
+                |> OperationWriter.writeParameter "newName" op.NewName
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:RenameSequenceOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".RenameSequence("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "newName" op.NewName
+                |> OperationWriter.writeParameter "newSchema" op.NewSchema
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:RenameTableOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".RenameTable("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "newName" op.NewName
+                |> OperationWriter.writeParameter "newSchema" op.NewSchema
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:RestartSequenceOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine ".RestartSequence("
+                |> indent
+                |> OperationWriter.writeParameter "name" op.Name
+                |> OperationWriter.writeOptionalParameter "schema" op.Schema
+                |> OperationWriter.writeParameter "startValue" op.StartValue
+                |> append ")"
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:SqlOperation , sb:IndentedStringBuilder) =
-            // TODO: implement
             sb
+                |> appendLine (sprintf ".Sql(%s)" (op.Sql |> FSharpHelper.Literal))
+                |> indent
+                |> OperationWriter.Annotations (op.GetAnnotations())
+                |> unindent
 
         static member Generate (op:InsertDataOperation , sb:IndentedStringBuilder) =
             // TODO: implement
