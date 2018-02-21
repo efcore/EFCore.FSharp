@@ -287,3 +287,5 @@ tools/**
 *.odx.cs
 *.xsd.cs
 /packages/
+/paket-files
+/.fake
