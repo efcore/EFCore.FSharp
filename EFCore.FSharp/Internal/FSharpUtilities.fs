@@ -179,8 +179,8 @@ module FSharpUtilities =
 
     let delimitString (str: string) =
         match str.Contains(Environment.NewLine) with
-        | true -> str |> escapeVerbatimString
-        | false -> str |> escapeString
+        | true -> str |> escapeVerbatimString |> sprintf "@\"%s\""
+        | false -> str |> escapeString |> sprintf "\"%s\""
 
     let generateLiteral(literal:obj) =
         match literal with

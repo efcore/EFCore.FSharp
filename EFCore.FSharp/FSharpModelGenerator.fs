@@ -16,19 +16,36 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
  
     let fileExtension = ".fs"
 
-    let createDomainFileContent (``namespace``:string) domainFileName =
+    let defaultNamespaces = [
+        "System";
+        "System.Collections.Generic";
+    ]
 
-        let defaultNamespaces = [
-            "System";
-            "Microsoft.EntityFrameworkCore";
-            "Microsoft.EntityFrameworkCore.Metadata";
-        ]
+    let annotationNamespaces = [
+        "System.ComponentModel.DataAnnotations";
+        "System.ComponentModel.DataAnnotations.Schema";
+    ]
+
+    let getNamespacesFromModel (model:IModel) =
+        model.GetEntityTypes()
+        |> Seq.collect (fun e -> e.GetProperties())
+        |> Seq.collect (fun p -> p.ClrType.GetNamespaces())
+        |> Seq.filter (fun ns -> defaultNamespaces |> Seq.contains ns |> not)
+        |> Seq.distinct
+        |> Seq.sort
+
+    let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) domainFileName =
+
+        let namespaces =
+            match useDataAnnotations with
+            | true -> defaultNamespaces |> Seq.append annotationNamespaces |> Seq.append (model |> getNamespacesFromModel)
+            | false -> defaultNamespaces  |> Seq.append (model |> getNamespacesFromModel)
 
         let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
             sb
                 |> append "namespace " |> appendLine ``namespace``
                 |> appendLine ""
-                |> writeNamespaces defaultNamespaces
+                |> writeNamespaces namespaces
                 |> appendLine ""
 
         IndentedStringBuilder()
@@ -56,7 +73,7 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
         let domainFile = ScaffoldedFile()
         domainFile.Path <- (domainFileName + fileExtension)
 
-        let domainFileBuilder = createDomainFileContent ``namespace`` domainFileName
+        let domainFileBuilder = createDomainFileContent model dataAnnotations ``namespace`` domainFileName
 
         model.GetEntityTypes()
             |> Seq.iter(fun entityType -> 

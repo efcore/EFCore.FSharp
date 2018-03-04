@@ -5,6 +5,7 @@ open System.Collections.Generic
 open System.Reflection
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
+open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Internal
 
 open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
@@ -144,34 +145,75 @@ module FSharpEntityTypeGenerator =
                 |> generateMaxLengthAttribute p
                 |> ignore
         
-        sb |> append p.Name |> append ": " |> appendLine (getTypeName optionOrNullable p.ClrType)
+        let typeName = getTypeName optionOrNullable p.ClrType
+        sb |> appendLine (sprintf "%s: %s" p.Name typeName) |> ignore
+        ()
         
+    let private writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable (sb:IndentedStringBuilder) =
+        properties
+        |> Seq.iter(fun p -> generateRecordTypeEntry useDataAnnotations optionOrNullable p sb)
+        
+        sb
 
-    let private generateRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
+    let private generateForeignKeyAttribute (n:INavigation) (sb: IndentedStringBuilder) =
+
+        if n.IsDependentToPrincipal() && n.ForeignKey.PrincipalKey.IsPrimaryKey() then
+            let a = "ForeignKeyAttribute" |> AttributeWriter
+            let props = n.ForeignKey.Properties |> Seq.map (fun n' -> n'.Name)
+            String.Join(",", props) |> FSharpUtilities.delimitString |> a.AddParameter
+            sb |> appendLine (a |> string)
+        else
+            sb
+
+    let private generateInversePropertyAttribute (n:INavigation) (sb: IndentedStringBuilder) =
+        if n.ForeignKey.PrincipalKey.IsPrimaryKey() then
+            let inverse = n.FindInverse()
+            if isNull inverse then
+                sb
+            else
+                let a = "InversePropertyAttribute" |> AttributeWriter
+                inverse.Name |> FSharpUtilities.delimitString |> a.AddParameter
+                sb |> appendLine (a |> string)
+        else
+            sb
+
+    let private generateNavigateTypeEntry (n:INavigation) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable (sb:IndentedStringBuilder) =
+        if useDataAnnotations then
+            sb
+                |> generateForeignKeyAttribute n
+                |> generateInversePropertyAttribute n
+                |> ignore
+
+        let referencedTypeName = n.GetTargetType().Name
+        let navigationType = if n.IsCollection() then (sprintf "ICollection<%s>" referencedTypeName) else referencedTypeName
+        sb |> appendLine (sprintf "%s: %s" n.Name navigationType) |> ignore
+        ()
+
+    let private writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable (sb:IndentedStringBuilder) =
+        nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations skipFinalNewLine optionOrNullable sb)
         sb
 
     let GenerateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable (sb:IndentedStringBuilder) =
 
         let properties =
             entityType.GetProperties()
-            |> Seq.map(fun p -> generateRecordTypeEntry useDataAnnotations optionOrNullable p)
-            |> Seq.map(string)
+            |> Seq.orderBy(fun p -> p.Scaffolding().ColumnOrdinal)
 
         let navProperties =
             entityType
                     |> EntityTypeExtensions.GetNavigations
                     |> Seq.sortBy(fun n -> ((if n.IsDependentToPrincipal() then 0 else 1), (if n.IsCollection() then 1 else 0)))
 
-
-
         let navsIsEmpty = navProperties |> Seq.isEmpty
 
         sb
+            |> appendLine ("CLIMutable" |> createAttributeQuick)
             |> appendLine ("type " + entityType.Name + " = {")
             |> indent
-            |> appendLines properties navsIsEmpty
-            |> appendLine " }"
+            |> writeRecordProperties properties useDataAnnotations navsIsEmpty optionOrNullable
+            |> writeNavigationProperties navProperties useDataAnnotations true optionOrNullable
             |> unindent
+            |> appendLine "}"
             |> appendLine ""
             
 

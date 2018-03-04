@@ -18,6 +18,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
 
 
     override this.FileExtension = ".fs"
+    override this.Language = "F#"
 
     override this.GenerateMigration(migrationNamespace: string, migrationName: string, upOperations: IReadOnlyList<MigrationOperation>, downOperations: IReadOnlyList<MigrationOperation>) =
         let sb = IndentedStringBuilder()
