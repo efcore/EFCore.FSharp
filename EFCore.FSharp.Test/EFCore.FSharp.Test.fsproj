@@ -6,6 +6,7 @@
     <AssemblyName>Bricelam.EntityFrameworkCore.FSharp.Test</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Internal\FSharpUtilitiesTest.fs" />
     <Compile Include="Tests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

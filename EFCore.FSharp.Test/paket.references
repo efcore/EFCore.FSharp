@@ -2,3 +2,4 @@ Microsoft.EntityFrameworkCore.Sqlite
 xunit
 xunit.runner.visualstudio
 FSharp.Core
+FsUnit.xUnit
