@@ -1,4 +1,6 @@
 #r @"packages/build/Fake/tools/FakeLib.dll"
+#r @"packages/System.IO/ref/netstandard1.5/System.IO.dll"
+open System.IO
 open Fake
 let configuration = getBuildParamOrDefault "configuration" "Release"
 let signOutput = hasBuildParam "signOutput"
@@ -15,7 +17,7 @@ Target "Test" <| fun _ ->
         { p with
             Configuration = configuration
             AdditionalArgs = [ "--no-build"; "--no-restore" ]
-            Project = "EFCore.FSharp.Test/EFCore.FSharp.Test.fsproj" }
+            Project = Path.Combine("EFCore.FSharp.Test", "EFCore.FSharp.Test.fsproj")    }
 
 "Build"
     ==> "Test"
