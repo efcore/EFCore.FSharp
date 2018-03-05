@@ -29,6 +29,7 @@
     <Compile Include="Internal\FSharpUtilities.fs" />
     <Compile Include="Scaffolding\FSharpDbContextGenerator.fs" />
     <Compile Include="Scaffolding\FSharpEntityTypeGenerator.fs" />
+    <Compile Include="Scaffolding\FSharpSnapshotGenerator.fs" />
     <Compile Include="FSharpMigrationOperationGenerator.fs" />
     <Compile Include="FSharpMigrationsGenerator.fs" />
     <Compile Include="FSharpModelGenerator.fs" />

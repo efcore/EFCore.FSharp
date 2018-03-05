@@ -1,6 +1,7 @@
 namespace Bricelam.EntityFrameworkCore.FSharp.Scaffolding
 
 open System
+open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Internal
@@ -23,6 +24,7 @@ type FSharpDbContextGenerator
 
     let defaultNamespaces = [
         "System";
+        "System.Collections.Generic";
         "Microsoft.EntityFrameworkCore";
         "Microsoft.EntityFrameworkCore.Metadata";
     ]
@@ -43,7 +45,7 @@ type FSharpDbContextGenerator
             |> appendLine "inherit DbContext"
             |> appendLine ""
             |> appendLine "new() = { inherit DbContext() }"
-            |> append"new(options : DbContextOptions<" |> append contextName |> appendLine ">) ="
+            |> append "new(options : DbContextOptions<" |> append contextName |> appendLine ">) ="
             |> appendLineIndent "{ inherit DbContext(options) }"
             |> appendLine ""
 
@@ -127,6 +129,41 @@ type FSharpDbContextGenerator
             let name = FSharpUtilities.delimitString(a.Name)
             let literal = FSharpUtilities.generateLiteral(a.Value)
             sprintf ".HasAnnotation(%s, %s,)" name literal)
+
+    let generateEntityTypes (entities: IEntityType seq) useDataAnnotations (sb:IndentedStringBuilder) =
+        sb
+    let generateSequence (s: ISequence) (sb:IndentedStringBuilder) =
+
+        let writeLineIfTrue truth name parameter (sb:IndentedStringBuilder) =
+            match truth with
+            | true -> sb |> appendLine (sprintf ".%s(%A)" name parameter)
+            | false -> sb
+
+        let methodName =
+            match s.ClrType = Sequence.DefaultClrType with
+            | true -> "HasSequence"
+            | false -> sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName(s.ClrType))
+
+        let parameters =
+            match (s.Schema |> String.IsNullOrEmpty) && (s.Model.Relational().DefaultSchema <> s.Schema) with
+            | true -> sprintf "%s, %s" (s.Name |> FSharpUtilities.delimitString) (s.Schema |> FSharpUtilities.delimitString)
+            | false -> s.Name |> FSharpUtilities.delimitString
+
+        sb
+            |> appendLine (sprintf "modelBuilder.%s(%s)" methodName parameters)
+            |> indent
+            |> writeLineIfTrue (s.StartValue <> (Sequence.DefaultStartValue |> int64)) "StartsAt" s.StartValue
+            |> writeLineIfTrue (s.IncrementBy <> Sequence.DefaultIncrementBy) "IncrementsBy" s.IncrementBy
+            |> writeLineIfTrue (s.MinValue <> Sequence.DefaultMinValue) "HasMin" s.MinValue
+            |> writeLineIfTrue (s.MaxValue <> Sequence.DefaultMaxValue) "HasMax" s.MaxValue
+            |> writeLineIfTrue (s.IsCyclic <> Sequence.DefaultIsCyclic) "IsCyclic" ""
+            |> appendLine ""
+            |> unindent
+            |> ignore
+            
+    let generateSequences (sequences: ISequence seq) (sb:IndentedStringBuilder) =
+        sequences |> Seq.iter(fun s -> sb |> generateSequence s)
+        sb
 
     let generateOnModelCreating (model:IModel) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
         sb.AppendLine("override this.OnModelCreating(modelBuilder: ModelBuilder) =")

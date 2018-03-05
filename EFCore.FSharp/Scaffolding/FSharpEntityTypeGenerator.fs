@@ -89,7 +89,28 @@ module FSharpEntityTypeGenerator =
             sb
 
     let private generateColumnAttribute (p:IProperty) (sb:IndentedStringBuilder) =
-        sb
+        let columnName = p.Relational().ColumnName
+        let columnType = p.GetConfiguredColumnType()
+
+        let delimitedColumnName = if isNull columnName |> not && columnName <> p.Name then FSharpUtilities.delimitString(columnName) |> Some else Option.None
+        let delimitedColumnType = if isNull columnType |> not then FSharpUtilities.delimitString(columnType) |> Some else Option.None
+
+        if delimitedColumnName.IsSome || delimitedColumnType.IsSome then
+            let a = "ColumnAttribute" |> AttributeWriter
+
+            match delimitedColumnName with
+            | Some name -> name |> a.AddParameter
+            | None -> ()
+
+            match delimitedColumnType with
+            | Some t -> (sprintf "Type = %s" t) |> a.AddParameter
+            | None -> ()
+
+            sb |> appendLine (a |> string)        
+
+        else
+            sb
+
 
     let private generateMaxLengthAttribute (p:IProperty) (sb:IndentedStringBuilder) =
 
@@ -185,9 +206,12 @@ module FSharpEntityTypeGenerator =
                 |> ignore
 
         let referencedTypeName = n.GetTargetType().Name
-        let navigationType = if n.IsCollection() then (sprintf "ICollection<%s>" referencedTypeName) else referencedTypeName
+        let navigationType =
+            if n.IsCollection() then
+                sprintf "ICollection<%s>" referencedTypeName
+            else
+                referencedTypeName
         sb |> appendLine (sprintf "%s: %s" n.Name navigationType) |> ignore
-        ()
 
     let private writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable (sb:IndentedStringBuilder) =
         nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations skipFinalNewLine optionOrNullable sb)
@@ -197,7 +221,7 @@ module FSharpEntityTypeGenerator =
 
         let properties =
             entityType.GetProperties()
-            |> Seq.orderBy(fun p -> p.Scaffolding().ColumnOrdinal)
+            |> Seq.sortBy(fun p -> p.Scaffolding().ColumnOrdinal)
 
         let navProperties =
             entityType

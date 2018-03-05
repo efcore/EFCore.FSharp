@@ -14,22 +14,24 @@ open System.Collections
 
 module FSharpHelper =
 
-    let private _builtInTypes = new Dictionary<Type, string>()
-    _builtInTypes.Add(typedefof<bool>, "bool")
-    _builtInTypes.Add(typedefof<byte>, "byte")
-    _builtInTypes.Add(typedefof<sbyte>, "sbyte")
-    _builtInTypes.Add(typedefof<char>, "char")
-    _builtInTypes.Add(typedefof<Int16>, "Int16")
-    _builtInTypes.Add(typedefof<int>, "int")
-    _builtInTypes.Add(typedefof<Int64>, "Int64")
-    _builtInTypes.Add(typedefof<UInt16>, "UInt16")
-    _builtInTypes.Add(typedefof<UInt32>, "UInt32")
-    _builtInTypes.Add(typedefof<UInt64>, "UInt64")
-    _builtInTypes.Add(typedefof<decimal>, "decimal")
-    _builtInTypes.Add(typedefof<float>, "float")
-    _builtInTypes.Add(typedefof<double>, "double")
-    _builtInTypes.Add(typedefof<string>, "string")
-    _builtInTypes.Add(typedefof<obj>, "obj")
+    let private _builtInTypes =
+        [
+            (typedefof<bool>, "bool")
+            (typedefof<byte>, "byte")
+            (typedefof<sbyte>, "sbyte")
+            (typedefof<char>, "char")
+            (typedefof<Int16>, "Int16")
+            (typedefof<int>, "int")
+            (typedefof<Int64>, "Int64")
+            (typedefof<UInt16>, "UInt16")
+            (typedefof<UInt32>, "UInt32")
+            (typedefof<UInt64>, "UInt64")
+            (typedefof<decimal>, "decimal")
+            (typedefof<float>, "float")
+            (typedefof<double>, "double")
+            (typedefof<string>, "string")
+            (typedefof<obj>, "obj")
+        ] |> dict
 
     let private _keywords =
         [|
@@ -141,27 +143,25 @@ module FSharpHelper =
 
     let test = [| [|2|] |]    
 
-    let private isNullableType (t:Type) =
+    let isNullableType (t:Type) =
         let typeInfo = t.GetTypeInfo()
-        (not typeInfo.IsValueType)
-        || typeInfo.IsGenericType
+        typeInfo.IsGenericType
         && typeInfo.GetGenericTypeDefinition() = typedefof<Nullable<_>>
 
-    let private isOptionType (t:Type) =
+    let isOptionType (t:Type) =
         let typeInfo = t.GetTypeInfo()
-        (not typeInfo.IsValueType)
-        || typeInfo.IsGenericType
+        typeInfo.IsGenericType
         && typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>
 
     let private isOptionOrNullableType (t:Type) =
         (t |> isNullableType) || (t |> isOptionType)
 
-    let private unwrapNullableType (t:Type) =
+    let unwrapNullableType (t:Type) =
         match t |> isNullableType with    
         | true -> t |> Nullable.GetUnderlyingType
         | false -> t
 
-    let private unwrapOptionType (t:Type) =
+    let unwrapOptionType (t:Type) =
         match t |> isOptionType with    
         | true -> t.GenericTypeArguments.[0]
         | false -> t

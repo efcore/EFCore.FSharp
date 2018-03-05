@@ -10,7 +10,36 @@ open System.Text.RegularExpressions
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Utilities
 
+open FSharpHelper
+
 module FSharpUtilities = 
+
+    let _primitiveTypeNames =
+        [
+            (typedefof<bool>, "bool")
+            (typedefof<byte>, "byte")
+            (typedefof<byte[]>, "byte[]")
+            (typedefof<sbyte>, "sbyte")
+            (typedefof<char>, "char")
+            (typedefof<Int16>, "Int16")
+            (typedefof<int>, "int")
+            (typedefof<Int64>, "Int64")
+            (typedefof<UInt16>, "UInt16")
+            (typedefof<UInt32>, "UInt32")
+            (typedefof<UInt64>, "UInt64")
+            (typedefof<decimal>, "decimal")
+            (typedefof<float>, "float")
+            (typedefof<double>, "double")
+            (typedefof<string>, "string")
+            (typedefof<obj>, "obj")
+        ] |> dict
+
+    let _fsharpTypeNames =
+        [
+            ("IEnumerable", "seq")
+            ("FSharpList", "list")
+            ("FSharpOption", "option")
+        ] |> dict
 
     let escapeString (str: string) =
         str.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\t", "\\t")
@@ -181,6 +210,25 @@ module FSharpUtilities =
         match str.Contains(Environment.NewLine) with
         | true -> str |> escapeVerbatimString |> sprintf "@\"%s\""
         | false -> str |> escapeString |> sprintf "\"%s\""
+
+    let rec getTypeName (t:Type) =
+        if isNull t then
+            failwith "t is null"
+        elif t.IsArray then
+            sprintf "%s[]" (t.GetElementType() |> getTypeName)
+        elif t.GetTypeInfo().IsGenericType then
+            if t |> isNullableType then sprintf "Nullable<%s>" (t |> unwrapNullableType |> getTypeName)
+            elif t |> isOptionType then sprintf "%s option" (t |> unwrapOptionType |> getTypeName)
+            else
+                let genericTypeDefName = t.Name.Substring(0, t.Name.IndexOf('`'))
+                let args = t.GenericTypeArguments |> Array.map (fun t' -> if isNull t' then failwithf "%s has a null arg" t.Name else t' |> getTypeName)
+                match _fsharpTypeNames.TryGetValue genericTypeDefName with
+                | true, value -> sprintf "%s %s" (String.Join(", ", args)) value
+                | _ -> sprintf "%s<%s>" genericTypeDefName (String.Join(", ", args))
+        else
+            match _primitiveTypeNames.TryGetValue t with
+            | true, value -> value
+            | _ -> t.Name
 
     let generateLiteral(literal:obj) =
         match literal with
