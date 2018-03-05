@@ -7,9 +7,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{789D4C
 		paket.dependencies = paket.dependencies
 	EndProjectSection
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "EFCore.FSharp", "EFCore.FSharp\EFCore.FSharp.fsproj", "{47F6E448-0237-4B1D-896E-40E0FD3A9578}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "EFCore.FSharp", "EFCore.FSharp/EFCore.FSharp.fsproj", "{47F6E448-0237-4B1D-896E-40E0FD3A9578}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "EFCore.FSharp.Test", "EFCore.FSharp.Test\EFCore.FSharp.Test.fsproj", "{64EFC3DB-266D-4EB8-8407-48852BAE5323}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "EFCore.FSharp.Test", "EFCore.FSharp.Test/EFCore.FSharp.Test.fsproj", "{64EFC3DB-266D-4EB8-8407-48852BAE5323}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
