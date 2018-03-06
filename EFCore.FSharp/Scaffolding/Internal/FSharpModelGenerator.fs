@@ -1,4 +1,4 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp
+﻿namespace Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal
 
 open System.IO
 open Microsoft.EntityFrameworkCore.Metadata

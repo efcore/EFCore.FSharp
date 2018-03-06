@@ -1,4 +1,4 @@
-namespace Bricelam.EntityFrameworkCore.FSharp.Scaffolding
+namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open System.Collections.Generic

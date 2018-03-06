@@ -7,6 +7,8 @@ open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 open Microsoft.Extensions.DependencyInjection
 
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
+open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal
+open Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 type EFCoreFSharpServices() =
     interface IDesignTimeServices with
