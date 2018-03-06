@@ -23,10 +23,6 @@ run() {
   then
     mono "$@"
   else
-    if [ -v "$TRAVIS"]
-    then
-      MSBuildEmitSolution=1
-    fi
     "$@"
   fi
 }
