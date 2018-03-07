@@ -402,7 +402,7 @@ module FSharpHelper =
         let sb = StringBuilder()
         let mutable partStart = 0
 
-        for i = partStart to name.Length do
+        for i = partStart to (name.Length - 1) do
             if name.[i] |> isIdentifierPartCharacter |> not then
                 if partStart <> i then
                     sb.Append(name.Substring(partStart, (i - partStart))) |> ignore

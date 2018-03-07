@@ -15,6 +15,10 @@ open Microsoft.EntityFrameworkCore.Migrations
 
 module FSharpMigrationOperationGenerator =
 
+    let private writeName nameValue sb =
+        sb
+            |> append "name = " |> appendLine (nameValue |> FSharpHelper.Literal)
+    
     let private writeParameter name value sb =
         sb
             |> appendLine ","
@@ -69,7 +73,7 @@ module FSharpMigrationOperationGenerator =
             |> append (op.ClrType |> FSharpHelper.Reference)
             |> appendLine ">("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeOptionalParameter "type" op.ColumnType
@@ -96,7 +100,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".AddForeignKey("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
@@ -115,7 +119,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".AddPrimaryKey("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
@@ -128,7 +132,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".AddUniqueConstraint("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
@@ -143,7 +147,7 @@ module FSharpMigrationOperationGenerator =
             |> append (op.ClrType |> FSharpHelper.Reference)
             |> appendLine ">("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeOptionalParameter "type" op.ColumnType
@@ -193,7 +197,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".AlterSequence("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
             |> writeNullable "minValue " op.MinValue
@@ -212,7 +216,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".AlterTable("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> append ")"
             |> annotations (op.GetAnnotations())
@@ -223,7 +227,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".CreateIndex("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
@@ -238,7 +242,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".EnsureSchema("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> append ")"
             |> annotations (op.GetAnnotations())
             |> unindent
@@ -253,7 +257,7 @@ module FSharpMigrationOperationGenerator =
                     append ""
             |> appendLine "("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameterIfTrue (op.StartValue <> 1L) "startValue" op.StartValue
             |> writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
@@ -273,7 +277,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropColumn("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> append ")"
@@ -284,7 +288,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropForeignKey("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> append ")"
@@ -295,7 +299,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropIndex("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> append ")"
@@ -306,7 +310,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropPrimaryKey("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> append ")"
@@ -317,7 +321,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropSchema("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> append ")"
             |> annotations (op.GetAnnotations())
             |> unindent
@@ -326,7 +330,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropSequence("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> append ")"
             |> annotations (op.GetAnnotations())
@@ -336,7 +340,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropTable("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> append ")"
             |> annotations (op.GetAnnotations())
@@ -346,7 +350,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".DropUniqueConstraint("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> append ")"
@@ -357,7 +361,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".RenameColumn("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeParameter "newName" op.NewName
@@ -369,7 +373,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".RenameIndex("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeParameter "newName" op.NewName
@@ -381,7 +385,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".RenameSequence("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "newName" op.NewName
             |> writeParameter "newSchema" op.NewSchema
@@ -393,7 +397,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".RenameTable("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "newName" op.NewName
             |> writeParameter "newSchema" op.NewSchema
@@ -405,7 +409,7 @@ module FSharpMigrationOperationGenerator =
         sb
             |> appendLine ".RestartSequence("
             |> indent
-            |> writeParameter "name" op.Name
+            |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "startValue" op.StartValue
             |> append ")"
@@ -468,7 +472,7 @@ module FSharpMigrationOperationGenerator =
         operations
             |> Seq.iter(fun op -> 
                 sb
-                    |> appendLine builderName
+                    |> append builderName
                     |> generateOperation op
                     |> appendLine ""
                     |> appendLine ""

@@ -14,7 +14,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
     inherit MigrationsCodeGenerator(dependencies)
     
     let getNamespaces (operations: MigrationOperation seq) =
-        seq { yield "" }
+        seq { yield "System // This should be the namespaces needed by the MigrationOperations" }
 
 
     override this.FileExtension = ".fs"
@@ -32,7 +32,8 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
             |> appendLine ""
             |> writeNamespaces (defaultNamespaces |> Seq.append (upOperations |> Seq.append downOperations |> getNamespaces))
-            |> append "type " |> appendLine migrationName
+            |> appendLine ""
+            |> append "type " |> append migrationName |> appendLine " ="
             |> indent |> appendLine "inherit Migration"
             |> indent |> appendLine "override this.Up(migrationBuilder:MigrationBuilder) ="
             |> indent |> FSharpMigrationOperationGenerator.Generate "migrationBuilder" upOperations
