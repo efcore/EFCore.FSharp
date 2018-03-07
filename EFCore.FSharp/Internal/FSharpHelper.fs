@@ -189,7 +189,7 @@ module FSharpHelper =
     let private ensureDecimalPlaces (number:string) =
         if number.IndexOf('.') >= 0 then number else number + ".0"
 
-    type LiteralWriter =       
+    type private LiteralWriter =
 
         static member Literal(value: Enum) = Reference(value.GetType()) + "." + (value |> string)
 
@@ -329,7 +329,10 @@ module FSharpHelper =
         builder.Append(")") |> string
 
     let Literal (o:obj) =
-        o |> LiteralWriter.Literal   
+        o |> LiteralWriter.Literal
+
+    let UnknownLiteral (o:obj) =
+        o |> LiteralWriter.UnknownLiteral    
 
     let private isLetterChar cat =
         match cat with

@@ -37,9 +37,9 @@ module FSharpMigrationOperationGenerator =
                 sb
                 |> appendLine ""
                 |> append ".Annotation("
-                |> append (FSharpHelper.LiteralWriter.Literal a.Name)
+                |> append (FSharpHelper.Literal a.Name)
                 |> append ", "
-                |> append (FSharpHelper.LiteralWriter.UnknownLiteral a.Value)
+                |> append (FSharpHelper.UnknownLiteral a.Value)
                 |> append ")"
                 |> ignore
             )
@@ -51,9 +51,9 @@ module FSharpMigrationOperationGenerator =
                 sb
                 |> appendLine ""
                 |> append ".OldAnnotation("
-                |> append (FSharpHelper.LiteralWriter.Literal a.Name)
+                |> append (FSharpHelper.Literal a.Name)
                 |> append ", "
-                |> append (FSharpHelper.LiteralWriter.UnknownLiteral a.Value)
+                |> append (FSharpHelper.UnknownLiteral a.Value)
                 |> append ")"
                 |> ignore
             )

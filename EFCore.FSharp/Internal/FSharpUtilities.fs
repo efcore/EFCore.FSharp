@@ -47,7 +47,7 @@ module FSharpUtilities =
     let escapeVerbatimString (str: string) =
         str.Replace("\"", "\"\"")
 
-    type LiteralWriter =
+    type private LiteralWriter =
         static member GenerateLiteral (value : byte array) =
             "new byte[] {" + String.Join(", ", value) + "}"
 

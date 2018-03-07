@@ -123,7 +123,7 @@ module FSharpEntityTypeGenerator =
                 | false -> "MaxLengthAttribute"
 
             let a = AttributeWriter(attrName)
-            a.AddParameter (FSharpHelper.LiteralWriter.Literal ml.Value)
+            a.AddParameter (FSharpHelper.Literal ml.Value)
 
             sb |> append (a |> string)
         else
