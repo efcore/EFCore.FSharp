@@ -2,6 +2,7 @@ namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open System.Collections.Generic
+open System.Linq
 open System.Reflection
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
@@ -14,17 +15,59 @@ open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 
+
 module FSharpSnapshotGenerator =
     
-    let private generateFluentApiForAnnotation (annotations: IAnnotation list byref) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
+    let private generateFluentApiForAnnotation (annotations: List<IAnnotation> byref) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
 
         let annotationValueFunc' =
             match annotationValueFunc with
             | Some a -> a
             | None -> (fun a -> if isNull a then null else a.Value)
 
+        let annotation = annotations |> Seq.tryFind (fun a -> a.Name = annotationName)
+        let annotationValue = annotation |> Option.map annotationValueFunc'
+        
+        let genericTypesFunc' =
+            match genericTypesFunc with
+            | Some a -> a
+            | None -> (fun _ -> List<Type>() :> IReadOnlyList<Type>)
 
-        sb
+        let genericTypes = annotation |> Option.map genericTypesFunc'
+        let hasGenericTypes =
+            match genericTypes with
+            | Some gt -> ((gt |> Seq.isEmpty |> not) && (gt |> Seq.forall(isNull >> not)))
+            | None -> false
+
+        if (annotationValue.IsSome && (annotationValue.Value |> isNull |> not)) || hasGenericTypes then
+            sb
+            |> appendLine ""
+            |> append "."
+            |> append fluentApiMethodName
+            |> ignore
+
+            if hasGenericTypes then
+                sb
+                    |> append "<"
+                    |> append (String.Join(",", (genericTypes.Value |> Seq.map(FSharpHelper.Reference))))
+                    |> ignore
+
+            sb
+                |> append "("
+                |> ignore
+
+            if annotationValue.IsSome && annotationValue.Value |> isNull |> not then
+                sb |> append (annotationValue.Value |> FSharpHelper.UnknownLiteral) |> ignore
+
+            sb
+                |> append ")"
+                |> ignore            
+
+            annotation.Value |> annotations.Remove |> ignore
+
+            sb
+        else
+            sb
     
     let private sort (entityTypes:IReadOnlyList<IEntityType>) =
         let entityTypeGraph = new Multigraph<IEntityType, int>()
@@ -35,13 +78,32 @@ module FSharpSnapshotGenerator =
             |> Seq.iter(fun e -> entityTypeGraph.AddEdge(e.BaseType, e, 0))
         entityTypeGraph.TopologicalSort()
 
-    let ignoreAnnotationTypes (annotations:IReadOnlyList<IAnnotation>) (annotation:string) (sb:IndentedStringBuilder) =
-        sb           
+    let ignoreAnnotationTypes (annotations:List<IAnnotation>) (annotation:string) (sb:IndentedStringBuilder) =
+        
+        let annotationsToRemove =
+            annotations |> Seq.filter (fun a -> a.Name.StartsWith(annotation, StringComparison.OrdinalIgnoreCase))
+
+        annotationsToRemove |> Seq.iter (annotations.Remove >> ignore)
+
+        sb
 
     let generateAnnotation (annotation:IAnnotation) (sb:IndentedStringBuilder) =
         sb
+            |> append ".HasAnnotation("
+            |> append (annotation.Name |> FSharpHelper.Literal)
+            |> append ", "
+            |> append (annotation.Value |> FSharpHelper.UnknownLiteral)
+            |> append ")"
+            |> ignore
 
-    let generateAnnotations (annotations:IReadOnlyList<IAnnotation>) (sb:IndentedStringBuilder) =
+    let generateAnnotations (annotations:List<IAnnotation>) (sb:IndentedStringBuilder) =
+
+        annotations
+        |> Seq.iter(fun a ->
+            sb
+                |> appendLine ""
+                |> generateAnnotation a)
+
         sb
 
     let generateEntityTypes builderName entities (sb:IndentedStringBuilder) =
@@ -49,7 +111,7 @@ module FSharpSnapshotGenerator =
         
     let generate (builderName:string) (model:IModel) (sb:IndentedStringBuilder) =
 
-        let mutable annotations = model.GetAnnotations() |> Seq.toList
+        let mutable annotations = model.GetAnnotations().ToList()
 
         if annotations |> Seq.isEmpty |> not then
             sb
