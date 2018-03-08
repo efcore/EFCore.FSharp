@@ -238,7 +238,7 @@ module FSharpEntityTypeGenerator =
             |> writeNavigationProperties navProperties useDataAnnotations true optionOrNullable
             |> unindent
             |> appendLine "}"
-            |> appendLine ""
+            |> appendEmptyLine
             
 
     let WriteCode (entityType: IEntityType) (useDataAnnotation: bool) createTypesAs optionOrNullable (sb:IndentedStringBuilder) =

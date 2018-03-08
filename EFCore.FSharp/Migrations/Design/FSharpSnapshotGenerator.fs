@@ -41,7 +41,7 @@ module FSharpSnapshotGenerator =
 
         if (annotationValue.IsSome && (annotationValue.Value |> isNull |> not)) || hasGenericTypes then
             sb
-            |> appendLine ""
+            |> appendEmptyLine
             |> append "."
             |> append fluentApiMethodName
             |> ignore
@@ -101,7 +101,7 @@ module FSharpSnapshotGenerator =
         annotations
         |> Seq.iter(fun a ->
             sb
-                |> appendLine ""
+                |> appendEmptyLine
                 |> generateAnnotation a)
 
         sb

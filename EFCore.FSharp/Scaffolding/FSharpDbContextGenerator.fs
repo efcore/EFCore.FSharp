@@ -32,22 +32,22 @@ type FSharpDbContextGenerator
     let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
         sb
             |> append "namespace " |> appendLine ``namespace``
-            |> appendLine ""
+            |> appendEmptyLine
             |> writeNamespaces defaultNamespaces
-            |> appendLine ""
+            |> appendEmptyLine
 
     let generateType (contextName:string) (sb:IndentedStringBuilder) =
         sb
             |> append "open " |> appendLine (contextName.Replace("Context", "Domain"))
-            |> appendLine ""
+            |> appendEmptyLine
             |> append "type " |> append contextName |> appendLine " ="
             |> indent
             |> appendLine "inherit DbContext"
-            |> appendLine ""
+            |> appendEmptyLine
             |> appendLine "new() = { inherit DbContext() }"
             |> append "new(options : DbContextOptions<" |> append contextName |> appendLine ">) ="
             |> appendLineIndent "{ inherit DbContext(options) }"
-            |> appendLine ""
+            |> appendEmptyLine
 
     let generateDbSet (sb:IndentedStringBuilder) (entityType : IEntityType) =
 
@@ -72,7 +72,7 @@ type FSharpDbContextGenerator
             |> Seq.iter(fun entityType -> entityType |> generateDbSet sb)
 
         if model.GetEntityTypes() |> Seq.isEmpty |> not then
-            sb |> appendLine "" |> ignore
+            sb |> appendEmptyLine |> ignore
 
         sb
 
@@ -84,7 +84,7 @@ type FSharpDbContextGenerator
             |> Seq.iter (fun e -> sb |> appendLine (sprintf "// %s Please see the warning messages." e.Value) |> ignore)
 
         if scaffolding.EntityTypeErrors |> Seq.isEmpty |> not then
-            sb |> appendLine "" |> ignore
+            sb |> appendEmptyLine |> ignore
 
         sb
 
@@ -102,7 +102,7 @@ type FSharpDbContextGenerator
             |> indent
             |> appendLine connStringLine
             |> appendLine "()"
-            |> appendLine ""
+            |> appendEmptyLine
             |> unindent
             |> unindent
 
@@ -157,7 +157,7 @@ type FSharpDbContextGenerator
             |> writeLineIfTrue (s.MinValue <> Sequence.DefaultMinValue) "HasMin" s.MinValue
             |> writeLineIfTrue (s.MaxValue <> Sequence.DefaultMaxValue) "HasMax" s.MaxValue
             |> writeLineIfTrue (s.IsCyclic <> Sequence.DefaultIsCyclic) "IsCyclic" ""
-            |> appendLine ""
+            |> appendEmptyLine
             |> unindent
             |> ignore
             

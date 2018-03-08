@@ -21,8 +21,10 @@ module FSharpMigrationOperationGenerator =
     
     let private writeParameter name value sb =
         sb
-            |> appendLine ","
-            |> append name |> append " = " |> appendLine (value |> FSharpHelper.Literal)
+            |> append ","
+            |> append name
+            |> append " = "
+            |> appendLine (value |> FSharpHelper.Literal)
 
     let private writeParameterIfTrue trueOrFalse name value sb =
         match trueOrFalse with
@@ -30,7 +32,7 @@ module FSharpMigrationOperationGenerator =
         | false -> sb
 
     let private writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
-        sb |> writeParameterIfTrue (isNull value |> not) name value
+        sb |> writeParameterIfTrue (value |> notNull) name value
 
     let private writeNullable name (nullableParamter: Nullable<_>) sb =
         sb |> writeParameterIfTrue nullableParamter.HasValue name nullableParamter.Value
@@ -39,7 +41,7 @@ module FSharpMigrationOperationGenerator =
         annotations
             |> Seq.iter(fun a ->
                 sb
-                |> appendLine ""
+                |> appendEmptyLine
                 |> append ".Annotation("
                 |> append (FSharpHelper.Literal a.Name)
                 |> append ", "
@@ -53,7 +55,7 @@ module FSharpMigrationOperationGenerator =
         annotations
             |> Seq.iter(fun a ->
                 sb
-                |> appendLine ""
+                |> appendEmptyLine
                 |> append ".OldAnnotation("
                 |> append (FSharpHelper.Literal a.Name)
                 |> append ", "
@@ -474,8 +476,8 @@ module FSharpMigrationOperationGenerator =
                 sb
                     |> append builderName
                     |> generateOperation op
-                    |> appendLine ""
-                    |> appendLine ""
+                    |> appendEmptyLine
+                    |> appendEmptyLine
                     |> ignore
             )
         sb

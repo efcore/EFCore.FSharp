@@ -44,14 +44,14 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
         let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
             sb
                 |> append "namespace " |> appendLine ``namespace``
-                |> appendLine ""
+                |> appendEmptyLine
                 |> writeNamespaces namespaces
-                |> appendLine ""
+                |> appendEmptyLine
 
         IndentedStringBuilder()
                 |> writeNamespaces ``namespace``
                 |> append "module rec " |> append domainFileName |> appendLine " ="
-                |> appendLine ""
+                |> appendEmptyLine
                 |> indent
 
     override this.Language = "F#"

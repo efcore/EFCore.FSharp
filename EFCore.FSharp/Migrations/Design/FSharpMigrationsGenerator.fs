@@ -30,14 +30,14 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
 
         sb
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
-            |> appendLine ""
+            |> appendEmptyLine
             |> writeNamespaces (defaultNamespaces |> Seq.append (upOperations |> Seq.append downOperations |> getNamespaces))
-            |> appendLine ""
+            |> appendEmptyLine
             |> append "type " |> append migrationName |> appendLine " ="
             |> indent |> appendLine "inherit Migration"
             |> indent |> appendLine "override this.Up(migrationBuilder:MigrationBuilder) ="
             |> indent |> FSharpMigrationOperationGenerator.Generate "migrationBuilder" upOperations
-            |> appendLine ""
+            |> appendEmptyLine
             |> unindent |> appendLine "override this.Down(migrationBuilder:MigrationBuilder) ="
             |> indent |> FSharpMigrationOperationGenerator.Generate "migrationBuilder" downOperations
             |> string
@@ -55,7 +55,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
 
         sb
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
-            |> appendLine ""
+            |> appendEmptyLine
             |> writeNamespaces defaultNamespaces
             // TODO: implement
             |> appendLine "// Metadata"
@@ -74,8 +74,10 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
 
         sb
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|modelSnapshotNamespace|])
-            |> appendLine ""
+            |> appendEmptyLine
             |> writeNamespaces defaultNamespaces
+            |> appendEmptyLine
+            |> FSharpSnapshotGenerator.generate "modelBuilder" model
             // TODO: implement
             |> appendLine "// Snapshot"
             |> string
