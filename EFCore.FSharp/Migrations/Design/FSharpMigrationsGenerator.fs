@@ -33,7 +33,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> appendEmptyLine
             |> writeNamespaces (defaultNamespaces |> Seq.append (upOperations |> Seq.append downOperations |> getNamespaces))
             |> appendEmptyLine
-            |> append "type " |> append migrationName |> appendLine " ="
+            |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine " ="
             |> indent |> appendLine "inherit Migration"
             |> indent |> appendLine "override this.Up(migrationBuilder:MigrationBuilder) ="
             |> indent |> FSharpMigrationOperationGenerator.Generate "migrationBuilder" upOperations
@@ -57,8 +57,16 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
             |> appendEmptyLine
             |> writeNamespaces defaultNamespaces
-            // TODO: implement
-            |> appendLine "// Metadata"
+            |> appendEmptyLine
+            |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
+            |> append "[<Migration(" |> append (migrationId |> FSharpHelper.Literal) |> appendLine ")>]"
+            |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine "with"
+            |> appendEmptyLine
+            |> appendLine "override this.BuildTargetModel(modelBuilder: ModelBuilder) ="
+            |> indent            
+            |> FSharpSnapshotGenerator.generate "modelBuilder" targetModel
+            |> appendEmptyLine
+            |> unindent
             |> string
 
     override this.GenerateSnapshot(modelSnapshotNamespace: string, contextType: Type, modelSnapshotName: string, model: IModel) =
@@ -77,7 +85,16 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> appendEmptyLine
             |> writeNamespaces defaultNamespaces
             |> appendEmptyLine
+            |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
+            |> append "type " |> append (modelSnapshotName |> FSharpHelper.Identifier) |> appendLine "() ="
+            |> indent |> appendLine "inherit ModelSnapshot()"
+            |> appendEmptyLine
+            |> appendLine "let hasAnnotation name value (modelBuilder:ModelBuilder) ="
+            |> appendLineIndent "modelBuilder.HasAnnotation(name, value)"
+            |> appendEmptyLine
+            |> appendLine "override this.BuildModel(modelBuilder: ModelBuilder) ="
+            |> indent            
             |> FSharpSnapshotGenerator.generate "modelBuilder" model
-            // TODO: implement
-            |> appendLine "// Snapshot"
+            |> appendEmptyLine
+            |> unindent
             |> string

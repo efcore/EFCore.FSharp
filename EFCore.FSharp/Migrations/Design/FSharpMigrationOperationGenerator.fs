@@ -272,8 +272,14 @@ module FSharpMigrationOperationGenerator =
 
 
     let private generateCreateTableOperation (op:CreateTableOperation) (sb:IndentedStringBuilder) =
-        //TODO: implement
         sb
+            |> appendLine ".CreateTable("
+            |> indent
+            |> writeName op.Name
+            |> writeOptionalParameter "schema" op.Schema
+            |> append ")"
+            |> annotations (op.GetAnnotations())
+            |> unindent
 
     let private generateDropColumnOperation (op:DropColumnOperation) (sb:IndentedStringBuilder) =
         sb
@@ -476,7 +482,7 @@ module FSharpMigrationOperationGenerator =
                 sb
                     |> append builderName
                     |> generateOperation op
-                    |> appendEmptyLine
+                    |> appendLine "|> ignore"
                     |> appendEmptyLine
                     |> ignore
             )

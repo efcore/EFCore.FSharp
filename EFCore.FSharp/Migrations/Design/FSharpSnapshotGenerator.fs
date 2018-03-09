@@ -89,11 +89,10 @@ module FSharpSnapshotGenerator =
 
     let generateAnnotation (annotation:IAnnotation) (sb:IndentedStringBuilder) =
         sb
-            |> append ".HasAnnotation("
+            |> append "|> hasAnnotation"
             |> append (annotation.Name |> FSharpHelper.Literal)
-            |> append ", "
+            |> append " "
             |> append (annotation.Value |> FSharpHelper.UnknownLiteral)
-            |> append ")"
             |> ignore
 
     let generateAnnotations (annotations:List<IAnnotation>) (sb:IndentedStringBuilder) =
@@ -104,7 +103,7 @@ module FSharpSnapshotGenerator =
                 |> appendEmptyLine
                 |> generateAnnotation a)
 
-        sb
+        sb |> appendEmptyLine |> appendLine "|> ignore"
 
     let generateEntityTypes builderName entities (sb:IndentedStringBuilder) =
         sb
