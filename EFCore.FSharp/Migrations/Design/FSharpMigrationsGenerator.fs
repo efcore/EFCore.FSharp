@@ -60,8 +60,9 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> appendEmptyLine
             |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
             |> append "[<Migration(" |> append (migrationId |> FSharpHelper.Literal) |> appendLine ")>]"
-            |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine "with"
+            |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine " with"
             |> appendEmptyLine
+            |> indent
             |> appendLine "override this.BuildTargetModel(modelBuilder: ModelBuilder) ="
             |> indent            
             |> FSharpSnapshotGenerator.generate "modelBuilder" targetModel

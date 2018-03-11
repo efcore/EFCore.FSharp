@@ -88,11 +88,11 @@ module FSharpSnapshotGenerator =
         sb
 
     let generateAnnotation (annotation:IAnnotation) (sb:IndentedStringBuilder) =
+        let name = annotation.Name |> FSharpHelper.Literal
+        let value = annotation.Value |> FSharpHelper.UnknownLiteral
+        
         sb
-            |> append "|> hasAnnotation"
-            |> append (annotation.Name |> FSharpHelper.Literal)
-            |> append " "
-            |> append (annotation.Value |> FSharpHelper.UnknownLiteral)
+            |> append (sprintf ".HasAnnotation(%s, %s,)" name value)
             |> ignore
 
     let generateAnnotations (annotations:List<IAnnotation>) (sb:IndentedStringBuilder) =

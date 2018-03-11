@@ -482,7 +482,7 @@ module FSharpMigrationOperationGenerator =
                 sb
                     |> append builderName
                     |> generateOperation op
-                    |> appendLine "|> ignore"
+                    |> appendLine " |> ignore"
                     |> appendEmptyLine
                     |> ignore
             )
