@@ -56,10 +56,10 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
 
     override this.Language = "F#"
 
-    override this.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, dataAnnotations: bool) =
+    override this.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, options: ModelCodeGenerationOptions) =
         let resultingFiles = ScaffoldedModel()
 
-        let generatedCode = contextGenerator.WriteCode(model, ``namespace``, contextName, connectionString, dataAnnotations)
+        let generatedCode = contextGenerator.WriteCode(model, ``namespace``, contextName, connectionString, options.UseDataAnnotations, options.SuppressConnectionStringWarning)
 
         let dbContextFileName = contextName + fileExtension;
 
@@ -73,12 +73,12 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
         let domainFile = ScaffoldedFile()
         domainFile.Path <- (domainFileName + fileExtension)
 
-        let domainFileBuilder = createDomainFileContent model dataAnnotations ``namespace`` domainFileName
+        let domainFileBuilder = createDomainFileContent model options.UseDataAnnotations ``namespace`` domainFileName
 
         model.GetEntityTypes()
             |> Seq.iter(fun entityType -> 
                 domainFileBuilder
-                    |> FSharpEntityTypeGenerator.WriteCode entityType dataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes
+                    |> FSharpEntityTypeGenerator.WriteCode entityType options.UseDataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes
                     |> ignore
             )
         domainFile.Code <- (domainFileBuilder |> string)

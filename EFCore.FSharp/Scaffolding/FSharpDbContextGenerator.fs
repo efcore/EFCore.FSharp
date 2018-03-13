@@ -205,7 +205,7 @@ type FSharpDbContextGenerator
             |> generateOnModelCreating model useDataAnnotations
 
     interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator with
-        member this.WriteCode (model, ``namespace``, contextName, connectionString, useDataAnnotations) =
+        member this.WriteCode (model, ``namespace``, contextName, connectionString, useDataAnnotations, suppressConnectionStringWarning) =
             let sb = 
                 IndentedStringBuilder()
                 |> writeNamespaces ``namespace``

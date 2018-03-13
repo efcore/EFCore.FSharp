@@ -9,13 +9,28 @@ open Microsoft.EntityFrameworkCore.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
+open Microsoft.EntityFrameworkCore.Design.Internal
 
 type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies) =
     inherit MigrationsCodeGenerator(dependencies)
     
-    let getNamespaces (operations: MigrationOperation seq) =
-        seq { yield "System // This should be the namespaces needed by the MigrationOperations" }
+    member private this.GetAllNamespaces (operations: MigrationOperation seq) =
+        let defaultNamespaces =
+            seq { yield "System";
+                     yield "System.Collections.Generic";
+                     yield "Microsoft.EntityFrameworkCore.Migrations"; }
 
+        let allOperationNamespaces = base.GetNamespaces(operations)
+
+        let namespaceComparer = NamespaceComparer()
+        let namespaces =
+            allOperationNamespaces
+            |> Seq.append defaultNamespaces
+            |> Seq.toList
+            |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
+            |> Seq.distinct
+
+        namespaces        
 
     override this.FileExtension = ".fs"
     override this.Language = "F#"
@@ -23,15 +38,14 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
     override this.GenerateMigration(migrationNamespace: string, migrationName: string, upOperations: IReadOnlyList<MigrationOperation>, downOperations: IReadOnlyList<MigrationOperation>) =
         let sb = IndentedStringBuilder()
 
-        let defaultNamespaces =
-            seq { yield "System";
-                     yield "System.Collections.Generic";
-                     yield "Microsoft.EntityFrameworkCore.Migrations"; }
+        let namespaces = (upOperations |> Seq.append downOperations) |> this.GetAllNamespaces
 
         sb
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
             |> appendEmptyLine
-            |> writeNamespaces (defaultNamespaces |> Seq.append (upOperations |> Seq.append downOperations |> getNamespaces))
+            |> writeNamespaces namespaces
+            |> appendEmptyLine
+            |> appendLine "// This is where we need to define our private types for column mappings etc."
             |> appendEmptyLine
             |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine " ="
             |> indent |> appendLine "inherit Migration"
