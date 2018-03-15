@@ -71,8 +71,8 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> appendEmptyLine
             |> createTypesForOperations allOperations // This will eventually become redundant with anon record types
             |> appendEmptyLine
-            |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
-            |> append "[<Migration(" |> append (migrationId |> FSharpHelper.Literal) |> appendLine ")>]"
+            //|> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
+            //|> append "[<Migration(" |> append (migrationId |> FSharpHelper.Literal) |> appendLine ")>]"
             |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine "() ="
             |> indent |> appendLine "inherit Migration()"
             |> appendEmptyLine
