@@ -302,7 +302,6 @@ module FSharpHelper =
         
         static member Literal(values: obj[,]) =
             
-            let d = array2D [[0;1]; [2;3]]
             let rowCount = Array2D.length1 values
             let valuesCount = Array2D.length2 values
 
@@ -319,14 +318,10 @@ module FSharpHelper =
             value |> LiteralWriter.UnknownLiteral      
    
     let Lambda (properties: IReadOnlyList<string>) =
-        let builder = StringBuilder()
-        builder.Append("(fun x -> ") |> ignore
-
-        match properties.Count with
-        | 1 -> builder.Append("x.").Append(properties.[0]) |> ignore
-        | _ -> builder.Append("(").Append(String.Join(", ", (properties |> Seq.map(fun p -> "x." + p)))).Append(" :> obj)") |> ignore
-
-        builder.Append(")") |> string
+        StringBuilder()
+            .Append("(fun x -> ")
+            .Append("(").Append(String.Join(", ", (properties |> Seq.map(fun p -> "x." + p)))).Append(" :> obj)")
+            .Append(")") |> string
 
     let Literal (o:obj) =
         o |> LiteralWriter.Literal

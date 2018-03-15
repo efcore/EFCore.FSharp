@@ -158,11 +158,11 @@ module FSharpMigrationOperationGenerator =
             |> writeParameterIfTrue op.IsRowVersion "rowVersion" true
             |> writeParameter "nullable" op.IsNullable
             |>
-                if not(isNull op.DefaultValueSql) then
+                if op.DefaultValueSql |> notNull then
                     writeParameter "defaultValueSql" op.DefaultValueSql
-                elif not(isNull op.ComputedColumnSql) then
+                elif op.ComputedColumnSql |> notNull then
                     writeParameter "computedColumnSql" op.ComputedColumnSql
-                elif not(isNull op.DefaultValue) then
+                elif op.DefaultValue |> notNull then
                     writeParameter "defaultValue" op.DefaultValue
                 else
                     append ""
@@ -173,11 +173,11 @@ module FSharpMigrationOperationGenerator =
             |> writeParameterIfTrue op.OldColumn.IsRowVersion "oldRowVersion" true
             |> writeParameter "oldNullable" op.OldColumn.IsNullable
             |>
-                if not(isNull op.OldColumn.DefaultValueSql) then
+                if op.OldColumn.DefaultValueSql |> notNull then
                     writeParameter "oldDefaultValueSql" op.OldColumn.DefaultValueSql
-                elif not(isNull op.OldColumn.ComputedColumnSql) then
+                elif op.OldColumn.ComputedColumnSql |> notNull then
                     writeParameter "oldComputedColumnSql" op.OldColumn.ComputedColumnSql
-                elif not(isNull op.OldColumn.DefaultValue) then
+                elif op.OldColumn.DefaultValue |> notNull then
                     writeParameter "oldDefaultValue" op.OldColumn.DefaultValue
                 else
                     append ""
@@ -272,11 +272,136 @@ module FSharpMigrationOperationGenerator =
 
 
     let private generateCreateTableOperation (op:CreateTableOperation) (sb:IndentedStringBuilder) =
+        
+        let map = Dictionary<string, string>()
+
+        let appendIfTrue truth name value b =
+                if truth then
+                    b |> append (sprintf ", %s = %s" name (value |> FSharpHelper.Literal))
+                else
+                    b
+
+        let appendIfHasValue name (value: Nullable<_>) b =
+                if value.HasValue then
+                    b |> append (sprintf ", %s = %s" name (value.Value |> FSharpHelper.Literal))
+                else
+                    b                
+
+        let writeColumn (c:AddColumnOperation) =
+            let propertyName = c.Name |> FSharpHelper.Identifier
+            map.Add(c.Name, propertyName)            
+
+            sb
+                |> append propertyName
+                |> append " = table.Column<"
+                |> append (FSharpHelper.Reference(c.ClrType))
+                |> append ">("
+                |> append "nullable = " |> append (c.IsNullable |> FSharpHelper.Literal)
+                |> appendIfTrue (c.Name <> propertyName) "name" c.Name
+                |> appendIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
+                |> appendIfTrue (c.IsUnicode.HasValue && (not c.IsUnicode.Value)) "unicode" false
+                |> appendIfHasValue "maxLength" c.MaxLength
+                |> appendIfTrue (c.IsRowVersion) "rowVersion" c.IsRowVersion
+                |>
+                    if c.DefaultValueSql |> notNull then
+                        append (sprintf ", defaultValueSql = %s" (c.DefaultValueSql |> FSharpHelper.Literal))
+                    elif c.ComputedColumnSql |> notNull then
+                        append (sprintf ", computedColumnSql = %s" (c.ComputedColumnSql |> FSharpHelper.Literal))
+                    elif c.DefaultValue |> notNull then
+                        append (sprintf ", defaultValue = %s" (c.DefaultValue |> FSharpHelper.UnknownLiteral))
+                    else
+                        append ""
+                |> append ")"
+                |> indent
+                |> annotations (c.GetAnnotations())
+                |> unindent
+                |> appendEmptyLine
+                |> ignore
+
+        let writeColumns sb =
+
+            sb
+                |> append "," |> appendLine "columns = (fun table -> "
+                |> appendLine "{"
+                |> indent
+                |> ignore
+
+            op.Columns |> Seq.filter(fun c  -> c |> notNull) |> Seq.iter(writeColumn)
+
+            sb
+                |> unindent
+                |> appendLine "})"
+
+        let writeUniqueConstraint (uc:AddUniqueConstraintOperation) =
+            sb
+                |> append "table.UniqueConstraint("
+                |> append (uc.Name |> FSharpHelper.Literal)
+                |> append ", "
+                |> append (uc.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> FSharpHelper.Lambda)
+                |> append ")"
+                |> indent
+                |> annotations (op.PrimaryKey.GetAnnotations())
+                |> appendLine " |> ignore"
+                |> unindent
+                |> ignore
+
+        let writeForeignKeyConstraint (fk:AddForeignKeyOperation) =
+            sb
+                |> appendLine "table.ForeignKey("
+                |> indent
+
+                |> append "name = " |> append (fk.Name |> FSharpHelper.Literal) |> appendLine ","
+                |> append (if fk.Columns.Length = 1 then "column = " else "columns = ")
+                |> append (fk.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> FSharpHelper.Lambda)
+                |> appendIfTrue (fk.PrincipalSchema |> notNull) "principalSchema" fk.PrincipalSchema
+                |> appendIfTrue true "principalTable" fk.PrincipalTable
+                |> appendIfTrue (fk.PrincipalColumns.Length = 1) "principalColumn" fk.PrincipalColumns.[0]
+                |> appendIfTrue (fk.PrincipalColumns.Length <> 1) "principalColumns" fk.PrincipalColumns
+                |> appendIfTrue (fk.OnUpdate <> ReferentialAction.NoAction) "onUpdate" fk.OnUpdate
+                |> appendIfTrue (fk.OnDelete <> ReferentialAction.NoAction) "onDelete" fk.OnDelete
+
+                |> append ")"                
+                |> annotations (fk.GetAnnotations())
+                |> unindent
+                |> appendLine " |> ignore"                
+                |> appendEmptyLine
+                |> ignore
+            ()
+
+        let writeConstraints sb =
+            sb |> append "," |> appendLine "constraints ="
+            |> indent
+            |> appendLine "(fun table -> "
+            |> indent
+            |> ignore
+
+            if op.PrimaryKey |> notNull then
+                sb
+                    |> append "table.PrimaryKey("
+                    |> append (op.PrimaryKey.Name |> FSharpHelper.Literal)
+                    |> append ", "
+                    |> append (op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> FSharpHelper.Lambda)
+                    |> appendLine ") |> ignore"
+                    |> indent
+                    |> annotations (op.PrimaryKey.GetAnnotations())
+                    |> unindent
+                    |> ignore
+            
+            op.UniqueConstraints |> Seq.iter(writeUniqueConstraint)
+            op.ForeignKeys |> Seq.iter(writeForeignKeyConstraint)
+
+            sb
+                |> unindent
+                |> appendLine ") "       
+        
         sb
             |> appendLine ".CreateTable("
             |> indent
             |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
+            |> writeColumns
+            |> writeConstraints
+            |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
             |> unindent
