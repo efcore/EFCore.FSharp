@@ -16,4 +16,4 @@ type EFCoreFSharpServices() =
             services
                 .AddSingleton<ICSharpDbContextGenerator, FSharpDbContextGenerator>()
                 .AddSingleton<IModelCodeGenerator, FSharpModelGenerator>()
-                .AddSingleton<IMigrationsCodeGenerator, FSharpMigrationsGenerator>() |> ignore
+                .AddSingleton<IMigrationsScaffolder, FSharpMigrationsScaffolder>() |> ignore

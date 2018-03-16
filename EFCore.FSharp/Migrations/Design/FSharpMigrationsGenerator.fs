@@ -10,11 +10,76 @@ open Microsoft.EntityFrameworkCore.Internal
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Design.Internal
+open Microsoft.EntityFrameworkCore.Infrastructure
+open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
-type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies) =
-    inherit MigrationsCodeGenerator(dependencies)
+module FSharpMigrationsGenerator =
+    let private getColumnNamespaces (columnOperation: ColumnOperation) =
+        let ns = columnOperation.ClrType.GetNamespaces()
+
+        let ns' =
+            match columnOperation :? AlterColumnOperation with
+            | true ->
+                (columnOperation :?> AlterColumnOperation).OldColumn.ClrType.GetNamespaces()
+            | false -> Seq.empty<String>
+
+        ns |> Seq.append ns'
+
+    let private getAnnotationNamespaces (items: IAnnotatable seq) = 
+        let ignoredAnnotations = 
+            [
+                RelationshipDiscoveryConvention.NavigationCandidatesAnnotationName
+                RelationshipDiscoveryConvention.AmbiguousNavigationsAnnotationName
+                InversePropertyAttributeConvention.InverseNavigationsAnnotationName
+            ]
+
+        items
+            |> Seq.collect (fun i -> i.GetAnnotations())
+            |> Seq.filter (fun a -> a.Value |> notNull)
+            |> Seq.filter (fun a -> (ignoredAnnotations |> List.contains a.Name) |> not)
+            |> Seq.collect (fun a -> a.Value.GetType().GetNamespaces())
+
+
+    let private getAnnotatables (ops: MigrationOperation seq) : IAnnotatable seq =
+        
+        let list = List<IAnnotatable>()
+        ops |> Seq.map(fun o -> o :> IAnnotatable) |> list.AddRange
+
+        ops
+            |> Seq.filter(fun o -> o :? CreateTableOperation)
+            |> Seq.map(fun o -> o :?> CreateTableOperation)
+            |> Seq.iter(fun c -> 
+                c.Columns |> Seq.map(fun o -> o :> IAnnotatable) |> list.AddRange
+
+                if c.PrimaryKey |> notNull then
+                    (c.PrimaryKey :> IAnnotatable) |> list.Add
+
+                c.UniqueConstraints |> Seq.map(fun o -> o :> IAnnotatable) |> list.AddRange
+                c.ForeignKeys |> Seq.map(fun o -> o :> IAnnotatable) |> list.AddRange
+                )
+
+        list |> Seq.cast
+
+    let private getOperationNamespaces (ops: MigrationOperation seq) =
+        let columnOperations =
+            ops
+                |> Seq.filter(fun o -> o :? ColumnOperation)
+                |> Seq.map(fun o -> o :?> ColumnOperation)
+                |> Seq.collect(getColumnNamespaces)
+
+        let columnsInCreateTableOperations =
+            ops
+                 |> Seq.filter(fun o -> o :? CreateTableOperation)
+                 |> Seq.map(fun o -> o :?> CreateTableOperation)
+                 |> Seq.collect(fun o -> o.Columns)
+                 |> Seq.collect(getColumnNamespaces)
+
+        let annotatables = ops |> getAnnotatables |> getAnnotationNamespaces
+
+        columnOperations |> Seq.append columnsInCreateTableOperations |> Seq.append annotatables
+
     
-    let writeCreateTableType (sb: IndentedStringBuilder) (op:CreateTableOperation) =
+    let private writeCreateTableType (sb: IndentedStringBuilder) (op:CreateTableOperation) =
         sb
             |> appendEmptyLine
             |> append "type private " |> append op.Name |> appendLine "Table = {"
@@ -25,14 +90,14 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> ignore
         ()        
 
-    let createTypesForOperations (operations: MigrationOperation seq) (sb: IndentedStringBuilder) =
+    let private createTypesForOperations (operations: MigrationOperation seq) (sb: IndentedStringBuilder) =
         operations
             |> Seq.filter(fun op -> (op :? CreateTableOperation))
             |> Seq.map(fun op -> (op :?> CreateTableOperation))
             |> Seq.iter(fun op -> op |> writeCreateTableType sb)
         sb
 
-    member private this.GetAllNamespaces (operations: MigrationOperation seq) =
+    let private getAllNamespaces (operations: MigrationOperation seq) =
         let defaultNamespaces =
             seq { yield "System";
                      yield "System.Collections.Generic";
@@ -43,7 +108,7 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
                      yield "Microsoft.EntityFrameworkCore.Migrations.Operations";
                      yield "Microsoft.EntityFrameworkCore.Migrations.Operations.Builders"; }
 
-        let allOperationNamespaces = base.GetNamespaces(operations)
+        let allOperationNamespaces = operations |> getOperationNamespaces
 
         let namespaceComparer = NamespaceComparer()
         let namespaces =
@@ -55,14 +120,13 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
 
         namespaces        
 
-    override this.FileExtension = ".fs"
-    override this.Language = "F#"
+    let FileExtension = ".fs"
 
-    override this.GenerateMigration(migrationNamespace: string, migrationName: string, upOperations: IReadOnlyList<MigrationOperation>, downOperations: IReadOnlyList<MigrationOperation>) =
+    let GenerateMigration (migrationNamespace) (migrationName) (migrationId: string) (contextType:Type) (upOperations) (downOperations) (model) =
         let sb = IndentedStringBuilder()
 
         let allOperations =  (upOperations |> Seq.append downOperations)
-        let namespaces = allOperations |> this.GetAllNamespaces
+        let namespaces = allOperations |> getAllNamespaces |> Seq.append [contextType.Namespace]
 
         sb
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
@@ -71,8 +135,8 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> appendEmptyLine
             |> createTypesForOperations allOperations // This will eventually become redundant with anon record types
             |> appendEmptyLine
-            //|> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
-            //|> append "[<Migration(" |> append (migrationId |> FSharpHelper.Literal) |> appendLine ")>]"
+            |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
+            |> append "[<Migration(" |> append (migrationId |> FSharpHelper.Literal) |> appendLine ")>]"
             |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine "() ="
             |> indent |> appendLine "inherit Migration()"
             |> appendEmptyLine
@@ -81,44 +145,15 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> appendEmptyLine
             |> unindent |> appendLine "override this.Down(migrationBuilder:MigrationBuilder) ="
             |> indent |> FSharpMigrationOperationGenerator.Generate "migrationBuilder" downOperations
-            // TODO: implement this override here
-            // |> unindent
-            // |> appendEmptyLine            
-            // |> appendLine "override this.BuildTargetModel(modelBuilder: ModelBuilder) ="
-            // |> indent            
-            // |> FSharpSnapshotGenerator.generate "modelBuilder" targetModel
-            |> appendEmptyLine
-            |> string
-
-    override this.GenerateMetadata(migrationNamespace: string, contextType: Type, migrationName: string, migrationId: string, targetModel: IModel) =
-        let sb = IndentedStringBuilder()
-
-        let defaultNamespaces =
-            ["System";
-             "Microsoft.EntityFrameworkCore";
-             "Microsoft.EntityFrameworkCore.Infrastructure";
-             "Microsoft.EntityFrameworkCore.Metadata";
-             "Microsoft.EntityFrameworkCore.Migrations";
-             contextType.Namespace]
-
-        sb
-            |> append "namespace " |> appendLine (FSharpHelper.Namespace [|migrationNamespace|])
-            |> appendEmptyLine
-            |> writeNamespaces defaultNamespaces
-            |> appendEmptyLine
-            |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
-            |> append "[<Migration(" |> append (migrationId |> FSharpHelper.Literal) |> appendLine ")>]"
-            |> append "type " |> append (migrationName |> FSharpHelper.Identifier) |> appendLine " with"
-            |> appendEmptyLine
-            |> indent
+            |> unindent
+            |> appendEmptyLine            
             |> appendLine "override this.BuildTargetModel(modelBuilder: ModelBuilder) ="
             |> indent            
-            |> FSharpSnapshotGenerator.generate "modelBuilder" targetModel
+            |> FSharpSnapshotGenerator.generate "modelBuilder" model
             |> appendEmptyLine
-            |> unindent
             |> string
 
-    override this.GenerateSnapshot(modelSnapshotNamespace: string, contextType: Type, modelSnapshotName: string, model: IModel) =
+    let GenerateSnapshot (modelSnapshotNamespace: string) (contextType: Type) (modelSnapshotName: string) (model: IModel) =
         let sb = IndentedStringBuilder()
 
         let defaultNamespaces =
@@ -137,9 +172,6 @@ type FSharpMigrationsGenerator(dependencies: MigrationsCodeGeneratorDependencies
             |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
             |> append "type " |> append (modelSnapshotName |> FSharpHelper.Identifier) |> appendLine "() ="
             |> indent |> appendLine "inherit ModelSnapshot()"
-            |> appendEmptyLine
-            |> appendLine "let hasAnnotation name value (modelBuilder:ModelBuilder) ="
-            |> appendLineIndent "modelBuilder.HasAnnotation(name, value)"
             |> appendEmptyLine
             |> appendLine "override this.BuildModel(modelBuilder: ModelBuilder) ="
             |> indent            
