@@ -69,14 +69,14 @@ module FSharpSnapshotGenerator =
         else
             sb
     
-    let private sort (entityTypes:IReadOnlyList<IEntityType>) =
+    let private sort (entityTypes:IEntityType list) =
         let entityTypeGraph = new Multigraph<IEntityType, int>()
         entityTypeGraph.AddVertices(entityTypes)
 
         entityTypes
             |> Seq.filter(fun e -> e.BaseType |> isNull |> not)
             |> Seq.iter(fun e -> entityTypeGraph.AddEdge(e.BaseType, e, 0))
-        entityTypeGraph.TopologicalSort()
+        entityTypeGraph.TopologicalSort() |> Seq.toList
 
     let ignoreAnnotationTypes (annotations:List<IAnnotation>) (annotation:string) (sb:IndentedStringBuilder) =
         
@@ -105,7 +105,131 @@ module FSharpSnapshotGenerator =
 
         sb |> appendEmptyLine |> appendLine "|> ignore"
 
-    let generateEntityTypes builderName entities (sb:IndentedStringBuilder) =
+    let generateBaseType (funcId: string) (baseType: IEntityType) (sb:IndentedStringBuilder) =
+
+        if (baseType |> notNull) then
+            sb
+                |> appendEmptyLine
+                |> append funcId
+                |> append ".HasBaseType("
+                |> append (baseType.Name |> FSharpHelper.Literal)
+                |> appendLine ")"
+        else
+            sb
+
+    let generateProperties (funcId: string) properties (sb:IndentedStringBuilder) =
+        sb
+
+    let generateKey (funcId: string) (key:IKey) (isPrimary:bool) (sb:IndentedStringBuilder) =
+        sb
+
+    let generateKeys (funcId: string) (declaredKeys: IKey seq) (pk:IKey) (sb:IndentedStringBuilder) =
+        
+        if pk |> notNull then
+            sb |> generateKey funcId pk true |> ignore
+
+        
+
+        sb
+
+    let generateIndex (funcId: string) (index:IIndex) (sb:IndentedStringBuilder) =
+        sb
+            |> appendEmptyLine
+
+            |> ignore
+
+    let generateIndexes (funcId: string) (indexes:IIndex seq) (sb:IndentedStringBuilder) =
+        
+        indexes |> Seq.iter (fun ix -> sb |> generateIndex funcId ix)        
+        sb
+
+    let generateEntityTypeAnnotations (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
+        sb
+
+    let generateForeignKeys funcId (foreignKeys: IForeignKey seq) sb =
+        sb
+
+    let generateOwnedTypes funcId (foreignKeys: IForeignKey seq) (sb:IndentedStringBuilder) =
+        sb
+
+    let generateRelationships (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
+        sb
+            |> generateForeignKeys funcId (entityType.GetDeclaredForeignKeys())
+            |> generateOwnedTypes funcId (entityType.GetDeclaredReferencingForeignKeys() |> Seq.filter(fun fk -> fk.IsOwnership))
+
+    let generateSeedData properties data (sb:IndentedStringBuilder) =
+        sb
+
+
+    let generateEntityType (builderName:string) (entityType: IEntityType) (sb:IndentedStringBuilder) =
+
+        let ownership = entityType.FindOwnership()
+
+        let ownerNav =
+            match ownership |> isNull with
+            | true -> None
+            | false -> ownership.PrincipalToDependent.Name |> Some
+
+        let declaration =
+            match ownerNav with
+            | None -> (sprintf ".Entity(%s" (entityType.Name |> FSharpHelper.Literal))
+            | Some o -> (sprintf ".OwnsOne(%s, %s" (entityType.Name |> FSharpHelper.Literal) (o |> FSharpHelper.Literal))
+
+        let funcId = "b"
+
+        sb
+            |> appendEmptyLine
+            |> append builderName
+            |> append declaration
+            |> append ", (fun " |> append funcId |> appendLine " ->"
+            |> indent
+            |> generateBaseType funcId entityType.BaseType
+            |> generateProperties funcId (entityType.GetDeclaredProperties())
+            |>
+                match ownerNav with
+                | None -> append ""
+                | Some _ -> generateKeys funcId (entityType.GetDeclaredKeys()) (entityType.FindDeclaredPrimaryKey())
+            |> generateIndexes funcId (entityType.GetDeclaredIndexes())
+            |> generateEntityTypeAnnotations funcId entityType
+            |>
+                match ownerNav with
+                | None -> append ""
+                | Some _ -> generateRelationships funcId entityType
+            |> generateSeedData (entityType.GetProperties()) (entityType.GetSeedData(true))
+            |> appendLine ")) |> ignore"
+            |> unindent
+            |> ignore
+
+    let generateEntityTypeRelationships builderName (entityType: IEntityType) (sb:IndentedStringBuilder) =
+        
+        sb
+            |> appendEmptyLine
+            |> append builderName
+            |> append ".Entity("
+            |> append (entityType.Name |> FSharpHelper.Literal)
+            |> appendLine(", (fun b ->")
+            |> indent
+            |> generateRelationships "b" entityType
+            |> appendLine ")) |> ignore"
+            |> unindent
+            |> ignore
+            |> ignore
+
+
+    let generateEntityTypes builderName (entities: IEntityType list) (sb:IndentedStringBuilder) =
+
+        let entitiesToWrite =
+            entities |> Seq.filter (fun e -> (e.HasDefiningNavigation() |> not) && (e.FindOwnership() |> isNull))
+
+        entitiesToWrite
+            |> Seq.iter(fun e -> generateEntityTypeRelationships builderName e sb)
+
+        let relationships =
+            entitiesToWrite
+            |> Seq.filter(fun e -> (e.GetDeclaredForeignKeys() |> Seq.isEmpty |> not) || (e.GetDeclaredReferencingForeignKeys() |> Seq.exists(fun fk -> fk.IsOwnership)))
+
+        relationships |> Seq.iter(fun e -> generateEntityTypeRelationships builderName e sb)
+
         sb
         
     let generate (builderName:string) (model:IModel) (sb:IndentedStringBuilder) =
