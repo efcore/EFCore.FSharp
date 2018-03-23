@@ -153,9 +153,6 @@ module FSharpHelper =
         typeInfo.IsGenericType
         && typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>
 
-    let private isOptionOrNullableType (t:Type) =
-        (t |> isNullableType) || (t |> isOptionType)
-
     let unwrapNullableType (t:Type) =
         match t |> isNullableType with    
         | true -> t |> Nullable.GetUnderlyingType

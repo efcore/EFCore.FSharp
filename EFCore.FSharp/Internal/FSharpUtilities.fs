@@ -14,7 +14,7 @@ open FSharpHelper
 
 module FSharpUtilities = 
 
-    let _primitiveTypeNames =
+    let private _primitiveTypeNames =
         [
             (typedefof<bool>, "bool")
             (typedefof<byte>, "byte")
@@ -34,65 +34,64 @@ module FSharpUtilities =
             (typedefof<obj>, "obj")
         ] |> dict
 
-    let _fsharpTypeNames =
+    let private _fsharpTypeNames =
         [
             ("IEnumerable", "seq")
             ("FSharpList", "list")
             ("FSharpOption", "option")
         ] |> dict
 
-    let escapeString (str: string) =
+    let private escapeString (str: string) =
         str.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\t", "\\t")
 
-    let escapeVerbatimString (str: string) =
+    let private escapeVerbatimString (str: string) =
         str.Replace("\"", "\"\"")
 
-    type private LiteralWriter =
-        static member GenerateLiteral (value : byte array) =
-            "new byte[] {" + String.Join(", ", value) + "}"
+    let private generateLiteralByteArray (value : byte array) =
+        "new byte[] {" + String.Join(", ", value) + "}"
 
-        static member GenerateLiteral (value: bool) =
-            match value with | true -> "true" | false -> "false"
+    let private generateLiteralBool (value: bool) =
+        match value with | true -> "true" | false -> "false"
 
-        static member GenerateLiteral (value: int) =
-            value.ToString(CultureInfo.InvariantCulture)
+    let private generateLiteralInt32 (value: int) =
+        value.ToString(CultureInfo.InvariantCulture)
 
-        static member GenerateLiteral (value: Int64) =
-            value.ToString(CultureInfo.InvariantCulture) + "L"
+    let private generateLiteralInt64 (value: Int64) =
+        value.ToString(CultureInfo.InvariantCulture) + "L"
 
-        static member GenerateLiteral (value: decimal) =
-            value.ToString(CultureInfo.InvariantCulture) + "m"
+    let private generateLiteralDecimal (value: decimal) =
+        value.ToString(CultureInfo.InvariantCulture) + "m"
 
-        static member GenerateLiteral (value: float32) =
-            sprintf "(float32 %s)" (value.ToString(CultureInfo.InvariantCulture))
+    let private generateLiteralFloat32 (value: float32) =
+        sprintf "(float32 %s)" (value.ToString(CultureInfo.InvariantCulture))
 
-        static member GenerateLiteral (value: double) =
-            sprintf "(double %s)" (value.ToString(CultureInfo.InvariantCulture))
+    let private generateLiteralDouble (value: double) =
+        sprintf "(double %s)" (value.ToString(CultureInfo.InvariantCulture))
 
-        static member GenerateLiteral (value: TimeSpan) =
-            sprintf "TimeSpan(%d)" value.Ticks
+    let private generateLiteralTimeSpan (value: TimeSpan) =
+        sprintf "TimeSpan(%d)" value.Ticks
 
-        static member GenerateLiteral (value: DateTime) =
-            sprintf "DateTime(%d, DateTimeKind.%s)" value.Ticks (Enum.GetName(typedefof<DateTimeKind>, value.Kind))
+    let private generateLiteralDateTime (value: DateTime) =
+        sprintf "DateTime(%d, DateTimeKind.%s)" value.Ticks (Enum.GetName(typedefof<DateTimeKind>, value.Kind))
 
-        static member GenerateLiteral (value: DateTimeOffset) =
-            sprintf "DateTimeOffset(%d, TimeSpan(%d))" value.Ticks value.Offset.Ticks
+    let private generateLiteralDateTimeOffset (value: DateTimeOffset) =
+        sprintf "DateTimeOffset(%d, TimeSpan(%d))" value.Ticks value.Offset.Ticks
 
-        static member GenerateLiteral (value: Guid) =
-            sprintf "Guid(%s)" (value |> string)
+    let private generateLiteralGuid (value: Guid) =
+        sprintf "Guid(%s)" (value |> string)
 
-        static member GenerateLiteral (value:string) =
-            sprintf "\"%s\"" (value |> escapeString)
+    let private generateLiteralString (value:string) =
+        sprintf "\"%s\"" (value |> escapeString)
 
-        static member GenerateVerbatimStringLiteral (value:string) =
-            sprintf "@\"%s\"" (value |> escapeVerbatimString)      
+    let private GenerateLiteralVerbatimString (value:string) =
+        sprintf "@\"%s\"" (value |> escapeVerbatimString)      
 
-        static member GenerateLiteral(value: obj) =
-            let valType = value.GetType()
-            if valType.GetTypeInfo().IsEnum then
-                sprintf "%s.%s" valType.Name (Enum.Format(valType, value, "G"))
-            else
-                String.Format(CultureInfo.InvariantCulture, "{0}", value)           
+    let private generateLiteralObject (value: obj) =
+        let valType = value.GetType()
+        if valType.GetTypeInfo().IsEnum then
+            sprintf "%s.%s" valType.Name (Enum.Format(valType, value, "G"))
+        else
+            String.Format(CultureInfo.InvariantCulture, "{0}", value)         
 
 
     let private _keywords =
@@ -232,19 +231,19 @@ module FSharpUtilities =
 
     let generateLiteral(literal:obj) =
         match literal with
-        | :? (byte array) as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? bool as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? int as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? Int64 as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? decimal as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? float32 as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? double as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? TimeSpan as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? DateTime as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? DateTimeOffset as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? Guid as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | :? string as literal' -> LiteralWriter.GenerateLiteral(literal')
-        | _ -> LiteralWriter.GenerateLiteral(literal)
+        | :? (byte array) as literal' -> generateLiteralByteArray(literal')
+        | :? bool as literal' -> generateLiteralBool(literal')
+        | :? int as literal' -> generateLiteralInt32(literal')
+        | :? Int64 as literal' -> generateLiteralInt64(literal')
+        | :? decimal as literal' -> generateLiteralDecimal(literal')
+        | :? float32 as literal' -> generateLiteralFloat32(literal')
+        | :? double as literal' -> generateLiteralDouble(literal')
+        | :? TimeSpan as literal' -> generateLiteralTimeSpan(literal')
+        | :? DateTime as literal' -> generateLiteralDateTime(literal')
+        | :? DateTimeOffset as literal' -> generateLiteralDateTimeOffset(literal')
+        | :? Guid as literal' -> generateLiteralGuid(literal')
+        | :? string as literal' -> generateLiteralString(literal')
+        | _ -> generateLiteralObject(literal)
         
 
     let generate (methodCallCodeFragment: MethodCallCodeFragment) =

@@ -1,5 +1,6 @@
 namespace Bricelam.EntityFrameworkCore.FSharp
 
+open System
 open Microsoft.EntityFrameworkCore.Internal
 
 module internal IndentedStringBuilderUtilities =
@@ -13,7 +14,10 @@ module internal IndentedStringBuilderUtilities =
         sb.AppendLine(text)
 
     let appendEmptyLine sb =
-        sb |> appendLine ""    
+        sb |> appendLine String.Empty
+
+    let noop sb =
+        sb |> append String.Empty
 
     let private prependLine (addLineBreak: bool byref) (text:string) (sb:IndentedStringBuilder) =
         if addLineBreak then

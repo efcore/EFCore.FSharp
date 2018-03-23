@@ -187,13 +187,13 @@ module FSharpSnapshotGenerator =
             |> generateProperties funcId (entityType.GetDeclaredProperties())
             |>
                 match ownerNav with
-                | None -> append ""
+                | None -> noop
                 | Some _ -> generateKeys funcId (entityType.GetDeclaredKeys()) (entityType.FindDeclaredPrimaryKey())
             |> generateIndexes funcId (entityType.GetDeclaredIndexes())
             |> generateEntityTypeAnnotations funcId entityType
             |>
                 match ownerNav with
-                | None -> append ""
+                | None -> noop
                 | Some _ -> generateRelationships funcId entityType
             |> generateSeedData (entityType.GetProperties()) (entityType.GetSeedData(true))
             |> appendLine ")) |> ignore"

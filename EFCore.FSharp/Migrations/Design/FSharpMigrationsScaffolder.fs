@@ -82,6 +82,21 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
         else
             defaultDirectory                                                
 
+    let getOperations (modelSnapshot:ModelSnapshot) =
+
+        let lastModel =
+            match modelSnapshot |> isNull with
+            | true -> dependencies.SnapshotModelProcessor.Process(null)
+            | false -> dependencies.SnapshotModelProcessor.Process(modelSnapshot.Model)
+
+        let upOperations = dependencies.MigrationsModelDiffer.GetDifferences(lastModel, dependencies.Model) |> Seq.toList
+        let downOperations = 
+            match upOperations |> List.isEmpty with
+            | true -> []
+            | false -> dependencies.MigrationsModelDiffer.GetDifferences(dependencies.Model, lastModel) |> Seq.toList
+
+        (upOperations, downOperations)
+
     let scaffoldMigration (migrationName:string) (rootNamespace: string) (subNamespace:string) (language: string) : ScaffoldedMigration =
         
         if dependencies.MigrationsAssembly.FindMigrationId(migrationName) |> notNull then
@@ -128,17 +143,8 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
                 migrationNamespace
 
         let modelSnapshot = dependencies.MigrationsAssembly.ModelSnapshot
-
-        let lastModel =
-            match modelSnapshot |> isNull with
-            | true -> dependencies.SnapshotModelProcessor.Process(null)
-            | false -> dependencies.SnapshotModelProcessor.Process(modelSnapshot.Model)
-
-        let upOperations = dependencies.MigrationsModelDiffer.GetDifferences(lastModel, dependencies.Model);
-        let downOperations = 
-            match upOperations.Any() with
-            | true -> dependencies.MigrationsModelDiffer.GetDifferences(dependencies.Model, lastModel)
-            | false -> List<MigrationOperation>() :> IReadOnlyList<MigrationOperation>
+        
+        let upOperations, downOperations = getOperations modelSnapshot
 
         let migrationId = dependencies.MigrationsIdGenerator.GenerateId(migrationName)
         let modelSnapshotNamespace = getNamespace modelSnapshot migrationNamespace'
@@ -155,7 +161,7 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
                 else
                     defaultModelSnapshotName            
         
-        if (upOperations |> Seq.exists(fun o -> o.IsDestructiveChange)) then
+        if upOperations |> Seq.exists(fun o -> o.IsDestructiveChange) then
             dependencies.OperationReporter.WriteWarning(DesignStrings.DestructiveOperation)
 
         let migrationCode =
@@ -169,6 +175,7 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
                 dependencies.Model
         
         let migrationMetadataCode = "// This file can be ignored"
+        
         let modelSnapshotCode =
             FSharpMigrationsGenerator.GenerateSnapshot
                 modelSnapshotNamespace
@@ -205,18 +212,19 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
 
         if migrations |> Seq.isEmpty |> not then
             let migration = migrations.[(migrations.Length - 1)]
+            let migrationId = migration.GetId()
             model <- migration.TargetModel
 
             if (dependencies.MigrationsModelDiffer.HasDifferences(model, dependencies.SnapshotModelProcessor.Process(modelSnapshot.Model))) |> not then
                 let mutable applied = false
 
                 try
-                    applied <- dependencies.HistoryRepository.GetAppliedMigrations() |> Seq.exists(fun e -> e.MigrationId.Equals(migration.GetId(), StringComparison.OrdinalIgnoreCase))
+                    applied <- dependencies.HistoryRepository.GetAppliedMigrations() |> Seq.exists(fun e -> e.MigrationId.Equals(migrationId, StringComparison.OrdinalIgnoreCase))
                 with
                 | ex ->
                     if force then
                         ex |> string |> dependencies.OperationReporter.WriteVerbose
-                        ((migration.GetId()), ex.Message) |> DesignStrings.ForceRemoveMigration |> dependencies.OperationReporter.WriteWarning
+                        ((migrationId), ex.Message) |> DesignStrings.ForceRemoveMigration |> dependencies.OperationReporter.WriteWarning
 
                 if applied then
                     if force then
@@ -227,18 +235,18 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
                                 Migration.InitialDatabase
                         dependencies.Migrator.Migrate(target)                    
                     else
-                        migration.GetId() |> DesignStrings.RevertMigration |> OperationException |> raise
+                        migrationId |> DesignStrings.RevertMigration |> OperationException |> raise
 
-                let migrationFileName = migration.GetId() + FSharpMigrationsGenerator.FileExtension
+                let migrationFileName = migrationId + FSharpMigrationsGenerator.FileExtension
                 let migrationFile = tryGetProjectFile projectDir migrationFileName
                 if (migrationFile |> notNull) then
-                    migration.GetId() |> DesignStrings.RemovingMigration |> dependencies.OperationReporter.WriteInformation
+                    migrationId |> DesignStrings.RemovingMigration |> dependencies.OperationReporter.WriteInformation
                     File.Delete(migrationFile);
                     files.MigrationFile <- migrationFile;
                 else
                     (migrationFileName, migration.GetType().ShortDisplayName()) |> DesignStrings.NoMigrationFile |> dependencies.OperationReporter.WriteWarning
                 
-                let migrationMetadataFileName = migration.GetId() + ".Designer" + FSharpMigrationsGenerator.FileExtension
+                let migrationMetadataFileName = migrationId + ".Designer" + FSharpMigrationsGenerator.FileExtension
                 let migrationMetadataFile = tryGetProjectFile projectDir migrationMetadataFileName
                 
                 if (migrationMetadataFile |> notNull) then
@@ -257,9 +265,11 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
                 DesignStrings.ManuallyDeleted |> dependencies.OperationReporter.WriteVerbose
 
         
-        let modelSnapshotName = modelSnapshot.GetType().Name
+        let modelSnapshotType = modelSnapshot.GetType()
+        let modelSnapshotName = modelSnapshotType.Name
         let modelSnapshotFileName = modelSnapshotName + FSharpMigrationsGenerator.FileExtension
         let modelSnapshotFile = tryGetProjectFile projectDir modelSnapshotFileName
+        
         if (model |> isNull) then
             if (modelSnapshotFile |> isNull |> not) then
                 dependencies.OperationReporter.WriteInformation(DesignStrings.RemovingSnapshot)
@@ -269,9 +279,9 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
                 dependencies.OperationReporter.WriteWarning(
                     DesignStrings.NoSnapshotFile(
                         modelSnapshotFileName,
-                        modelSnapshot.GetType().ShortDisplayName()))
+                        modelSnapshotType.ShortDisplayName()))
         else
-            let modelSnapshotNamespace = modelSnapshot.GetType().Namespace
+            let modelSnapshotNamespace = modelSnapshotType.Namespace
             let modelSnapshotCode =
                 FSharpMigrationsGenerator.GenerateSnapshot
                     modelSnapshotNamespace
@@ -327,11 +337,11 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
 
     interface IMigrationsScaffolder with
 
-        member this.ScaffoldMigration(migrationName:string, rootNamespace: string, subNamespace:string, language: string) =
+        member __.ScaffoldMigration(migrationName:string, rootNamespace: string, subNamespace:string, language: string) =
             scaffoldMigration migrationName rootNamespace subNamespace language
 
-        member this.RemoveMigration(projectDir:string, rootNamespace: string, force:bool, language: string) =
+        member __.RemoveMigration(projectDir:string, rootNamespace: string, force:bool, language: string) =
             removeMigration projectDir rootNamespace force language
 
-        member this.Save(projectDir: string, migration: ScaffoldedMigration, outputDir: string) =
+        member __.Save(projectDir: string, migration: ScaffoldedMigration, outputDir: string) =
             save projectDir migration outputDir

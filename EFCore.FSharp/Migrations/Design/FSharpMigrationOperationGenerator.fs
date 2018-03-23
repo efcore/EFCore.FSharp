@@ -3,8 +3,6 @@ namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 open System
 open System.Collections.Generic
 open Microsoft.FSharp.Linq.NullableOperators
-open Microsoft.EntityFrameworkCore.Metadata
-open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
@@ -91,7 +89,7 @@ module FSharpMigrationOperationGenerator =
                 elif not(isNull op.DefaultValue) then
                     writeParameter "defaultValue" op.DefaultValue
                 else
-                    append ""
+                    noop
             |> append ")"                
 
             |> annotations (op.GetAnnotations())
@@ -165,7 +163,7 @@ module FSharpMigrationOperationGenerator =
                 elif op.DefaultValue |> notNull then
                     writeParameter "defaultValue" op.DefaultValue
                 else
-                    append ""
+                    noop
             |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> FSharpHelper.Reference))
             |> writeOptionalParameter "oldType" op.OldColumn.ColumnType
             |> writeParameterIfTrue (op.OldColumn.IsUnicode ?= false) "oldUnicode" "false"
@@ -180,7 +178,7 @@ module FSharpMigrationOperationGenerator =
                 elif op.OldColumn.DefaultValue |> notNull then
                     writeParameter "oldDefaultValue" op.OldColumn.DefaultValue
                 else
-                    append ""
+                    noop
             |> append ")"
             |> annotations (op.GetAnnotations())
             |> oldAnnotations (op.OldColumn.GetAnnotations())
@@ -256,7 +254,7 @@ module FSharpMigrationOperationGenerator =
                 if op.ClrType <> typedefof<Int64> then
                     append (sprintf "<%s>" (op.ClrType |> FSharpHelper.Reference))
                 else
-                    append ""
+                    noop
             |> appendLine "("
             |> indent
             |> writeName op.Name
@@ -310,7 +308,7 @@ module FSharpMigrationOperationGenerator =
                     elif c.DefaultValue |> notNull then
                         append (sprintf ", defaultValue = %s" (c.DefaultValue |> FSharpHelper.UnknownLiteral))
                     else
-                        append ""
+                        noop
                 |> append ")"
                 |> indent
                 |> annotations (c.GetAnnotations())
@@ -601,7 +599,7 @@ module FSharpMigrationOperationGenerator =
         | :? UpdateDataOperation as op' -> op' |> generateUpdateDataOperation
         | _ -> op |> generateMigrationOperation // The failure case
 
-    let Generate (builderName:string) (operations: IReadOnlyList<MigrationOperation>) (sb:IndentedStringBuilder) =
+    let Generate (builderName:string) (operations: MigrationOperation list) (sb:IndentedStringBuilder) =
         operations
             |> Seq.iter(fun op -> 
                 sb
