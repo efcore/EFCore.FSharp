@@ -8,4 +8,4 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies) =
 
     override this.Language = "F#"
 
-    override this.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, dataAnnotations: bool) = null
+    override this.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, options: ModelCodeGenerationOptions) = null
