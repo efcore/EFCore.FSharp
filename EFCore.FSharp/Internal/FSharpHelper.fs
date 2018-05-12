@@ -11,6 +11,7 @@ open System.Globalization
 open Bricelam.EntityFrameworkCore.FSharp
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open System.Collections
+open Microsoft.EntityFrameworkCore.Design
 
 module FSharpHelper =
 
@@ -146,12 +147,12 @@ module FSharpHelper =
     let isNullableType (t:Type) =
         let typeInfo = t.GetTypeInfo()
         typeInfo.IsGenericType
-        && typeInfo.GetGenericTypeDefinition() = typedefof<Nullable<_>>
+        && typeInfo.GetGenericTypeDefinition() = typeof<Nullable<_>>
 
     let isOptionType (t:Type) =
         let typeInfo = t.GetTypeInfo()
         typeInfo.IsGenericType
-        && typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>
+        && typeInfo.GetGenericTypeDefinition() = typeof<Option<_>>
 
     let unwrapNullableType (t:Type) =
         match t |> isNullableType with    
@@ -430,4 +431,17 @@ module FSharpHelper =
              |> join
 
          if String.IsNullOrEmpty ns then "_" else ns
-        
+
+    let rec private buildFragment (f: MethodCallCodeFragment) (b: StringBuilder) : StringBuilder =
+        let args = f.Arguments |> Seq.map UnknownLiteral |> join ", "
+
+        let result = sprintf ".%s(%s)" f.Method args
+
+        b.Append(result) |> ignore
+
+        match f.ChainedCall |> isNull with
+            | false -> buildFragment f.ChainedCall b
+            | true -> b
+
+    let Fragment (fragment: MethodCallCodeFragment) =
+        buildFragment fragment (StringBuilder()) |> string

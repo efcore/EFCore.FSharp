@@ -2,7 +2,9 @@
 
 open System
 open System.Collections.Generic
+open System.Reflection
 open Microsoft.EntityFrameworkCore.Metadata
+open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
@@ -38,7 +40,7 @@ module FSharpMigrationsGenerator =
             |> Seq.filter (fun a -> a.Value |> notNull)
             |> Seq.filter (fun a -> (ignoredAnnotations |> List.contains a.Name) |> not)
             |> Seq.collect (fun a -> a.Value.GetType().GetNamespaces())
-
+            |> Seq.toList
 
     let private getAnnotatables (ops: MigrationOperation seq) : IAnnotatable seq =
         
@@ -60,6 +62,24 @@ module FSharpMigrationsGenerator =
 
         list |> Seq.cast
 
+    let private getAnnotatablesByModel (model : IModel) =
+        
+        let g o = o :> IAnnotatable
+
+        let e = 
+            (model.GetEntityTypes())
+            |> Seq.collect (fun e -> 
+
+                [(e :> IAnnotatable)]
+                @  (e.GetDeclaredProperties() |> Seq.map g |> Seq.toList)
+                @  (e.GetDeclaredKeys() |> Seq.map g |> Seq.toList)
+                @  (e.GetDeclaredForeignKeys() |> Seq.map g |> Seq.toList)
+                @  (e.GetDeclaredIndexes() |> Seq.map g |> Seq.toList)
+                )
+            |> Seq.toList            
+
+        [(model :> IAnnotatable)] @ e
+
     let private getOperationNamespaces (ops: MigrationOperation seq) =
         let columnOperations =
             ops
@@ -78,6 +98,27 @@ module FSharpMigrationsGenerator =
 
         columnOperations |> Seq.append columnsInCreateTableOperations |> Seq.append annotatables
 
+    let private getModelNamspaces (model: IModel) =
+        
+        let namespaces =
+            model.GetEntityTypes()
+                |> Seq.collect
+                    (fun e -> e.GetDeclaredProperties()
+                                |> Seq.collect (fun p ->
+                                                    let mapping = p.FindMapping()
+                                                    let ns =
+                                                        if  mapping |> isNull ||
+                                                            mapping.Converter |> isNull ||
+                                                            mapping.Converter.ProviderClrType |> isNull then
+                                                            p.ClrType
+                                                        else
+                                                            mapping.Converter.ProviderClrType
+                                                    ns.GetNamespaces()))
+                |> Seq.toList                                
+
+        let annotationNamespaces = model |> getAnnotatablesByModel |> getAnnotationNamespaces
+
+        namespaces @ annotationNamespaces
     
     let private writeCreateTableType (sb: IndentedStringBuilder) (op:CreateTableOperation) =
         sb
@@ -106,7 +147,8 @@ module FSharpMigrationsGenerator =
                      yield "Microsoft.EntityFrameworkCore.Metadata";
                      yield "Microsoft.EntityFrameworkCore.Migrations";
                      yield "Microsoft.EntityFrameworkCore.Migrations.Operations";
-                     yield "Microsoft.EntityFrameworkCore.Migrations.Operations.Builders"; }
+                     yield "Microsoft.EntityFrameworkCore.Migrations.Operations.Builders";
+                     yield "Microsoft.EntityFrameworkCore.Storage.ValueConversion" }
 
         let allOperationNamespaces = operations |> getOperationNamespaces
 
@@ -157,17 +199,31 @@ module FSharpMigrationsGenerator =
         let sb = IndentedStringBuilder()
 
         let defaultNamespaces =
-            ["System";
-             "Microsoft.EntityFrameworkCore";
-             "Microsoft.EntityFrameworkCore.Infrastructure";
-             "Microsoft.EntityFrameworkCore.Metadata";
-             "Microsoft.EntityFrameworkCore.Migrations";
-             contextType.Namespace]
+            seq {
+                 yield "System"
+                 yield "Microsoft.EntityFrameworkCore"
+                 yield "Microsoft.EntityFrameworkCore.Infrastructure"
+                 yield "Microsoft.EntityFrameworkCore.Metadata"
+                 yield "Microsoft.EntityFrameworkCore.Migrations"
+                 yield "Microsoft.EntityFrameworkCore.Storage.ValueConversion"
+
+                 if contextType.Namespace |> String.IsNullOrEmpty |> not then
+                    yield contextType.Namespace
+            }
+            |> Seq.toList
+
+        let modelNamespaces = model |> getModelNamspaces
+
+        let namespaceComparer = NamespaceComparer()
+        let namespaces =
+            (defaultNamespaces @ modelNamespaces)
+            |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
+            |> Seq.distinct
 
         sb
             |> append "namespace " |> appendLine (FSharpHelper.Namespace [|modelSnapshotNamespace|])
             |> appendEmptyLine
-            |> writeNamespaces defaultNamespaces
+            |> writeNamespaces namespaces
             |> appendEmptyLine
             |> append "[<DbContext(typeof<" |> append (contextType |> FSharpHelper.Reference) |> appendLine ">)>]"
             |> append "type " |> append (modelSnapshotName |> FSharpHelper.Identifier) |> appendLine "() ="

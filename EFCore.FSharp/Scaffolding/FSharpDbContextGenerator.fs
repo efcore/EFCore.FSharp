@@ -15,7 +15,7 @@ open Microsoft.EntityFrameworkCore.Design
 
 #nowarn "0044"
 type FSharpDbContextGenerator
-    (//TODO - correct method of injection for providerCodeGenerator: ProviderCodeGenerator,
+    (providerCodeGenerator: ProviderCodeGenerator,
         legacyProviderCodeGenerator: IScaffoldingProviderCodeGenerator,
         annotationCodeGenerator : IAnnotationCodeGenerator) =
 
@@ -90,10 +90,10 @@ type FSharpDbContextGenerator
 
     let generateOnConfiguring (connectionString:string) (sb:IndentedStringBuilder) =      
 
-        let connStringLine = sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
-            // match isNull providerCodeGenerator with
-            //     | true -> sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
-            //     | false -> sprintf "optionsBuilder.%s(%s)" providerCodeGenerator.UseProviderMethod connectionString
+        let connStringLine = //sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
+            match isNull providerCodeGenerator with
+                | true -> sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
+                | false -> sprintf "optionsBuilder%s" (connectionString |> providerCodeGenerator.GenerateUseProvider |> FSharpHelper.Fragment)
             
         sb
             |> appendLine "override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) ="
@@ -165,6 +165,10 @@ type FSharpDbContextGenerator
         sequences |> Seq.iter(fun s -> sb |> generateSequence s)
         sb
 
+    let generateEntityType (entityType : IEntityType) (useDataAnnotations : bool) (sb:IndentedStringBuilder) =
+        sb
+
+
     let generateOnModelCreating (model:IModel) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
         sb.AppendLine("override this.OnModelCreating(modelBuilder: ModelBuilder) =")
             |> appendLineIndent "base.OnModelCreating(modelBuilder)"
@@ -193,6 +197,19 @@ type FSharpDbContextGenerator
 
         
         let lines' = lines |> Seq.append ((annotations |> Seq.except toRemove) |> generateAnnotations)
+
+        if lines' |> Seq.isEmpty |> not then
+            sb
+                |> appendEmptyLine
+                |> indent
+                |> append (sprintf "modelBuilder%s" (lines' |> Seq.head))
+                |> indent
+                |> appendLines (lines' |> Seq.tail) false
+                |> unindent
+                |> unindent
+                |> ignore
+
+        // TODO: https://github.com/aspnet/EntityFrameworkCore/blob/dev/src/EFCore.Design/Scaffolding/Internal/CSharpDbContextGenerator.cs#L301
 
         sb            
 

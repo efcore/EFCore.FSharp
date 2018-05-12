@@ -7,6 +7,10 @@ module internal IndentedStringBuilderUtilities =
 
     let notNull o = o |> isNull |> not
 
+    let join (separator : string) (strings : string seq) = 
+        strings
+            |> Seq.reduce (fun x y -> x + separator + y)
+
     let append (text:string) (sb:IndentedStringBuilder) =
         sb.Append(text)
 

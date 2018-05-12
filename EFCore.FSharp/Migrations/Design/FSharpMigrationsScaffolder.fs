@@ -1,23 +1,18 @@
 namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
-open System.Collections.Generic
 open System.Linq
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Migrations.Design
-open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Migrations.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Bricelam.EntityFrameworkCore.FSharp.Internal
-open Microsoft.EntityFrameworkCore.Design.Internal
 open System.Reflection
 open Microsoft.EntityFrameworkCore.Migrations
 open Microsoft.EntityFrameworkCore.Infrastructure
 open System.Text
-open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal
 open System.IO
 
 type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) =
