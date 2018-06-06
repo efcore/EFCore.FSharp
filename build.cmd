@@ -1,2 +1,2 @@
-.paket\paket.exe restore
-packages\Build\FAKE\tools\FAKE.exe build.fsx %*
+dotnet restore build.proj
+dotnet fake build %*

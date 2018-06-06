@@ -1,25 +1,29 @@
-#r @"packages/build/Fake/tools/FakeLib.dll"
-#r @"packages/System.IO/ref/netstandard1.5/System.IO.dll"
-open System.IO
-open Fake
-let configuration = getBuildParamOrDefault "configuration" "Release"
-let signOutput = hasBuildParam "signOutput"
+#r "paket: groupref FakeBuild //"
+#load "./.fake/build.fsx/intellisense.fsx"
+open Fake.Core
+open Fake.DotNet
+open Fake.IO
 
-Target "Build" <| fun _ ->
-    DotNetCli.Build <| fun p ->
-        { p with
-            AdditionalArgs = [ sprintf "/p:SignOutput=%O" signOutput; "/nologo" ]
-            Configuration = configuration
-            Project = "EFCore.FSharp.sln" }
+let configuration = DotNet.Custom <| Environment.environVarOrDefault "configuration" "Release"
+let signOutput = Environment.hasEnvironVar "signOutput"
 
-Target "Test" <| fun _ ->
-    DotNetCli.Test <| fun p ->
+Target.create "Build" <| fun _ ->  
+    "EFCore.FSharp.sln" |>
+    DotNet.build (fun p -> 
         { p with
-            Configuration = configuration
-            AdditionalArgs = [ "--no-build"; "--no-restore" ]
-            Project = Path.Combine("EFCore.FSharp.Test", "EFCore.FSharp.Test.fsproj")    }
+            Common = { p.Common with CustomParams = Some <| sprintf "/nologo /p:SignOutput=%O" signOutput }
+            Configuration = configuration })
+
+Target.create "Test" <| fun _ ->
+    Path.combine "EFCore.FSharp.Test" "EFCore.FSharp.Test.fsproj" |>
+    DotNet.test (fun p ->
+        { p with
+            Common = { p.Common with CustomParams = Some "--no-build --no-restore"}
+            Configuration = configuration })
+
+open Fake.Core.TargetOperators
 
 "Build"
     ==> "Test"
 
-RunTargetOrDefault "Test"    
+Target.runOrDefault "Test"    
