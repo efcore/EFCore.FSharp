@@ -9,12 +9,12 @@ open Microsoft.EntityFrameworkCore.Internal
 
 open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
+open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Internal
-open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 
 
@@ -33,7 +33,7 @@ module rec FSharpSnapshotGenerator =
             b |> noop        
 
     let private findValueConverter (p:IProperty) =
-        let mapping = p.FindMapping()
+        let mapping = findMapping p
 
         match mapping |> isNull with
         | true -> p.GetValueConverter()
@@ -303,7 +303,7 @@ module rec FSharpSnapshotGenerator =
         let tableName =
             match tableNameAnnotation with
             | Some t -> t.Value |> string
-            | None -> entityType.DisplayName()
+            | None -> getDisplayName entityType
 
         let hasSchema, schema =
             match schemaAnnotation with
@@ -440,8 +440,8 @@ module rec FSharpSnapshotGenerator =
 
     let generateRelationships (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
         sb
-            |> generateForeignKeys funcId (entityType.GetDeclaredForeignKeys())
-            |> generateOwnedTypes funcId (entityType.GetDeclaredReferencingForeignKeys() |> Seq.filter(fun fk -> fk.IsOwnership))
+            |> generateForeignKeys funcId (getDeclaredForeignKeys entityType)
+            |> generateOwnedTypes funcId (entityType |> getDeclaredReferencingForeignKeys |> Seq.filter(fun fk -> fk.IsOwnership))
 
     let generateData funcId (properties: IProperty seq) data (sb:IndentedStringBuilder) =
         sb
@@ -449,7 +449,7 @@ module rec FSharpSnapshotGenerator =
 
     let generateEntityType (builderName:string) (entityType: IEntityType) (sb:IndentedStringBuilder) =
 
-        let ownership = entityType.FindOwnership()
+        let ownership = findOwnership entityType
 
         let ownerNav =
             match ownership |> isNull with
@@ -470,18 +470,18 @@ module rec FSharpSnapshotGenerator =
             |> append ", (fun " |> append funcId |> appendLine " ->"
             |> indent
             |> generateBaseType funcId entityType.BaseType
-            |> generateProperties funcId (entityType.GetDeclaredProperties())
+            |> generateProperties funcId (entityType |> getDeclaredProperties)
             |>
                 match ownerNav with
                 | Some _ -> noop
-                | None -> generateKeys funcId (entityType.GetDeclaredKeys()) (entityType.FindDeclaredPrimaryKey())
-            |> generateIndexes funcId (entityType.GetDeclaredIndexes())
+                | None -> generateKeys funcId (entityType |> getDeclaredKeys) (entityType |> findDeclaredPrimaryKey)
+            |> generateIndexes funcId (entityType |> getDeclaredIndexes)
             |> generateEntityTypeAnnotations funcId entityType
             |>
                 match ownerNav with
                 | None -> noop
                 | Some _ -> generateRelationships funcId entityType
-            |> generateData funcId (entityType.GetProperties()) (entityType.GetData(true))
+            |> generateData funcId (entityType.GetProperties()) (entityType |> getData true)
             |> unindent
             |> appendEmptyLine
             |> appendLine ")) |> ignore"
@@ -504,14 +504,14 @@ module rec FSharpSnapshotGenerator =
     let generateEntityTypes builderName (entities: IEntityType list) (sb:IndentedStringBuilder) =
 
         let entitiesToWrite =
-            entities |> Seq.filter (fun e -> (e.HasDefiningNavigation() |> not) && (e.FindOwnership() |> isNull))
+            entities |> Seq.filter (fun e -> (e.HasDefiningNavigation() |> not) && (e |> findOwnership |> isNull))
 
         entitiesToWrite
             |> Seq.iter(fun e -> generateEntityType builderName e sb)
 
         let relationships =
             entitiesToWrite
-            |> Seq.filter(fun e -> (e.GetDeclaredForeignKeys() |> Seq.isEmpty |> not) || (e.GetDeclaredReferencingForeignKeys() |> Seq.exists(fun fk -> fk.IsOwnership)))
+            |> Seq.filter(fun e -> (e |> getDeclaredForeignKeys |> Seq.isEmpty |> not) || (e |> getDeclaredReferencingForeignKeys |> Seq.exists(fun fk -> fk.IsOwnership)))
 
         relationships |> Seq.iter(fun e -> generateEntityTypeRelationships builderName e sb)
 

@@ -6,8 +6,8 @@ open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Design
-open Microsoft.EntityFrameworkCore.Migrations.Internal
 
+open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open System.Reflection
 open Microsoft.EntityFrameworkCore.Migrations
@@ -207,7 +207,7 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
 
         if migrations |> Seq.isEmpty |> not then
             let migration = migrations.[(migrations.Length - 1)]
-            let migrationId = migration.GetId()
+            let migrationId = getId migration
             model <- migration.TargetModel
 
             if (dependencies.MigrationsModelDiffer.HasDifferences(model, dependencies.SnapshotModelProcessor.Process(modelSnapshot.Model))) |> not then
@@ -225,7 +225,7 @@ type FSharpMigrationsScaffolder(dependencies: MigrationsScaffolderDependencies) 
                     if force then
                         let target = 
                             if migrations.Length > 1 then
-                                migrations.[migrations.Length - 2].GetId()
+                                getId migrations.[migrations.Length - 2]
                             else
                                 Migration.InitialDatabase
                         dependencies.Migrator.Migrate(target)                    

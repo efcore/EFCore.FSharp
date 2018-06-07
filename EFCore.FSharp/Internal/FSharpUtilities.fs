@@ -1,18 +1,15 @@
 ﻿namespace Bricelam.EntityFrameworkCore.FSharp.Internal
 
 open System
-open System.Collections.Generic
 open System.Globalization
-open System.Linq
 open System.Reflection
 open System.Text
-open System.Text.RegularExpressions
 open Microsoft.EntityFrameworkCore.Design
-open Microsoft.EntityFrameworkCore.Utilities
 
 open FSharpHelper
+open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 
-module FSharpUtilities = 
+module FSharpUtilities =
 
     let private _primitiveTypeNames =
         [
@@ -84,14 +81,14 @@ module FSharpUtilities =
         sprintf "\"%s\"" (value |> escapeString)
 
     let private GenerateLiteralVerbatimString (value:string) =
-        sprintf "@\"%s\"" (value |> escapeVerbatimString)      
+        sprintf "@\"%s\"" (value |> escapeVerbatimString)
 
     let private generateLiteralObject (value: obj) =
         let valType = value.GetType()
         if valType.GetTypeInfo().IsEnum then
             sprintf "%s.%s" valType.Name (Enum.Format(valType, value, "G"))
         else
-            String.Format(CultureInfo.InvariantCulture, "{0}", value)         
+            String.Format(CultureInfo.InvariantCulture, "{0}", value)
 
 
     let private _keywords =
@@ -199,7 +196,7 @@ module FSharpUtilities =
             "while";
             "with";
             "yield!";
-            "yield";   
+            "yield";
           |]
 
     let handleMethodCallCodeFragment (sb:StringBuilder) (methodCallCodeFragment: MethodCallCodeFragment) =
@@ -220,10 +217,14 @@ module FSharpUtilities =
             elif t |> isOptionType then sprintf "%s option" (t |> unwrapOptionType |> getTypeName)
             else
                 let genericTypeDefName = t.Name.Substring(0, t.Name.IndexOf('`'))
-                let args = t.GenericTypeArguments |> Array.map (fun t' -> if isNull t' then failwithf "%s has a null arg" t.Name else t' |> getTypeName)
+                let args =
+                    t.GenericTypeArguments
+                    |> Array.map (fun t' -> if isNull t' then failwithf "%s has a null arg" t.Name else t' |> getTypeName)
+                    |> join ", "
+
                 match _fsharpTypeNames.TryGetValue genericTypeDefName with
-                | true, value -> sprintf "%s %s" (String.Join(", ", args)) value
-                | _ -> sprintf "%s<%s>" genericTypeDefName (String.Join(", ", args))
+                | true, value -> sprintf "%s %s" args value
+                | _ -> sprintf "%s<%s>" genericTypeDefName args
         else
             match _primitiveTypeNames.TryGetValue t with
             | true, value -> value
@@ -244,8 +245,12 @@ module FSharpUtilities =
         | :? Guid as literal' -> generateLiteralGuid(literal')
         | :? string as literal' -> generateLiteralString(literal')
         | _ -> generateLiteralObject(literal)
-        
+
 
     let generate (methodCallCodeFragment: MethodCallCodeFragment) =
-        let a' = (methodCallCodeFragment.Arguments |> Seq.map generateLiteral)
-        sprintf ".%s(%s)" methodCallCodeFragment.Method (String.Join(", ", a'))
+        let parameters =
+            methodCallCodeFragment.Arguments
+            |> Seq.map generateLiteral
+            |> join ", "
+
+        sprintf ".%s(%s)" methodCallCodeFragment.Method parameters

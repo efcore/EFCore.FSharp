@@ -6,10 +6,7 @@ open System.Reflection
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
-open Microsoft.EntityFrameworkCore.Internal
-
-open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
-
+open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
 
@@ -35,18 +32,21 @@ module FSharpEntityTypeGenerator =
 
     let createAttributeQuick = AttributeWriter >> string
 
-    let private primitiveTypeNames = new Dictionary<Type, string>()
-    primitiveTypeNames.Add(typedefof<bool>, "bool")
-    primitiveTypeNames.Add(typedefof<byte>, "byte")
-    primitiveTypeNames.Add(typedefof<byte[]>, "byte[]")
-    primitiveTypeNames.Add(typedefof<sbyte>, "sbyte")
-    primitiveTypeNames.Add(typedefof<int>, "int")
-    primitiveTypeNames.Add(typedefof<char>, "char")
-    primitiveTypeNames.Add(typedefof<float32>, "float32")
-    primitiveTypeNames.Add(typedefof<double>, "double")
-    primitiveTypeNames.Add(typedefof<string>, "string")
-    primitiveTypeNames.Add(typedefof<decimal>, "decimal")
-
+    let private primitiveTypeNames =
+        seq {
+            yield (typedefof<bool>, "bool")
+            yield (typedefof<byte>, "byte")
+            yield (typedefof<byte[]>, "byte[]")
+            yield (typedefof<sbyte>, "sbyte")
+            yield (typedefof<int>, "int")
+            yield (typedefof<char>, "char")
+            yield (typedefof<float32>, "float32")
+            yield (typedefof<double>, "double")
+            yield (typedefof<string>, "string")
+            yield (typedefof<decimal>, "decimal")
+        }
+        |> dict
+        
     let rec private getTypeName optionOrNullable (t:Type) =
 
         if t.IsArray then
@@ -69,7 +69,7 @@ module FSharpEntityTypeGenerator =
 
     let private generatePrimaryKeyAttribute (p:IProperty) sb =
 
-        let key = (p :?> Microsoft.EntityFrameworkCore.Metadata.Internal.Property).PrimaryKey
+        let key = getPrimaryKey p
 
         if isNull key || key.Properties.Count <> 1 then
             sb
@@ -90,7 +90,7 @@ module FSharpEntityTypeGenerator =
 
     let private generateColumnAttribute (p:IProperty) sb =
         let columnName = p.Relational().ColumnName
-        let columnType = p.GetConfiguredColumnType()
+        let columnType = getConfiguredColumnType p
 
         let delimitedColumnName = if isNull columnName |> not && columnName <> p.Name then FSharpUtilities.delimitString(columnName) |> Some else Option.None
         let delimitedColumnType = if isNull columnType |> not then FSharpUtilities.delimitString(columnType) |> Some else Option.None

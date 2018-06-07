@@ -21,6 +21,7 @@
     <DevelopmentDependency>true</DevelopmentDependency>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Utilities\EntityFrameworkExtensions.fs" />
     <Compile Include="Utilities\IndentedStringBuilderUtilities.fs" />
     <Compile Include="Internal\FSharpHelper.fs" />
     <Compile Include="Internal\FSharpUtilities.fs" />

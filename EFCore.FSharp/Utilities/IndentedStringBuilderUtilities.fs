@@ -8,8 +8,9 @@ module internal IndentedStringBuilderUtilities =
     let notNull o = o |> isNull |> not
 
     let join (separator : string) (strings : string seq) = 
-        strings
-            |> Seq.reduce (fun x y -> x + separator + y)
+        match Seq.isEmpty strings with
+        | true -> String.Empty
+        | false -> strings |> Seq.reduce (fun x y -> x + separator + y)
 
     let append (text:string) (sb:IndentedStringBuilder) =
         sb.Append(text)
@@ -20,8 +21,7 @@ module internal IndentedStringBuilderUtilities =
     let appendEmptyLine sb =
         sb |> appendLine String.Empty
 
-    let noop sb =
-        sb |> append String.Empty
+    let noop sb = sb
 
     let private prependLine (addLineBreak: bool byref) (text:string) (sb:IndentedStringBuilder) =
         if addLineBreak then

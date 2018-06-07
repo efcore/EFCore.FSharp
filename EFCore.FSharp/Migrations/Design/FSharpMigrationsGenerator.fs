@@ -2,27 +2,25 @@
 
 open System
 open System.Collections.Generic
-open System.Reflection
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
-open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
+open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
-open Microsoft.EntityFrameworkCore.Design.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
 module FSharpMigrationsGenerator =
     let private getColumnNamespaces (columnOperation: ColumnOperation) =
-        let ns = columnOperation.ClrType.GetNamespaces()
+        let ns = getNamespaces columnOperation.ClrType
 
         let ns' =
             match columnOperation :? AlterColumnOperation with
             | true ->
-                (columnOperation :?> AlterColumnOperation).OldColumn.ClrType.GetNamespaces()
+                (columnOperation :?> AlterColumnOperation).OldColumn.ClrType |> getNamespaces
             | false -> Seq.empty<String>
 
         ns |> Seq.append ns'
@@ -39,7 +37,7 @@ module FSharpMigrationsGenerator =
             |> Seq.collect (fun i -> i.GetAnnotations())
             |> Seq.filter (fun a -> a.Value |> notNull)
             |> Seq.filter (fun a -> (ignoredAnnotations |> List.contains a.Name) |> not)
-            |> Seq.collect (fun a -> a.Value.GetType().GetNamespaces())
+            |> Seq.collect (fun a -> a.Value.GetType() |> getNamespaces)
             |> Seq.toList
 
     let private getAnnotatables (ops: MigrationOperation seq) : IAnnotatable seq =
@@ -113,7 +111,7 @@ module FSharpMigrationsGenerator =
                                                             p.ClrType
                                                         else
                                                             mapping.Converter.ProviderClrType
-                                                    ns.GetNamespaces()))
+                                                    getNamespaces ns))
                 |> Seq.toList                                
 
         let annotationNamespaces = model |> getAnnotatablesByModel |> getAnnotationNamespaces
@@ -152,12 +150,11 @@ module FSharpMigrationsGenerator =
 
         let allOperationNamespaces = operations |> getOperationNamespaces
 
-        let namespaceComparer = NamespaceComparer()
         let namespaces =
             allOperationNamespaces
             |> Seq.append defaultNamespaces
             |> Seq.toList
-            |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
+            |> sortNamespaces
             |> Seq.distinct
 
         namespaces        
@@ -214,10 +211,9 @@ module FSharpMigrationsGenerator =
 
         let modelNamespaces = model |> getModelNamspaces
 
-        let namespaceComparer = NamespaceComparer()
         let namespaces =
             (defaultNamespaces @ modelNamespaces)
-            |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
+            |> sortNamespaces
             |> Seq.distinct
 
         sb
