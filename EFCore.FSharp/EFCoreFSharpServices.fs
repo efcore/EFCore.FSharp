@@ -12,8 +12,9 @@ open Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 type EFCoreFSharpServices() =
     interface IDesignTimeServices with
-        member this.ConfigureDesignTimeServices(services: IServiceCollection) =
+        member __.ConfigureDesignTimeServices(services: IServiceCollection) =
             services
                 .AddSingleton<ICSharpDbContextGenerator, FSharpDbContextGenerator>()
                 .AddSingleton<IModelCodeGenerator, FSharpModelGenerator>()
+                .AddSingleton<IMigrationsCodeGenerator, FSharpMigrationsGeneratorService>()
                 .AddSingleton<IMigrationsScaffolder, FSharpMigrationsScaffolder>() |> ignore
