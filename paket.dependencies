@@ -5,6 +5,12 @@ nuget Microsoft.EntityFrameworkCore.Sqlite 2.1.0
 nuget xunit.runner.visualstudio 2.3.1
 nuget FsUnit.xUnit 3.1.0
 
-group Build
 source https://api.nuget.org/v3/index.json
-nuget Fake
+storage: none
+clitool dotnet-fake
+
+group FakeBuild
+source https://api.nuget.org/v3/index.json
+storage: none
+nuget Fake.Core.Target
+nuget Fake.DotNet.Cli
