@@ -335,7 +335,7 @@ module rec FSharpSnapshotGenerator =
                 let propertyClrType = entityType.FindProperty(a.Value |> string).ClrType
                 sb
                     |> append "<"
-                    |> append (propertyClrType |> FSharpHelper.Reference) // TODO: implement UnwrapEnumType
+                    |> append (propertyClrType |> FSharpHelper.Reference)
                     |> append ">("
                     |> append (a.Value |> UnknownLiteral)
                     |> append ")"

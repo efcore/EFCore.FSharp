@@ -3,6 +3,7 @@ namespace Bricelam.EntityFrameworkCore.FSharp
 open System
 open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Metadata
+open Microsoft.EntityFrameworkCore.Infrastructure
 
 module internal EntityFrameworkExtensions =
 
@@ -52,3 +53,12 @@ module internal EntityFrameworkExtensions =
     let findOwnership (entityType : IEntityType) =    
         (entityType :?> Microsoft.EntityFrameworkCore.Metadata.Internal.EntityType)
             |> Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.FindOwnership
+
+    let scaffoldEntity (e : IEntityType) =
+        Microsoft.EntityFrameworkCore.Metadata.Internal.ScaffoldingMetadataExtensions.Scaffolding e
+
+    let scaffoldModel (m : IModel) =
+        Microsoft.EntityFrameworkCore.Metadata.Internal.ScaffoldingMetadataExtensions.Scaffolding m
+
+    let toAnnotatable (a : IAnnotatable) =
+        a :> IAnnotatable

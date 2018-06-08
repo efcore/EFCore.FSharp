@@ -4,13 +4,9 @@ open System
 open System.Collections.Generic
 open System.Reflection
 open System.Text
-open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Internal
-open Microsoft.EntityFrameworkCore.Metadata.Internal
 open System.Globalization
-open Bricelam.EntityFrameworkCore.FSharp
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open System.Collections
 open Microsoft.EntityFrameworkCore.Design
 
 module FSharpHelper =
@@ -164,6 +160,31 @@ module FSharpHelper =
         | true -> t.GenericTypeArguments.[0]
         | false -> t
 
+    let makeNullable (nullable : bool) (t : Type) =
+        if isNullableType t = nullable then
+            t
+        else
+            if nullable then
+                typedefof<Nullable<_>>.MakeGenericType(t)
+            else unwrapNullableType t
+
+    let unwrapEnumType (t:Type) =
+        let isNullable = isNullableType t
+
+        let underlyingNonNullableType =
+            match isNullable with
+            | true -> unwrapNullableType t
+            | false -> t
+
+        if not (underlyingNonNullableType.GetTypeInfo()).IsEnum then
+            t
+        else
+            let underlyingEnumType = Enum.GetUnderlyingType(underlyingNonNullableType)
+            match isNullable with
+            | true -> makeNullable true underlyingEnumType
+            | false -> underlyingEnumType
+
+
     let rec Reference (t: Type) =
 
         match _builtInTypes.TryGetValue t with
@@ -277,14 +298,15 @@ module FSharpHelper =
             sprintf "%duL" value
         static member Literal(value: UInt16) =
             sprintf "%dus" value        
-        static member Literal(values: IReadOnlyList<obj>, vertical: bool) =
+        
+        static member Literal(values: IReadOnlyList<obj>, vertical: bool, sb:IndentedStringBuilder) =
             
             let values' = values |> Seq.map(LiteralWriter.UnknownLiteral)
             
-            if not vertical then                
-                sprintf "[| %s |]" (String.Join("; ", values'))
+            if not vertical then
+                let line = sprintf "[| %s |]" (String.Join("; ", values'))
+                sb |> append line
             else
-                let sb = IndentedStringBuilder()
                 sb
                     |> append "[|"
                     |> indent
@@ -292,10 +314,12 @@ module FSharpHelper =
 
                 values' |> Seq.iter(fun line -> sb |> appendLine line |> ignore)
 
-                sb |> string        
+                sb
+
+            |> string            
 
         static member Literal(values: IReadOnlyList<obj>) =
-            LiteralWriter.Literal (values, false)
+            LiteralWriter.Literal (values, false, IndentedStringBuilder())
 
         
         static member Literal(values: obj[,]) =
@@ -307,7 +331,7 @@ module FSharpHelper =
                 [0..rowCount]
                 |> Seq.map(fun i ->
                     let row' = values.[i, 0..valuesCount]
-                    let entries = row' |> Seq.map(fun o -> o |> LiteralWriter.Literal)
+                    let entries = row' |> Seq.map LiteralWriter.Literal
                     sprintf "[ %s ]" (String.Join("; ", entries)) )
 
             sprintf "array2D [ %s ]" (String.Join("; ", rowContents))
@@ -323,6 +347,12 @@ module FSharpHelper =
 
     let Literal (o:obj) =
         o |> LiteralWriter.Literal
+
+    let LiteralList (vertical: bool) (sb:IndentedStringBuilder) (values: IReadOnlyList<obj>) =
+        LiteralWriter.Literal(values, vertical, sb)
+
+    let Literal2DArray (values: obj[,]) =
+        LiteralWriter.Literal(values)    
 
     let UnknownLiteral (o:obj) =
         o |> LiteralWriter.UnknownLiteral    

@@ -43,7 +43,7 @@ module FSharpMigrationsGenerator =
     let private getAnnotatables (ops: MigrationOperation seq) : IAnnotatable seq =
         
         let list = List<IAnnotatable>()
-        ops |> Seq.map(fun o -> o :> IAnnotatable) |> list.AddRange
+        ops |> Seq.map toAnnotatable |> list.AddRange
 
         ops
             |> Seq.filter(fun o -> o :? CreateTableOperation)
@@ -62,21 +62,19 @@ module FSharpMigrationsGenerator =
 
     let private getAnnotatablesByModel (model : IModel) =
         
-        let g o = o :> IAnnotatable
-
         let e = 
             (model.GetEntityTypes())
             |> Seq.collect (fun e -> 
 
-                [(e :> IAnnotatable)]
-                @  (e.GetDeclaredProperties() |> Seq.map g |> Seq.toList)
-                @  (e.GetDeclaredKeys() |> Seq.map g |> Seq.toList)
-                @  (e.GetDeclaredForeignKeys() |> Seq.map g |> Seq.toList)
-                @  (e.GetDeclaredIndexes() |> Seq.map g |> Seq.toList)
+                [(toAnnotatable e)]
+                @  (e.GetDeclaredProperties() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetDeclaredKeys() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetDeclaredForeignKeys() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetDeclaredIndexes() |> Seq.map toAnnotatable |> Seq.toList)
                 )
             |> Seq.toList            
 
-        [(model :> IAnnotatable)] @ e
+        [(toAnnotatable model)] @ e
 
     let private getOperationNamespaces (ops: MigrationOperation seq) =
         let columnOperations =
@@ -127,7 +125,6 @@ module FSharpMigrationsGenerator =
             |> unindent
             |> appendLine "}"
             |> ignore
-        ()        
 
     let private createTypesForOperations (operations: MigrationOperation seq) (sb: IndentedStringBuilder) =
         operations

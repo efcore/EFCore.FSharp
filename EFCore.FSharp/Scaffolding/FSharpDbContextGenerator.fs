@@ -7,11 +7,12 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 
+open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
-open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Design
+
 
 #nowarn "0044"
 type FSharpDbContextGenerator
@@ -51,7 +52,7 @@ type FSharpDbContextGenerator
 
     let generateDbSet (sb:IndentedStringBuilder) (entityType : IEntityType) =
 
-        let scaffolding = entityType |> ScaffoldingMetadataExtensions.Scaffolding
+        let scaffolding = scaffoldEntity entityType
         let mutableName = "_" + scaffolding.DbSetName;
 
         sb
@@ -78,7 +79,7 @@ type FSharpDbContextGenerator
 
     let generateEntityTypeErrors (model:IModel) (sb:IndentedStringBuilder) =    
 
-        let scaffolding = model |> ScaffoldingMetadataExtensions.Scaffolding
+        let scaffolding = scaffoldModel model
 
         scaffolding.EntityTypeErrors
             |> Seq.iter (fun e -> sb |> appendLine (sprintf "// %s Please see the warning messages." e.Value) |> ignore)
@@ -176,7 +177,7 @@ type FSharpDbContextGenerator
 
         let annotations =
             model.GetAnnotations()
-            |> removeAnnotation ChangeDetector.SkipDetectChangesAnnotation
+            |> removeAnnotation ChangeTracking.Internal.ChangeDetector.SkipDetectChangesAnnotation
             |> removeAnnotation RelationalAnnotationNames.MaxIdentifierLength
             |> removeAnnotation ScaffoldingAnnotationNames.DatabaseName
             |> removeAnnotation ScaffoldingAnnotationNames.EntityTypeErrors
@@ -209,7 +210,7 @@ type FSharpDbContextGenerator
                 |> unindent
                 |> ignore
 
-        // TODO: https://github.com/aspnet/EntityFrameworkCore/blob/dev/src/EFCore.Design/Scaffolding/Internal/CSharpDbContextGenerator.cs#L301
+        // TODO: https://github.com/aspnet/EntityFrameworkCore/blob/release/2.1/src/EFCore.Design/Scaffolding/Internal/CSharpDbContextGenerator.cs#L295
 
         sb            
 

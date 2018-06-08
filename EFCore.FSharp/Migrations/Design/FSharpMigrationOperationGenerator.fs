@@ -10,19 +10,23 @@ open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Migrations
+open Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper
 
 module FSharpMigrationOperationGenerator =
 
+    let private toOnedimensionalArray firstDimension (a : obj[,]) =
+        Array.init a.Length (fun i -> if firstDimension then a.[i, 0] else a.[0, i])
+
     let private writeName nameValue sb =
         sb
-            |> append "name = " |> appendLine (nameValue |> FSharpHelper.Literal)
+            |> append "name = " |> appendLine (nameValue |> Literal)
     
     let private writeParameter name value sb =
         sb
             |> append ","
             |> append name
             |> append " = "
-            |> appendLine (value |> FSharpHelper.Literal)
+            |> appendLine (value |> Literal)
 
     let private writeParameterIfTrue trueOrFalse name value sb =
         match trueOrFalse with
@@ -41,9 +45,9 @@ module FSharpMigrationOperationGenerator =
                 sb
                 |> appendEmptyLine
                 |> append ".Annotation("
-                |> append (FSharpHelper.Literal a.Name)
+                |> append (Literal a.Name)
                 |> append ", "
-                |> append (FSharpHelper.UnknownLiteral a.Value)
+                |> append (UnknownLiteral a.Value)
                 |> append ")"
                 |> ignore
             )
@@ -54,11 +58,7 @@ module FSharpMigrationOperationGenerator =
             |> Seq.iter(fun a ->
                 sb
                 |> appendEmptyLine
-                |> append ".OldAnnotation("
-                |> append (FSharpHelper.Literal a.Name)
-                |> append ", "
-                |> append (FSharpHelper.UnknownLiteral a.Value)
-                |> append ")"
+                |> append (sprintf ".OldAnnotation(%s, %s)" (Literal a.Name) (UnknownLiteral a.Value))
                 |> ignore
             )
         sb
@@ -555,8 +555,40 @@ module FSharpMigrationOperationGenerator =
             |> unindent
 
     let private generateInsertDataOperation (op:InsertDataOperation) (sb:IndentedStringBuilder) =
-        // TODO: implement
+
+        let parameters =
+            seq {
+                if notNull op.Schema then
+                    yield sprintf "schema = %s, " (op.Schema |> Literal)
+                
+                yield sprintf "table = %s, " (op.Table |> Literal)
+
+                if op.Columns.Length = 1 then
+                    yield sprintf "column = %s, " (op.Columns.[0] |> Literal)
+                else
+                    yield sprintf "columns = %s, " (op.Columns |> Literal)
+
+                let length0 = op.Values.GetLength(0)
+                let length1 = op.Values.GetLength(1)               
+
+                if length0 = 1 && length1 = 1 then
+                    yield sprintf "value = %s" (op.Values.[0,0] |> UnknownLiteral)
+                elif length0 = 1 then                    
+                    yield sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> Literal)
+                elif length1 = 1 then
+                    let sb' = IndentedStringBuilder sb // sb' will be created with the indent already set to the correct level
+                    let lines = (op.Values |> toOnedimensionalArray true |> LiteralList true sb')
+                    yield sprintf "values = %s" lines
+                else
+                    yield sprintf "values = %s" (op.Values |> Literal2DArray)
+            }
+
         sb
+            |> appendLine ".InsertData("
+            |> indent
+            |> appendLines parameters false
+            |> unindent
+            |> appendLine ")"
 
     let private generateDeleteDataOperation (op:DeleteDataOperation) (sb:IndentedStringBuilder) =
         // TODO: implement

@@ -80,7 +80,7 @@ module FSharpUtilities =
     let private generateLiteralString (value:string) =
         sprintf "\"%s\"" (value |> escapeString)
 
-    let private GenerateLiteralVerbatimString (value:string) =
+    let private generateLiteralVerbatimString (value:string) =
         sprintf "@\"%s\"" (value |> escapeVerbatimString)
 
     let private generateLiteralObject (value: obj) =

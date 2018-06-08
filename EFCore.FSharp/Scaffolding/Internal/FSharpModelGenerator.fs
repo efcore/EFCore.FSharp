@@ -2,14 +2,15 @@
 
 open System.IO
 open Microsoft.EntityFrameworkCore.Metadata
-open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes
+open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.EntityFrameworkCore.Internal
+
 
 type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextGenerator: ICSharpDbContextGenerator) =
     inherit ModelCodeGenerator(dependencies)
@@ -29,7 +30,7 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
     let getNamespacesFromModel (model:IModel) =
         model.GetEntityTypes()
         |> Seq.collect (fun e -> e.GetProperties())
-        |> Seq.collect (fun p -> p.ClrType.GetNamespaces())
+        |> Seq.collect (fun p -> getNamespaces p.ClrType)
         |> Seq.filter (fun ns -> defaultNamespaces |> Seq.contains ns |> not)
         |> Seq.distinct
         |> Seq.sort
