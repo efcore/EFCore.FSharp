@@ -249,7 +249,7 @@ type FSharpMigrationsGeneratorService(dependencies) =
         tempUpOperations <- Seq.toList upOperations
         tempDownOperations <- Seq.toList downOperations 
         tempMigrationName <- migrationName
-        null
+        "// intentionally empty"
     
     override __.GenerateMetadata (migrationNamespace, contextType, migrationName, migrationId, targetModel) = 
         if tempMigrationName = migrationName then

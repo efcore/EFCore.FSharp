@@ -35,7 +35,7 @@ type FSharpMigrationsScaffolder(dependencies) =
            A makeover of the API (GenerateMigration ... -> migrationCode: string * metadataCode: string) would be best
            That should include this Save method taking into account it sometimes can receive nothing for metadataCode
         *)
-        if isNull migration.MigrationCode then 
+        if migration.MigrationCode = "// intentionally empty" then
             File.WriteAllText(migrationFile, migration.MetadataCode, Encoding.UTF8)
         else 
             File.WriteAllText(migrationFile, migration.MigrationCode, Encoding.UTF8)
