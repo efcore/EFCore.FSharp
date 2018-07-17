@@ -2,7 +2,6 @@ namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open System.Collections.Generic
-open System.Linq
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Internal
@@ -17,14 +16,10 @@ open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 
-
 module rec FSharpSnapshotGenerator =
 
-    let private appendIfTrue truth value b =
-        if truth then
-            b |> append value
-        else
-            b |> noop
+    let private getAnnotations (o:IAnnotatable) =
+        ResizeArray (o.GetAnnotations())
 
     let private appendLineIfTrue truth value b =
         if truth then
@@ -39,7 +34,7 @@ module rec FSharpSnapshotGenerator =
         | true -> p.GetValueConverter()
         | false -> mapping.Converter
 
-    let private generateFluentApiForAnnotation (annotations: List<IAnnotation> byref) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
+    let private generateFluentApiForAnnotation (annotations: IAnnotation ResizeArray) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
 
         let annotationValueFunc' =
             match annotationValueFunc with
@@ -52,7 +47,7 @@ module rec FSharpSnapshotGenerator =
         let genericTypesFunc' =
             match genericTypesFunc with
             | Some a -> a
-            | None -> (fun _ -> List<Type>() :> IReadOnlyList<Type>)
+            | None -> (fun _ -> List<Type>() :> _)
 
         let genericTypes = annotation |> Option.map genericTypesFunc'
         let hasGenericTypes =
@@ -71,6 +66,7 @@ module rec FSharpSnapshotGenerator =
                 sb
                     |> append "<"
                     |> append (String.Join(",", (genericTypes.Value |> Seq.map(FSharpHelper.Reference))))
+                    |> append ">"
                     |> ignore
 
             sb
@@ -85,10 +81,8 @@ module rec FSharpSnapshotGenerator =
                 |> ignore
 
             annotation.Value |> annotations.Remove |> ignore
-
-            sb
-        else
-            sb
+            
+        sb
 
     let private sort (entityTypes:IEntityType list) =
         let entityTypeGraph = new Multigraph<IEntityType, int>()
@@ -99,7 +93,7 @@ module rec FSharpSnapshotGenerator =
             |> Seq.iter(fun e -> entityTypeGraph.AddEdge(e.BaseType, e, 0))
         entityTypeGraph.TopologicalSort() |> Seq.toList
 
-    let ignoreAnnotationTypes (annotations:List<IAnnotation>) (annotation:string) (sb:IndentedStringBuilder) =
+    let ignoreAnnotationTypes (annotations:IAnnotation ResizeArray) (annotation:string) (sb:IndentedStringBuilder) =
 
         let annotationsToRemove =
             annotations |> Seq.filter (fun a -> a.Name.StartsWith(annotation, StringComparison.OrdinalIgnoreCase)) |> Seq.toList
@@ -116,7 +110,7 @@ module rec FSharpSnapshotGenerator =
             |> append (sprintf ".HasAnnotation(%s, %s)" name value)
             |> ignore
 
-    let generateAnnotations (annotations:List<IAnnotation>) (sb:IndentedStringBuilder) =
+    let generateAnnotations (annotations:IAnnotation ResizeArray) (sb:IndentedStringBuilder) =
 
         annotations
         |> Seq.iter(fun a ->
@@ -144,7 +138,7 @@ module rec FSharpSnapshotGenerator =
         }
 
     let generatePropertyAnnotations (p:IProperty) (sb:IndentedStringBuilder) =
-        let mutable annotations =  p.GetAnnotations().ToList()
+        let annotations =  getAnnotations p
         let valueConverter = p |> findValueConverter
 
         if valueConverter |> notNull && valueConverter.MappingHints |> notNull then
@@ -159,7 +153,7 @@ module rec FSharpSnapshotGenerator =
                 |> append (sprintf ".HasConversion(ValueConverter<%s,%s>(%s, %s), ConverterMappingHints(%s))" storeType storeType createStoreType createStoreType mappingHints)
                 |> ignore
         
-        let consumed = annotations |> Seq.filter(fun a -> a.Name = CoreAnnotationNames.ValueConverter || a.Name = CoreAnnotationNames.ProviderClrType)
+        let consumed = annotations |> Seq.filter(fun a -> a.Name = CoreAnnotationNames.ValueConverter || a.Name = CoreAnnotationNames.ProviderClrType) |> Seq.toList
         consumed |> Seq.iter (annotations.Remove >> ignore)
 
         let getValueFunc (valueConverter: ValueConverter) (a:IAnnotation) =
@@ -169,15 +163,15 @@ module rec FSharpSnapshotGenerator =
                 a.Value
 
         sb
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.ColumnName None "HasColumnName" None
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.ColumnType None "HasColumnType" None
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.DefaultValueSql None "HasDefaultValueSql" None
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.ComputedColumnSql None "HasComputedColumnSql" None
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.IsFixedLength None "IsFixedLength" None
-            |> generateFluentApiForAnnotation &annotations CoreAnnotationNames.MaxLengthAnnotation None "HasMaxLength" None
-            |> generateFluentApiForAnnotation &annotations CoreAnnotationNames.UnicodeAnnotation None "IsUnicode" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ColumnName None "HasColumnName" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ColumnType None "HasColumnType" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultValueSql None "HasDefaultValueSql" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ComputedColumnSql None "HasComputedColumnSql" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.IsFixedLength None "IsFixedLength" None
+            |> generateFluentApiForAnnotation annotations CoreAnnotationNames.MaxLengthAnnotation None "HasMaxLength" None
+            |> generateFluentApiForAnnotation annotations CoreAnnotationNames.UnicodeAnnotation None "IsUnicode" None
 
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.DefaultValue (getValueFunc valueConverter |> Some) "HasDefaultValue" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultValue (getValueFunc valueConverter |> Some) "HasDefaultValue" None
             
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.ValueGeneratorFactoryAnnotation
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.PropertyAccessModeAnnotation
@@ -234,7 +228,7 @@ module rec FSharpSnapshotGenerator =
 
     let generateKey (funcId: string) (key:IKey) (isPrimary:bool) (sb:IndentedStringBuilder) =
 
-        let mutable annotations = key.GetAnnotations().ToList()
+        let annotations = getAnnotations key
 
         sb
             |> appendEmptyLine
@@ -244,7 +238,7 @@ module rec FSharpSnapshotGenerator =
             |> append (key.Properties |> Seq.map (fun p -> (p.Name |> Literal)) |> join ", ")
             |> append ")"
             |> indent
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.Name Option.None "HasName" Option.None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Name Option.None "HasName" Option.None
             |> generateAnnotations annotations
             |> appendLine " |> ignore"
             |> unindent
@@ -255,14 +249,14 @@ module rec FSharpSnapshotGenerator =
             generateKey funcId pk true sb |> ignore
 
         keys
-            |> Seq.filter(fun k -> k <> pk && (k.GetReferencingForeignKeys() |> Seq.isEmpty) && k.GetAnnotations() |> Seq.isEmpty |> not)
+            |> Seq.filter(fun k -> k <> pk && (k.GetReferencingForeignKeys() |> Seq.isEmpty) && (getAnnotations k) |> Seq.isEmpty |> not)
             |> Seq.iter (fun k -> generateKey funcId k false sb |> ignore)
 
         sb        
 
     let generateIndex (funcId: string) (idx:IIndex) (sb:IndentedStringBuilder) =
 
-        let mutable annotations = idx.GetAnnotations().ToList()
+        let annotations = getAnnotations idx
 
         sb
             |> appendEmptyLine
@@ -272,8 +266,8 @@ module rec FSharpSnapshotGenerator =
             |> append ")"
             |> indent
             |> appendLineIfTrue idx.IsUnique ".IsUnique()"
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.Name Option.None "HasName" Option.None
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.Filter Option.None "HasFilter" Option.None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Name Option.None "HasName" Option.None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Filter Option.None "HasFilter" Option.None
             |> generateAnnotations annotations
             |> appendLine " |> ignore"
             |> unindent
@@ -286,7 +280,7 @@ module rec FSharpSnapshotGenerator =
 
     let generateEntityTypeAnnotations (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
 
-        let mutable annotations = entityType.GetAnnotations().ToList()
+        let annotations = getAnnotations entityType
 
         let tryGetAnnotationByName (name:string) =
             let a = annotations |> Seq.tryFind (fun a -> a.Name = name)
@@ -384,10 +378,10 @@ module rec FSharpSnapshotGenerator =
 
     let generateForeignKeyAnnotations (fk: IForeignKey) sb =
 
-        let mutable annotations = fk.GetAnnotations().ToList()
+        let annotations = getAnnotations fk
 
         sb
-            |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.Name Option.None "HasConstraintName" Option.None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Name Option.None "HasConstraintName" Option.None
             |> generateAnnotations annotations
 
     let private generateForeignKeyRelation (fk: IForeignKey) sb =
@@ -519,13 +513,13 @@ module rec FSharpSnapshotGenerator =
 
     let generate (builderName:string) (model:IModel) (sb:IndentedStringBuilder) =
 
-        let mutable annotations = model.GetAnnotations().ToList()
+        let annotations = getAnnotations model
 
         if annotations |> Seq.isEmpty |> not then
             sb
                 |> append builderName
                 |> indent
-                |> generateFluentApiForAnnotation &annotations RelationalAnnotationNames.DefaultSchema Option.None "HasDefaultSchema" Option.None
+                |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultSchema Option.None "HasDefaultSchema" Option.None
                 |> ignoreAnnotationTypes annotations RelationalAnnotationNames.DbFunction
                 |> ignoreAnnotationTypes annotations RelationalAnnotationNames.MaxIdentifierLength
                 |> ignoreAnnotationTypes annotations CoreAnnotationNames.OwnedTypesAnnotation

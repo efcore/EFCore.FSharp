@@ -55,18 +55,20 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
                 |> appendEmptyLine
                 |> indent
 
-    override this.Language = "F#"
+    override __.Language = "F#"
 
-    override this.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, options: ModelCodeGenerationOptions) =
+    override __.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, options: ModelCodeGenerationOptions) =
         let resultingFiles = ScaffoldedModel()
 
         let generatedCode = contextGenerator.WriteCode(model, ``namespace``, contextName, connectionString, options.UseDataAnnotations, options.SuppressConnectionStringWarning)
 
         let dbContextFileName = contextName + fileExtension;
 
-        let contextFile = ScaffoldedFile()
-        contextFile.Code <- generatedCode
-        contextFile.Path <- Path.Combine(contextDir, dbContextFileName)
+        let contextFile =
+            ScaffoldedFile(
+                Code = generatedCode,
+                Path = Path.Combine(contextDir, dbContextFileName))
+                
         resultingFiles.ContextFile <- contextFile
 
         let domainFileName = contextName.Replace("Context", "Domain")

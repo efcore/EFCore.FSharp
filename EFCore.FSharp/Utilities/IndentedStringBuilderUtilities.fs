@@ -23,19 +23,31 @@ module internal IndentedStringBuilderUtilities =
 
     let noop sb = sb
 
-    let private prependLine (addLineBreak: bool byref) (text:string) (sb:IndentedStringBuilder) =
-        if addLineBreak then
+    let appendIfTrue truth value b =
+        if truth then
+            b |> append value
+        else
+            b
+
+    let appendLineIfTrue truth value b =
+        if truth then
+            b |> appendLine value
+        else
+            b        
+
+    let private prependLine (addLineBreak: bool ref) (text:string) (sb:IndentedStringBuilder) =
+        if addLineBreak.Value then
             sb |> appendEmptyLine |> ignore
         else
-            addLineBreak <- true
+            addLineBreak := true
 
         sb |> append text |> ignore
 
     let appendLines (lines: string seq) skipFinalNewLine (sb:IndentedStringBuilder) =
 
-        let mutable addLineBreak = false
+        let addLineBreak = ref false
 
-        lines |> Seq.iter(fun l -> sb |> prependLine &addLineBreak l)
+        lines |> Seq.iter(fun l -> sb |> prependLine addLineBreak l)
 
         if skipFinalNewLine then
             sb

@@ -61,4 +61,4 @@ module internal EntityFrameworkExtensions =
         Microsoft.EntityFrameworkCore.Metadata.Internal.ScaffoldingMetadataExtensions.Scaffolding m
 
     let toAnnotatable (a : IAnnotatable) =
-        a :> IAnnotatable
+        a

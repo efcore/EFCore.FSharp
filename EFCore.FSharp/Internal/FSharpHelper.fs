@@ -2,32 +2,34 @@ namespace Bricelam.EntityFrameworkCore.FSharp.Internal
 
 open System
 open System.Collections.Generic
+open System.Linq
 open System.Reflection
 open System.Text
 open Microsoft.EntityFrameworkCore.Internal
 open System.Globalization
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.EntityFrameworkCore.Design
+open System.Collections
 
 module FSharpHelper =
 
     let private _builtInTypes =
         [
-            (typedefof<bool>, "bool")
-            (typedefof<byte>, "byte")
-            (typedefof<sbyte>, "sbyte")
-            (typedefof<char>, "char")
-            (typedefof<Int16>, "Int16")
-            (typedefof<int>, "int")
-            (typedefof<Int64>, "Int64")
-            (typedefof<UInt16>, "UInt16")
-            (typedefof<UInt32>, "UInt32")
-            (typedefof<UInt64>, "UInt64")
-            (typedefof<decimal>, "decimal")
-            (typedefof<float>, "float")
-            (typedefof<double>, "double")
-            (typedefof<string>, "string")
-            (typedefof<obj>, "obj")
+            (typeof<bool>, "bool")
+            (typeof<byte>, "byte")
+            (typeof<sbyte>, "sbyte")
+            (typeof<char>, "char")
+            (typeof<int16>, "Int16")
+            (typeof<int>, "int")
+            (typeof<int64>, "Int64")
+            (typeof<uint16>, "UInt16")
+            (typeof<uint32>, "UInt32")
+            (typeof<uint64>, "UInt64")
+            (typeof<decimal>, "decimal")
+            (typeof<float>, "float")
+            (typeof<double>, "double")
+            (typeof<string>, "string")
+            (typeof<obj>, "obj")
         ] |> dict
 
     let private _keywords =
@@ -135,28 +137,26 @@ module FSharpHelper =
             "while";
             "with";
             "yield!";
-            "yield";   
+            "yield";
           |]
-
-    let test = [| [|2|] |]    
-
+          
     let isNullableType (t:Type) =
         let typeInfo = t.GetTypeInfo()
         typeInfo.IsGenericType
-        && typeInfo.GetGenericTypeDefinition() = typeof<Nullable<_>>
+        && typeInfo.GetGenericTypeDefinition() = typedefof<Nullable<_>>
 
     let isOptionType (t:Type) =
         let typeInfo = t.GetTypeInfo()
         typeInfo.IsGenericType
-        && typeInfo.GetGenericTypeDefinition() = typeof<Option<_>>
+        && typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>
 
     let unwrapNullableType (t:Type) =
-        match t |> isNullableType with    
+        match t |> isNullableType with
         | true -> t |> Nullable.GetUnderlyingType
         | false -> t
 
     let unwrapOptionType (t:Type) =
-        match t |> isOptionType with    
+        match t |> isOptionType with
         | true -> t.GenericTypeArguments.[0]
         | false -> t
 
@@ -197,9 +197,9 @@ module FSharpHelper =
 
                 if t.IsArray then
                     builder.Append(Reference(t.GetElementType())).Append("[") |> ignore
-                    (',', t.GetArrayRank()) |> String |> builder.Append |> ignore    
+                    (',', t.GetArrayRank()) |> String |> builder.Append |> ignore
                     builder.Append("]") |> ignore
-                    
+
                 elif t.IsNested then
                     builder.Append(Reference(t.DeclaringType)).Append(".") |> ignore
 
@@ -215,43 +215,43 @@ module FSharpHelper =
         static member UnknownLiteral (value: obj) =
             if isNull value then
                 "null"
-            else                        
+            else
                 match value with
                 | :? DBNull -> "null"
+                | :? Enum as e -> LiteralWriter.Literal e
+                | :? bool as e -> LiteralWriter.Literal e
+                | :? byte as e -> LiteralWriter.Literal e
+                | :? (byte array) as e -> LiteralWriter.Literal e                
+                | :? char as e -> LiteralWriter.Literal e
+                | :? DateTime as e -> LiteralWriter.Literal e
+                | :? DateTimeOffset as e -> LiteralWriter.Literal e
+                | :? decimal as e -> LiteralWriter.Literal e
+                | :? double as e -> LiteralWriter.Literal e
+                | :? float32 as e -> LiteralWriter.Literal e
+                | :? Guid as e -> LiteralWriter.Literal e
+                | :? int as e -> LiteralWriter.Literal e
+                | :? Int64 as e -> LiteralWriter.Literal e
+                | :? sbyte as e -> LiteralWriter.Literal e
+                | :? Int16 as e -> LiteralWriter.Literal e
+                | :? string as e -> LiteralWriter.Literal e
+                | :? TimeSpan as e -> LiteralWriter.Literal e
+                | :? UInt32 as e -> LiteralWriter.Literal e
+                | :? UInt64 as e -> LiteralWriter.Literal e
+                | :? UInt16 as e -> LiteralWriter.Literal e
+                | :? (string[]) as e -> LiteralWriter.Literal (e :> Array)
+                | :? Array as e -> LiteralWriter.Literal e
                 | _ ->
-                    match value with
-                    | :? Enum as e -> LiteralWriter.Literal e
-                    | :? bool as e -> LiteralWriter.Literal e
-                    | :? byte as e -> LiteralWriter.Literal e
-                    | :? (byte array) as e -> LiteralWriter.Literal e
-                    | :? char as e -> LiteralWriter.Literal e
-                    | :? DateTime as e -> LiteralWriter.Literal e
-                    | :? DateTimeOffset as e -> LiteralWriter.Literal e
-                    | :? decimal as e -> LiteralWriter.Literal e
-                    | :? double as e -> LiteralWriter.Literal e
-                    | :? float32 as e -> LiteralWriter.Literal e
-                    | :? Guid as e -> LiteralWriter.Literal e
-                    | :? int as e -> LiteralWriter.Literal e
-                    | :? Int64 as e -> LiteralWriter.Literal e
-                    | :? sbyte as e -> LiteralWriter.Literal e
-                    | :? Int16 as e -> LiteralWriter.Literal e
-                    | :? string as e -> LiteralWriter.Literal e
-                    | :? TimeSpan as e -> LiteralWriter.Literal e
-                    | :? UInt32 as e -> LiteralWriter.Literal e
-                    | :? UInt64 as e -> LiteralWriter.Literal e
-                    | :? UInt16 as e -> LiteralWriter.Literal e
-                    | _ ->
-                        let t = value.GetType()
-                        let type' =
-                            if t |> isNullableType then t |> unwrapNullableType
-                            elif t |> isOptionType then t |> unwrapOptionType
-                            else t
-                        invalidOp (type' |> DesignStrings.UnknownLiteral)
+                    let t = value.GetType()
+                    let type' =
+                        if t |> isNullableType then t |> unwrapNullableType
+                        elif t |> isOptionType then t |> unwrapOptionType
+                        else t
+                    invalidOp (type' |> DesignStrings.UnknownLiteral)
 
         static member Literal(value: string) =
             if value.Contains(Environment.NewLine) then
                 "@\"" + value.Replace("\"", "\"\"") + "\""
-            else            
+            else
                 "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""
 
         static member Literal(value: bool) =
@@ -260,6 +260,10 @@ module FSharpHelper =
         static member Literal(value: byte) = sprintf "(byte %d)" value
 
         static member Literal(values: byte[]) =
+            sprintf "[| %s |]" (String.Join("; ", values))
+
+        static member Literal(values: Array) =
+            let v = values.Cast<obj>() |> Seq.map LiteralWriter.UnknownLiteral
             sprintf "[| %s |]" (String.Join("; ", values))
 
         static member Literal(value: char) =
@@ -276,7 +280,7 @@ module FSharpHelper =
             sprintf "DateTimeOffset(%s, %s)" (value.DateTime |> LiteralWriter.Literal) (value.Offset |> LiteralWriter.Literal)
         static member Literal(value: decimal) =
             sprintf "%fm" value
-        static member Literal(value: double) = 
+        static member Literal(value: double) =
             (value.ToString("R", CultureInfo.InvariantCulture)) |> ensureDecimalPlaces
         static member Literal(value: float32) =
             sprintf "(float32 %f)" value
@@ -291,18 +295,18 @@ module FSharpHelper =
 
         static member Literal(value: Int16) =
             sprintf "%ds" value
-        
+
         static member Literal(value: UInt32) =
             sprintf "%du" value
         static member Literal(value: UInt64) =
             sprintf "%duL" value
         static member Literal(value: UInt16) =
-            sprintf "%dus" value        
-        
+            sprintf "%dus" value
+
         static member Literal(values: IReadOnlyList<obj>, vertical: bool, sb:IndentedStringBuilder) =
-            
-            let values' = values |> Seq.map(LiteralWriter.UnknownLiteral)
-            
+
+            let values' = values |> Seq.map LiteralWriter.UnknownLiteral
+
             if not vertical then
                 let line = sprintf "[| %s |]" (String.Join("; ", values'))
                 sb |> append line
@@ -316,14 +320,14 @@ module FSharpHelper =
 
                 sb
 
-            |> string            
+            |> string
 
         static member Literal(values: IReadOnlyList<obj>) =
             LiteralWriter.Literal (values, false, IndentedStringBuilder())
 
-        
+
         static member Literal(values: obj[,]) =
-            
+
             let rowCount = Array2D.length1 values
             let valuesCount = Array2D.length2 values
 
@@ -337,8 +341,8 @@ module FSharpHelper =
             sprintf "array2D [ %s ]" (String.Join("; ", rowContents))
 
         static member Literal(value) =
-            value |> LiteralWriter.UnknownLiteral      
-   
+            value |> LiteralWriter.UnknownLiteral
+
     let Lambda (properties: IReadOnlyList<string>) =
         StringBuilder()
             .Append("(fun x -> ")
@@ -346,16 +350,16 @@ module FSharpHelper =
             .Append(")") |> string
 
     let Literal (o:obj) =
-        o |> LiteralWriter.Literal
+        LiteralWriter.Literal o
 
     let LiteralList (vertical: bool) (sb:IndentedStringBuilder) (values: IReadOnlyList<obj>) =
         LiteralWriter.Literal(values, vertical, sb)
 
     let Literal2DArray (values: obj[,]) =
-        LiteralWriter.Literal(values)    
+        LiteralWriter.Literal values
 
     let UnknownLiteral (o:obj) =
-        o |> LiteralWriter.UnknownLiteral    
+        LiteralWriter.UnknownLiteral o
 
     let private isLetterChar cat =
         match cat with
@@ -391,7 +395,7 @@ module FSharpHelper =
                 | UnicodeCategory.SpacingCombiningMark -> true
                 | UnicodeCategory.Format -> true
                 | _ -> false
-                            
+
     let private isIdentifierStartCharacter ch =
         if ch < 'a' then
             if ch < 'A' then
@@ -419,7 +423,7 @@ module FSharpHelper =
 
             uniqueId |> scope.Add
             uniqueId
-        
+
     let IdentifierWithScope (name:string) (scope:ICollection<string>) =
 
         let sb = StringBuilder()
@@ -436,7 +440,7 @@ module FSharpHelper =
             sb.Append(name.Substring(partStart)) |> ignore
 
         if sb.Length = 0 || sb.[0] |> isIdentifierStartCharacter |> not then
-            sb.Insert(0, "_") |> ignore        
+            sb.Insert(0, "_") |> ignore
 
         let identifier = sb |> handleScope scope
 

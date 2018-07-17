@@ -13,22 +13,22 @@ module FSharpUtilities =
 
     let private _primitiveTypeNames =
         [
-            (typedefof<bool>, "bool")
-            (typedefof<byte>, "byte")
-            (typedefof<byte[]>, "byte[]")
-            (typedefof<sbyte>, "sbyte")
-            (typedefof<char>, "char")
-            (typedefof<Int16>, "Int16")
-            (typedefof<int>, "int")
-            (typedefof<Int64>, "Int64")
-            (typedefof<UInt16>, "UInt16")
-            (typedefof<UInt32>, "UInt32")
-            (typedefof<UInt64>, "UInt64")
-            (typedefof<decimal>, "decimal")
-            (typedefof<float>, "float")
-            (typedefof<double>, "double")
-            (typedefof<string>, "string")
-            (typedefof<obj>, "obj")
+            (typeof<bool>, "bool")
+            (typeof<byte>, "byte")
+            (typeof<byte[]>, "byte[]")
+            (typeof<sbyte>, "sbyte")
+            (typeof<char>, "char")
+            (typeof<int16>, "Int16")
+            (typeof<int>, "int")
+            (typeof<int64>, "Int64")
+            (typeof<uint16>, "UInt16")
+            (typeof<uint32>, "UInt32")
+            (typeof<uint64>, "UInt64")
+            (typeof<decimal>, "decimal")
+            (typeof<float>, "float")
+            (typeof<double>, "double")
+            (typeof<string>, "string")
+            (typeof<obj>, "obj")
         ] |> dict
 
     let private _fsharpTypeNames =
