@@ -20,7 +20,7 @@ module FSharpMigrationOperationGenerator =
     let private writeName nameValue sb =
         sb
             |> append "name = " |> appendLine (nameValue |> Literal)
-    
+
     let private writeParameter name value sb =
         sb
             |> append ","
@@ -68,9 +68,16 @@ module FSharpMigrationOperationGenerator =
 
     let private generateAddColumnOperation (op:AddColumnOperation) (sb:IndentedStringBuilder) =
 
+        let isPropertyRequired =
+            let isNullable = 
+                op.ClrType |> isOptionType ||
+                op.ClrType |> isNullableType
+
+            isNullable <> op.IsNullable
+
         sb
             |> append ".AddColumn<"
-            |> append (op.ClrType |> FSharpHelper.Reference)
+            |> append (op.ClrType |> unwrapOptionType |> FSharpHelper.Reference)
             |> appendLine ">("
             |> indent
             |> writeName op.Name
@@ -90,7 +97,8 @@ module FSharpMigrationOperationGenerator =
                     writeParameter "defaultValue" op.DefaultValue
                 else
                     noop
-            |> append ")"                
+            |> append ")"    
+            |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> FSharpHelper.Reference))
 
             |> annotations (op.GetAnnotations())
             |> unindent
@@ -324,7 +332,7 @@ module FSharpMigrationOperationGenerator =
                 |> indent
                 |> ignore
 
-            op.Columns |> Seq.filter(fun c  -> c |> notNull) |> Seq.iter(writeColumn)
+            op.Columns |> Seq.filter(notNull) |> Seq.iter(writeColumn)
 
             sb
                 |> unindent

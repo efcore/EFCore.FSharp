@@ -36,6 +36,7 @@ module FSharpUtilities =
             ("IEnumerable", "seq")
             ("FSharpList", "list")
             ("FSharpOption", "option")
+            ("List", "ResizeArray")
         ] |> dict
 
     let private escapeString (str: string) =
