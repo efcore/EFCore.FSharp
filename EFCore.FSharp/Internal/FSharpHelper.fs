@@ -9,7 +9,6 @@ open Microsoft.EntityFrameworkCore.Internal
 open System.Globalization
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.EntityFrameworkCore.Design
-open System.Collections
 
 module FSharpHelper =
 
@@ -238,7 +237,7 @@ module FSharpHelper =
                 | :? UInt32 as e -> LiteralWriter.Literal e
                 | :? UInt64 as e -> LiteralWriter.Literal e
                 | :? UInt16 as e -> LiteralWriter.Literal e
-                | :? (string[]) as e -> LiteralWriter.Literal (e :> Array)
+                | :? (string[]) as e -> LiteralWriter.Literal e
                 | :? Array as e -> LiteralWriter.Literal e
                 | _ ->
                     let t = value.GetType()
@@ -260,11 +259,16 @@ module FSharpHelper =
         static member Literal(value: byte) = sprintf "(byte %d)" value
 
         static member Literal(values: byte[]) =
-            sprintf "[| %s |]" (String.Join("; ", values))
+            let v = values |> Seq.map LiteralWriter.Literal
+            sprintf "[| %s |]" (String.Join("; ", v))
+
+        static member Literal(values: string[]) =
+            let v = values |> Seq.map LiteralWriter.Literal
+            sprintf "[| %s |]" (String.Join("; ", v))
 
         static member Literal(values: Array) =
             let v = values.Cast<obj>() |> Seq.map LiteralWriter.UnknownLiteral
-            sprintf "[| %s |]" (String.Join("; ", values))
+            sprintf "[| %s |]" (String.Join("; ", v))
 
         static member Literal(value: char) =
             "\'" + (if value = '\'' then "\\'" else value.ToString()) + "\'"
