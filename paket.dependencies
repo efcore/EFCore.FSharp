@@ -1,7 +1,7 @@
 source https://api.nuget.org/v3/index.json
 
-nuget Microsoft.EntityFrameworkCore.Design 2.1.0
-nuget Microsoft.EntityFrameworkCore.Sqlite 2.1.0
+nuget Microsoft.EntityFrameworkCore.Design >= 2.2.0
+nuget Microsoft.EntityFrameworkCore.Sqlite >= 2.2.0
 nuget xunit.runner.visualstudio 2.3.1
 nuget FsUnit.xUnit 3.1.0
 
