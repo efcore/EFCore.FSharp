@@ -8,6 +8,7 @@ open Microsoft.EntityFrameworkCore.Internal
 
 open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 
+open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal

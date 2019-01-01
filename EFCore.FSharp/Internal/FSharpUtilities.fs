@@ -6,7 +6,7 @@ open System.Reflection
 open System.Text
 open Microsoft.EntityFrameworkCore.Design
 
-open FSharpHelper
+open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 
 module FSharpUtilities =

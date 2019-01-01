@@ -6,6 +6,7 @@ open Microsoft.FSharp.Linq.NullableOperators
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
+open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
@@ -26,7 +27,7 @@ module FSharpMigrationOperationGenerator =
             |> append ","
             |> append name
             |> append " = "
-            |> appendLine (value |> Literal)
+            |> appendLine (value |> Literal)      
 
     let private writeParameterIfTrue trueOrFalse name value sb =
         match trueOrFalse with
@@ -36,8 +37,17 @@ module FSharpMigrationOperationGenerator =
     let private writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
         sb |> writeParameterIfTrue (value |> notNull) name value
 
-    let private writeNullable name (nullableParamter: Nullable<_>) sb =
-        sb |> writeParameterIfTrue nullableParamter.HasValue name nullableParamter.Value
+    let private writeNullable name (nullableParameter: Nullable<_>) sb =
+
+        match nullableParameter.HasValue with
+        | true ->
+            let t = nullableParameter.GetType() |> string
+            let value = nullableParameter |> Literal
+            let fmt = sprintf ", %s = Nullable<%s>(%s)" name t value
+
+            sb |> appendLine fmt
+
+        | false -> sb
 
     let private annotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
         annotations
@@ -69,7 +79,7 @@ module FSharpMigrationOperationGenerator =
     let private generateAddColumnOperation (op:AddColumnOperation) (sb:IndentedStringBuilder) =
 
         let isPropertyRequired =
-            let isNullable = 
+            let isNullable =
                 op.ClrType |> isOptionType ||
                 op.ClrType |> isNullableType
 
@@ -97,7 +107,7 @@ module FSharpMigrationOperationGenerator =
                     writeParameter "defaultValue" op.DefaultValue
                 else
                     noop
-            |> append ")"    
+            |> append ")"
             |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> FSharpHelper.Reference))
 
             |> annotations (op.GetAnnotations())
@@ -193,7 +203,7 @@ module FSharpMigrationOperationGenerator =
             |> unindent
 
 
-    let private generateAlterDatabaseOperation (op:AlterDatabaseOperation) (sb:IndentedStringBuilder) =            
+    let private generateAlterDatabaseOperation (op:AlterDatabaseOperation) (sb:IndentedStringBuilder) =
         sb
             |> appendLine ".AlterDatabase()"
             |> indent
@@ -240,7 +250,7 @@ module FSharpMigrationOperationGenerator =
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
             |> writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
-            |> writeParameterIfTrue op.IsUnique "unique" "true"
+            |> writeParameterIfTrue op.IsUnique "unique" true
             |> writeOptionalParameter "filter" op.Filter
             |> append ")"
             |> annotations (op.GetAnnotations())
@@ -278,24 +288,12 @@ module FSharpMigrationOperationGenerator =
 
 
     let private generateCreateTableOperation (op:CreateTableOperation) (sb:IndentedStringBuilder) =
-        
+
         let map = Dictionary<string, string>()
-
-        let appendIfTrue truth name value b =
-                if truth then
-                    b |> append (sprintf ", %s = %s" name (value |> FSharpHelper.Literal))
-                else
-                    b
-
-        let appendIfHasValue name (value: Nullable<_>) b =
-                if value.HasValue then
-                    b |> append (sprintf ", %s = %s" name (value.Value |> FSharpHelper.Literal))
-                else
-                    b                
 
         let writeColumn (c:AddColumnOperation) =
             let propertyName = c.Name |> FSharpHelper.Identifier
-            map.Add(c.Name, propertyName)            
+            map.Add(c.Name, propertyName)
 
             sb
                 |> append propertyName
@@ -303,11 +301,11 @@ module FSharpMigrationOperationGenerator =
                 |> append (FSharpHelper.Reference(c.ClrType))
                 |> append ">("
                 |> append "nullable = " |> append (c.IsNullable |> FSharpHelper.Literal)
-                |> appendIfTrue (c.Name <> propertyName) "name" c.Name
-                |> appendIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
-                |> appendIfTrue (c.IsUnicode.HasValue && (not c.IsUnicode.Value)) "unicode" false
-                |> appendIfHasValue "maxLength" c.MaxLength
-                |> appendIfTrue (c.IsRowVersion) "rowVersion" c.IsRowVersion
+                |> writeParameterIfTrue (c.Name <> propertyName) "name" c.Name
+                |> writeParameterIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
+                |> writeParameterIfTrue (c.IsUnicode.HasValue && (not c.IsUnicode.Value)) "unicode" false
+                |> writeNullable "maxLength" c.MaxLength
+                |> writeParameterIfTrue (c.IsRowVersion) "rowVersion" c.IsRowVersion
                 |>
                     if c.DefaultValueSql |> notNull then
                         append (sprintf ", defaultValueSql = %s" (c.DefaultValueSql |> FSharpHelper.Literal))
@@ -359,17 +357,17 @@ module FSharpMigrationOperationGenerator =
                 |> append "name = " |> append (fk.Name |> FSharpHelper.Literal) |> appendLine ","
                 |> append (if fk.Columns.Length = 1 then "column = " else "columns = ")
                 |> append (fk.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> FSharpHelper.Lambda)
-                |> appendIfTrue (fk.PrincipalSchema |> notNull) "principalSchema" fk.PrincipalSchema
-                |> appendIfTrue true "principalTable" fk.PrincipalTable
-                |> appendIfTrue (fk.PrincipalColumns.Length = 1) "principalColumn" fk.PrincipalColumns.[0]
-                |> appendIfTrue (fk.PrincipalColumns.Length <> 1) "principalColumns" fk.PrincipalColumns
-                |> appendIfTrue (fk.OnUpdate <> ReferentialAction.NoAction) "onUpdate" fk.OnUpdate
-                |> appendIfTrue (fk.OnDelete <> ReferentialAction.NoAction) "onDelete" fk.OnDelete
+                |> writeParameterIfTrue (fk.PrincipalSchema |> notNull) "principalSchema" fk.PrincipalSchema
+                |> writeParameter "principalTable" fk.PrincipalTable
+                |> writeParameterIfTrue (fk.PrincipalColumns.Length = 1) "principalColumn" fk.PrincipalColumns.[0]
+                |> writeParameterIfTrue (fk.PrincipalColumns.Length <> 1) "principalColumns" fk.PrincipalColumns
+                |> writeParameterIfTrue (fk.OnUpdate <> ReferentialAction.NoAction) "onUpdate" fk.OnUpdate
+                |> writeParameterIfTrue (fk.OnDelete <> ReferentialAction.NoAction) "onDelete" fk.OnDelete
 
-                |> append ")"                
+                |> append ")"
                 |> annotations (fk.GetAnnotations())
                 |> unindent
-                |> appendLine " |> ignore"                
+                |> appendLine " |> ignore"
                 |> appendEmptyLine
                 |> ignore
             ()
@@ -392,14 +390,14 @@ module FSharpMigrationOperationGenerator =
                     |> annotations (op.PrimaryKey.GetAnnotations())
                     |> unindent
                     |> ignore
-            
+
             op.UniqueConstraints |> Seq.iter(writeUniqueConstraint)
             op.ForeignKeys |> Seq.iter(writeForeignKeyConstraint)
 
             sb
                 |> unindent
-                |> appendLine ") "       
-        
+                |> appendLine ") "
+
         sb
             |> appendLine ".CreateTable("
             |> indent
@@ -568,7 +566,7 @@ module FSharpMigrationOperationGenerator =
             seq {
                 if notNull op.Schema then
                     yield sprintf "schema = %s, " (op.Schema |> Literal)
-                
+
                 yield sprintf "table = %s, " (op.Table |> Literal)
 
                 if op.Columns.Length = 1 then
@@ -577,11 +575,11 @@ module FSharpMigrationOperationGenerator =
                     yield sprintf "columns = %s, " (op.Columns |> Literal)
 
                 let length0 = op.Values.GetLength(0)
-                let length1 = op.Values.GetLength(1)               
+                let length1 = op.Values.GetLength(1)
 
                 if length0 = 1 && length1 = 1 then
                     yield sprintf "value = %s" (op.Values.[0,0] |> UnknownLiteral)
-                elif length0 = 1 then                    
+                elif length0 = 1 then
                     yield sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> Literal)
                 elif length1 = 1 then
                     let sb' = IndentedStringBuilder sb // sb' will be created with the indent already set to the correct level
@@ -641,7 +639,7 @@ module FSharpMigrationOperationGenerator =
 
     let Generate (builderName:string) (operations: MigrationOperation list) (sb:IndentedStringBuilder) =
         operations
-            |> Seq.iter(fun op -> 
+            |> Seq.iter(fun op ->
                 sb
                     |> append builderName
                     |> generateOperation op

@@ -17,10 +17,11 @@
     <LangVersion>latest</LangVersion>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.1.0-alpha1</Version>
+    <Version>2.2.0-alpha1</Version>
     <DevelopmentDependency>true</DevelopmentDependency>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Utilities\SharedTypeExtensions.fs" />
     <Compile Include="Utilities\EntityFrameworkExtensions.fs" />
     <Compile Include="Utilities\IndentedStringBuilderUtilities.fs" />
     <Compile Include="Internal\FSharpHelper.fs" />
