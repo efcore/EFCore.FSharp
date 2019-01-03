@@ -141,25 +141,33 @@ module FSharpHelper =
             "yield";
           |]
           
-    let rec Reference (t: Type) =
+    let rec ReferenceFullName (t: Type) useFullName =
 
         match _builtInTypes.TryGetValue t with
         | true, value -> value
         | _ ->
-            if t |> isNullableType then sprintf "Nullable<%s>" (t |> unwrapNullableType |> Reference)
-            elif t |> isOptionType then sprintf "%s option" (t |> unwrapOptionType |> Reference)
+            if t |> isNullableType then sprintf "Nullable<%s>" (ReferenceFullName (t |> unwrapNullableType) useFullName)
+            elif t |> isOptionType then sprintf "%s option" (ReferenceFullName (t |> unwrapOptionType) useFullName)
             else
                 let builder = StringBuilder()
 
                 if t.IsArray then
-                    builder.Append(Reference(t.GetElementType())).Append("[") |> ignore
+                    builder.Append(ReferenceFullName (t.GetElementType()) useFullName).Append("[") |> ignore
                     (',', t.GetArrayRank()) |> String |> builder.Append |> ignore
                     builder.Append("]") |> ignore
 
                 elif t.IsNested then
-                    builder.Append(Reference(t.DeclaringType)).Append(".") |> ignore
+                    builder.Append(ReferenceFullName (t.DeclaringType) useFullName).Append(".") |> ignore
 
-                builder.Append(t.ShortDisplayName()) |> string
+                let name =
+                    match useFullName with
+                    | true -> t.DisplayName()
+                    | false -> t.ShortDisplayName()
+
+                builder.Append(name) |> string
+
+    let Reference t =
+        ReferenceFullName t false
 
     let private ensureDecimalPlaces (number:string) =
         if number.IndexOf('.') >= 0 then number else number + ".0"
@@ -177,7 +185,7 @@ module FSharpHelper =
         let LiteralBoolean(value: bool) =
             if value then "true" else "false"
 
-        let LiteralByte(value: byte) = sprintf "(byte %d)" value
+        let LiteralByte (value: byte) = sprintf "(byte %d)" value
 
         let LiteralByteArray(values: byte[]) =
             let v = values |> Seq.map LiteralByte
@@ -203,18 +211,25 @@ module FSharpHelper =
 
         let LiteralDateTimeOffset(value: DateTimeOffset) =
             sprintf "DateTimeOffset(%s, %s)" (value.DateTime |> LiteralDateTime) (value.Offset |> LiteralTimeSpan)
+        
         let LiteralDecimal(value: decimal) =
             sprintf "%fm" value
+        
         let LiteralDouble(value: double) =
             (value.ToString("R", CultureInfo.InvariantCulture)) |> ensureDecimalPlaces
+        
         let LiteralFloat32(value: float32) =
             sprintf "(float32 %f)" value
+        
         let LiteralGuid(value: Guid) =
             sprintf "Guid(\"%A\")" value
+        
         let LiteralInt(value: int) =
             sprintf "%d" value
+        
         let LiteralInt64(value: Int64) =
             sprintf "%dL" value
+        
         let LiteralSByte(value: sbyte) =
             sprintf "(sbyte %d)" value
 
@@ -223,8 +238,10 @@ module FSharpHelper =
 
         let LiteralUInt32(value: UInt32) =
             sprintf "%du" value
+        
         let LiteralUInt64(value: UInt64) =
             sprintf "%duL" value
+        
         let LiteralUInt16(value: UInt16) =
             sprintf "%dus" value
 
@@ -247,7 +264,6 @@ module FSharpHelper =
 
             |> string
 
-
         let LiteralArray2D(values: obj[,]) =
 
             let rowCount = Array2D.length1 values
@@ -261,6 +277,80 @@ module FSharpHelper =
                     sprintf "[ %s ]" (String.Join("; ", entries)) )
 
             sprintf "array2D [ %s ]" (String.Join("; ", rowContents))
+
+        let HandleArguments args sb =
+
+            sb |> append "(" |> ignore
+
+            match (HandleList args false sb) with
+            | true ->
+                sb |> append ")" |> ignore
+                true
+            | false -> false
+
+        let HandleList exps simple sb =
+            let mutable separator = String.Empty
+
+            let results =
+                exps
+                    |> Seq.map(fun e ->
+                        sb |> append separator |> ignore
+
+                        let result = HandleExpression e simple sb
+
+                        separator <- ", "
+                        result )
+
+            results |> Seq.forall (fun r -> r = true)
+
+        let rec HandleExpression (expression:Expression) simple (sb:IndentedStringBuilder) =
+            match expression.NodeType with
+            | ExpressionType.NewArrayInit ->
+                
+                sb |> append "[| " |> ignore
+                HandleList (expression :?> NewArrayExpression).Expressions true sb |> ignore
+                sb |> append " |]" |> ignore
+
+                true
+            | ExpressionType.Convert ->
+                sb |> append "(" |> ignore
+                let result = HandleExpression (expression :?> UnaryExpression).Operand false sb
+                sb |> append " :?> " |> append (ReferenceFullName expression.Type true) |> append ")" |> ignore
+
+                result
+            | ExpressionType.New ->
+                sb |> append (ReferenceFullName expression.Type true) |> ignore                
+                HandleArguments ((expression :?> NewExpression).Arguments) sb
+
+            | ExpressionType.Call ->
+                
+                let mutable exitEarly = false
+                let callExpr = expression :?> MethodCallExpression
+
+                if callExpr.Method.IsStatic then
+                    sb |> append (ReferenceFullName callExpr.Method.DeclaringType true) |> ignore
+                else
+                    if (not (HandleExpression callExpr.Object false sb)) then
+                        exitEarly <- true
+                
+                match exitEarly with
+                | true -> false
+                | false ->
+                    sb |> append "." |> append callExpr.Method.Name |> ignore
+                    HandleArguments callExpr.Arguments sb
+
+            | ExpressionType.Constant ->
+                let value = (expression :?> ConstantExpression).Value
+                let valueToWrite =
+                    if simple && (value.GetType() |> isNumeric) then
+                        value |> string
+                    else
+                        LiteralWriter.UnknownLiteral(value)
+
+                sb |> append valueToWrite |> ignore
+
+                true
+            | _ -> false
 
         let UnknownLiteral (value: obj) =
             if isNull value then
@@ -297,25 +387,6 @@ module FSharpHelper =
                         elif t |> isOptionType then t |> unwrapOptionType
                         else t
                     invalidOp (type' |> DesignStrings.UnknownLiteral)
-
-        // let rec HandleExpression (expression:Expression) (builder:IndentedStringBuilder) simple =
-        //    match expression.NodeType with
-        //    | ExpressionType.NewArrayInit -> true
-        //    | ExpressionType.Convert -> true
-        //    | ExpressionType.New -> true
-        //    | ExpressionType.Call -> true
-        //    | ExpressionType.Constant ->
-        //        let value = (expression :?> ConstantExpression).Value
-        //        let valueToWrite =
-        //            if simple && (value.GetType() |> isNumeric) then
-        //                value |> string
-        //            else
-        //                LiteralWriter.UnknownLiteral(value)
-
-        //        valueToWrite |> builder.Append |> ignore
-
-        //        true
-        //    | _ -> false
 
         let Literal value =
             value |> UnknownLiteral
