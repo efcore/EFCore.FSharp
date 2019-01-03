@@ -6,9 +6,12 @@
     <AssemblyName>Bricelam.EntityFrameworkCore.FSharp.Test</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="TestUtilities\TestProviderCodeGenerator.fs" />
+    <Compile Include="TestUtilities\BuildReference.fs" />
     <Compile Include="Internal\FSharpUtilitiesTest.fs" />
+    <Compile Include="Scaffolding\Internal\ModelCodeGeneratorTestBase.fs" />
+    <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
     <Compile Include="Tests.fs" />
-    <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EFCore.FSharp\EFCore.FSharp.fsproj" />

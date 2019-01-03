@@ -1,8 +1,9 @@
-namespace Bricelam.EntityFrameworkCore.FSharp.Internal
+namespace Bricelam.EntityFrameworkCore.FSharp.Test.Internal
 
 open System
 open System.Collections.Generic
 open Microsoft.EntityFrameworkCore.Design
+open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Xunit
 open FsUnit.Xunit
 

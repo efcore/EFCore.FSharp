@@ -1,3 +1,6 @@
 Microsoft.EntityFrameworkCore.Sqlite
+Microsoft.EntityFrameworkCore.SqlServer
+Microsoft.CodeAnalysis
+FSharp.Compiler.Service
 xunit.runner.visualstudio
 FsUnit.xUnit

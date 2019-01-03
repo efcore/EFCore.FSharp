@@ -1,9 +1,14 @@
+version 5.193.0
+
 source https://api.nuget.org/v3/index.json
 
 nuget Microsoft.EntityFrameworkCore.Design >= 2.2.0
 nuget Microsoft.EntityFrameworkCore.Sqlite >= 2.2.0
+nuget Microsoft.EntityFrameworkCore.SqlServer >= 2.2.0
+nuget Microsoft.CodeAnalysis ~ 2.10.0
 nuget xunit.runner.visualstudio 2.3.1
 nuget FsUnit.xUnit 3.1.0
+nuget FSharp.Compiler.Service 25.0.1
 
 source https://api.nuget.org/v3/index.json
 storage: none
