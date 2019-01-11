@@ -1,10 +1,12 @@
 ﻿namespace Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
 
+open System
 open System.IO
 open Microsoft.CodeAnalysis
 open Microsoft.Extensions.DependencyModel
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open System
+open Microsoft.FSharp.Compiler.Ast
+open Fantomas
 
 type BuildReference = {
     CopyLocal : bool
@@ -49,6 +51,20 @@ type BuildSource = {
 
             ]
 
+        static member private ReferenceNames =
+            [
+                "System.Collections"
+                "System.ComponentModel.Annotations"
+                "System.Data.Common"
+                "System.Linq.Expressions"
+                "System.Runtime"
+                "System.Text.RegularExpressions"
+                "Microsoft.EntityFrameworkCore"
+                "Microsoft.EntityFrameworkCore.Relational"
+                "Microsoft.EntityFrameworkCore.SqlServer"
+
+            ]
+
         member this.Build () =
             let projectName = Path.GetRandomFileName()
             let references = ResizeArray<MetadataReference>()
@@ -59,17 +75,26 @@ type BuildSource = {
             // TODO: complete
 
         member this.BuildInMemory () =
-            let projectName = Path.GetRandomFileName()
-            let references = BuildSource.References |> Seq.collect (fun r -> r.References)
+            let projectName = "TestProject"
 
             let checker = FSharpChecker.Create()
 
-            let dllName = Path.ChangeExtension(projectName, ".dll")
-            let errors, code, assembly = checker.CompileToDynamicAssembly([| "-o"; dllName; |], execute=None) |> Async.RunSynchronously
+            let loadRefs =
+                BuildSource.ReferenceNames
+                |> Seq.map(fun r -> sprintf """#r "%s" """ r)
+            
+            let src = String.Join(Environment.NewLine, loadRefs) + Environment.NewLine + Environment.NewLine + (this.Sources |>Seq.head)
+
+            let ast = CodeFormatter.parse true src
+            
+            let errors, code, assOpt = checker.CompileToDynamicAssembly([ast], projectName, BuildSource.ReferenceNames, None) |> Async.RunSynchronously
             
 
-            match assembly with
-            | Some a -> a
-            | None ->
-                let messages = errors |> Seq.map (fun e -> e.Message)
-                invalidOp (String.Join(", ", messages))
+            let assembly = 
+                match assOpt with
+                | Some a -> a
+                | None ->
+                    let messages = errors |> Seq.map (fun e -> e.Message)
+                    invalidOp (String.Join(", ", messages))
+
+            assembly

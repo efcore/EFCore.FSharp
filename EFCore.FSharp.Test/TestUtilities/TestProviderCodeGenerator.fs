@@ -23,7 +23,7 @@ type TestProviderCodeGenerator(dependencies) =
 
 type TestScaffoldingProviderCodeGenerator () =
     interface IScaffoldingProviderCodeGenerator with
-
+    
         member this.GenerateUseProvider(connectionString, language) =
             ""
 

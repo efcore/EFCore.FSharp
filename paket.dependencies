@@ -10,6 +10,7 @@ nuget Microsoft.CodeAnalysis ~ 2.10.0
 nuget xunit.runner.visualstudio 2.3.1
 nuget FsUnit.xUnit 3.1.0
 nuget FSharp.Compiler.Service 25.0.1
+nuget Fantomas 2.9.1
 
 source https://api.nuget.org/v3/index.json
 storage: none

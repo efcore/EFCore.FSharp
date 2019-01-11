@@ -3,5 +3,6 @@ Microsoft.EntityFrameworkCore.SqlServer
 Microsoft.EntityFrameworkCore.Specification.Tests
 Microsoft.CodeAnalysis
 FSharp.Compiler.Service
+Fantomas
 xunit.runner.visualstudio
 FsUnit.xUnit

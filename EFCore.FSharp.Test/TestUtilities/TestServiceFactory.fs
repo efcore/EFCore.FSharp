@@ -60,7 +60,8 @@ module TestServiceFactory =
             match serviceTypeOpt with
             | None ->
                 if implementationTypes |> Seq.length = 1 then
-                    invalidOp "Cannot use 'TestServiceFactory' for '{serviceType.ShortDisplayName()}': no single implementation type in same assembly."
+                    let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no single implementation type in same assembly." (serviceType.ShortDisplayName())
+                    invalidOp msg
 
                 [ { Type = serviceType; ImplementationType = implementationTypes |> Seq.head }]
             | Some s ->
@@ -101,7 +102,9 @@ module TestServiceFactory =
                             |> Seq.tryHead
 
                         match constructor with
-                        | None -> invalidOp "Cannot use 'TestServiceFactory' for '{ImplementationType.ShortDisplayName()}': no public constructor."
+                        | None ->
+                            let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no public constructor." (t.ImplementationType.ShortDisplayName())
+                            invalidOp msg
                         | Some c ->
                                 c.GetParameters()
                                     |> Seq.iter(fun p -> addType serviceCollection p.ParameterType specialCases |> ignore)

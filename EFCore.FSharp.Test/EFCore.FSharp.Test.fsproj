@@ -19,8 +19,10 @@
     <Compile Include="TestUtilities\BuildReference.fs" />
     <Compile Include="TestUtilities\RelationalTestHelpers.fs" />
     <Compile Include="Internal\FSharpUtilitiesTest.fs" />
+    <Compile Include="Migrations\Design\FSharpMigrationsGeneratorTest.fs" />
     <Compile Include="Scaffolding\Internal\ModelCodeGeneratorTestBase.fs" />
     <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
+    <Compile Include="Scaffolding\Internal\FSharpDbContextGeneratorTest.fs" />
     <Compile Include="Tests.fs" />
     <ProjectReference Include="..\EFCore.FSharp\EFCore.FSharp.fsproj" />
   </ItemGroup>
