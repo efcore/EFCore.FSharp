@@ -597,12 +597,93 @@ module FSharpMigrationOperationGenerator =
             |> appendLine ")"
 
     let private generateDeleteDataOperation (op:DeleteDataOperation) (sb:IndentedStringBuilder) =
-        // TODO: implement
+        let parameters =
+            seq {
+                if notNull op.Schema then
+                    yield sprintf "schema = %s, " (op.Schema |> Literal)
+
+                yield sprintf "table = %s, " (op.Table |> Literal)
+
+                if op.KeyColumns.Length = 1 then
+                    yield sprintf "keyColumn = %s, " (op.KeyColumns.[0] |> Literal)
+                else
+                    yield sprintf "keyColumns = %s, " (op.KeyColumns |> Literal)
+
+                let length0 = op.KeyValues.GetLength(0)
+                let length1 = op.KeyValues.GetLength(1)
+
+                if length0 = 1 && length1 = 1 then
+                    yield sprintf "keyValue = %s" (op.KeyValues.[0,0] |> UnknownLiteral)
+                elif length0 = 1 then
+                    yield sprintf "keyValues = %s" (op.KeyValues |> toOnedimensionalArray false |> Literal)
+                elif length1 = 1 then
+                    let sb' = IndentedStringBuilder sb // sb' will be created with the indent already set to the correct level
+                    let lines = (op.KeyValues |> toOnedimensionalArray true |> LiteralList true sb')
+                    yield sprintf "keyValues = %s" lines
+                else
+                    yield sprintf "keyValues = %s" (op.KeyValues |> Literal2DArray)
+            }
+
         sb
+            |> appendLine ".DeleteData("
+            |> indent
+            |> appendLines parameters false
+            |> unindent
+            |> appendLine ")"
 
     let private generateUpdateDataOperation (op:UpdateDataOperation) (sb:IndentedStringBuilder) =
-        // TODO: implement
+        let parameters =
+            seq {
+                if notNull op.Schema then
+                    yield sprintf "schema = %s, " (op.Schema |> Literal)
+
+                yield sprintf "table = %s, " (op.Table |> Literal)
+
+                if op.KeyColumns.Length = 1 then
+                    yield sprintf "keyColumn = %s, " (op.KeyColumns.[0] |> Literal)
+                else
+                    yield sprintf "keyColumns = %s, " (op.KeyColumns |> Literal)
+
+                let length0 = op.KeyValues.GetLength(0)
+                let length1 = op.KeyValues.GetLength(1)
+
+                if length0 = 1 && length1 = 1 then
+                    yield sprintf "keyValue = %s" (op.KeyValues.[0,0] |> UnknownLiteral)
+                elif length0 = 1 then
+                    yield sprintf "keyValues = %s" (op.KeyValues |> toOnedimensionalArray false |> Literal)
+                elif length1 = 1 then
+                    let sb' = IndentedStringBuilder sb // sb' will be created with the indent already set to the correct level
+                    let lines = (op.KeyValues |> toOnedimensionalArray true |> LiteralList true sb')
+                    yield sprintf "keyValues = %s" lines
+                else
+                    yield sprintf "keyValues = %s" (op.KeyValues |> Literal2DArray)
+
+                if op.Columns.Length = 1 then
+                    yield sprintf "column = %s, " (op.Columns.[0] |> Literal)
+                else
+                    yield sprintf "columns = %s, " (op.Columns |> Literal)
+
+                let length0 = op.Values.GetLength(0)
+                let length1 = op.Values.GetLength(1)
+
+                if length0 = 1 && length1 = 1 then
+                    yield sprintf "value = %s" (op.Values.[0,0] |> UnknownLiteral)
+                elif length0 = 1 then
+                    yield sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> Literal)
+                elif length1 = 1 then
+                    let sb' = IndentedStringBuilder sb // sb' will be created with the indent already set to the correct level
+                    let lines = (op.Values |> toOnedimensionalArray true |> LiteralList true sb')
+                    yield sprintf "values = %s" lines
+                else
+                    yield sprintf "values = %s" (op.Values |> Literal2DArray)
+            }
+
         sb
+            |> appendLine ".UpdateData("
+            |> indent
+            |> appendLines parameters false
+            |> unindent
+            |> appendLine ")"
 
     let private generateOperation (op:MigrationOperation) =
         match op with
