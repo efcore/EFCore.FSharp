@@ -20,10 +20,19 @@ open System.Collections.Generic
 open Bricelam.EntityFrameworkCore.FSharp
 
 type FSharpDbContextGenerator
-    (providerCodeGenerator: 'a when 'a :> ProviderCodeGenerator,
-        legacyProviderCodeGenerator: IScaffoldingProviderCodeGenerator,
+    (providerCodeGenerators: IProviderConfigurationCodeGenerator seq,
+        legacyProviderCodeGenerators: IScaffoldingProviderCodeGenerator seq,
         annotationCodeGenerator : IAnnotationCodeGenerator) =
 
+    let providerCodeGenerator =
+        match Seq.isEmpty providerCodeGenerators with
+        | false -> providerCodeGenerators |> Seq.tryLast
+        | true ->
+            let name = "providerCodeGenerators"
+            invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
+        
+    let legacyProviderCodeGenerator = legacyProviderCodeGenerators |> Seq.tryLast
+        
     let mutable _entityTypeBuilderInitialized = false
 
     let entityLambdaIdentifier = "entity";
@@ -98,9 +107,21 @@ type FSharpDbContextGenerator
     let generateOnConfiguring (connectionString:string) (sb:IndentedStringBuilder) =      
 
         let connStringLine = //sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
-            match isNull providerCodeGenerator with
-                | true -> sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
-                | false -> sprintf "optionsBuilder%s" (connectionString |> providerCodeGenerator.GenerateUseProvider |> FSharpHelper.Fragment)
+            match providerCodeGenerator, legacyProviderCodeGenerator with
+            | Some pcg, _ ->
+                let contextOptions = pcg.GenerateContextOptions()
+                let useProviderCall =
+                    match isNull contextOptions with
+                    | true -> pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions())
+                    | false -> pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions()).Chain(contextOptions)
+
+                let fragment = FSharpHelper.Fragment useProviderCall
+
+                sprintf "optionsBuilder%s" fragment
+            | None, Some lpcg -> sprintf "optionsBuilder%s" (lpcg.GenerateUseProvider(connectionString, language))
+            | _, _ ->
+                let name = "providerCodeGenerators"
+                invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
             
         sb
             |> appendLine "override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) ="
@@ -135,7 +156,7 @@ type FSharpDbContextGenerator
         |> Seq.map (fun a ->
             let name = FSharpUtilities.delimitString(a.Name)
             let literal = FSharpUtilities.generateLiteral(a.Value)
-            sprintf ".HasAnnotation(%s, %s,)" name literal)
+            sprintf ".HasAnnotation(%s, %s)" name literal)
 
     let generateEntityTypes (entities: IEntityType seq) useDataAnnotations (sb:IndentedStringBuilder) =
         sb
