@@ -106,7 +106,7 @@ type FSharpDbContextGenerator
 
     let generateOnConfiguring (connectionString:string) (sb:IndentedStringBuilder) =      
 
-        let connStringLine = //sprintf "optionsBuilder%s" (legacyProviderCodeGenerator.GenerateUseProvider(connectionString, language))
+        let connStringLine =
             match providerCodeGenerator, legacyProviderCodeGenerator with
             | Some pcg, _ ->
                 let contextOptions = pcg.GenerateContextOptions()
@@ -117,8 +117,8 @@ type FSharpDbContextGenerator
 
                 let fragment = FSharpHelper.Fragment useProviderCall
 
-                sprintf "optionsBuilder%s" fragment
-            | None, Some lpcg -> sprintf "optionsBuilder%s" (lpcg.GenerateUseProvider(connectionString, language))
+                sprintf "optionsBuilder%s |> ignore" fragment
+            | None, Some lpcg -> sprintf "optionsBuilder%s |> ignore" (lpcg.GenerateUseProvider(connectionString, language))
             | _, _ ->
                 let name = "providerCodeGenerators"
                 invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
@@ -228,8 +228,14 @@ type FSharpDbContextGenerator
             let props =
                 properties |> Seq.map (fun p -> sprintf "%s.%s" lambdaIdentifier p.Name)
             
-            sprintf "(%s) |> box" (String.Join(", ", props))
+            sprintf "(%s)" (String.Join(", ", props))
 
+    let generatePropertyNameArray (properties : IReadOnlyList<IProperty>) =
+
+        let props =
+            properties |> Seq.map (fun p -> FSharpHelper.Literal p.Name)
+
+        sprintf "[| %s |]" (String.Join("; ", props))
 
     let getLinesFromAnnotations (annotatable : IAnnotatable) annotations =
         let annotationsToRemove = ResizeArray<IAnnotation>()
@@ -286,7 +292,7 @@ type FSharpDbContextGenerator
             |> Seq.iter(fun l -> sb |> appendLine l |> ignore)
 
             sb
-            |> appendLine " |> ignore"
+            |> appendLine "|> ignore"
             |> unindent
             |> unindent
             |> ignore
@@ -328,7 +334,7 @@ type FSharpDbContextGenerator
             else
                 
                 let lines = ResizeArray<string>()
-                lines.Add(sprintf ".HasKey(fun e -> %s :> obj)" (generateLambdaToKey key.Properties "e"))
+                lines.Add(sprintf ".HasKey(fun e -> box %s)" (generateLambdaToKey key.Properties "e"))
                 
                 if explicitName then
                     lines.Add(sprintf ".HasName(%s)" (FSharpHelper.Literal (key.Relational()).Name))
@@ -483,13 +489,13 @@ type FSharpDbContextGenerator
         let lines = ResizeArray<string>()
 
         lines.Add(sprintf ".HasOne(%s)" (match isNull fk.DependentToPrincipal with | false -> (sprintf "fun d -> d.%s" fk.DependentToPrincipal.Name)  | true -> ""))
-        lines.Add(sprintf ".%s(%s)" (match fk.IsUnique with | true -> "WithOne" | false -> "WithMany") (match isNull fk.PrincipalToDependent with | false -> (sprintf "fun p -> p.%s" fk.PrincipalToDependent.Name) | true -> ""))
+        lines.Add(sprintf ".%s(%s)" (match fk.IsUnique with | true -> "WithOne" | false -> "WithMany") (match isNull fk.PrincipalToDependent with | false -> FSharpHelper.Literal fk.PrincipalToDependent.Name | true -> ""))
 
         if not (fk.PrincipalKey.IsPrimaryKey()) then
             canUseDataAnnotations <- false
-            lines.Add(sprintf ".HasPrincipalKey%s(%s)" (match fk.IsUnique with | true -> (sprintf "<%s>" ((fk.PrincipalEntityType :> ITypeBase).DisplayName())) | false -> "") (sprintf "fun p -> p.%s" (generateLambdaToKey fk.PrincipalKey.Properties "p")) )
+            lines.Add(sprintf ".HasPrincipalKey%s(%s)" (match fk.IsUnique with | true -> (sprintf "<%s>" ((fk.PrincipalEntityType :> ITypeBase).DisplayName())) | false -> "") (generatePropertyNameArray fk.PrincipalKey.Properties) )
 
-        lines.Add(sprintf ".HasForeignKey%s(%s)" (match fk.IsUnique with | true -> (sprintf "<%s>" ((fk.DeclaringEntityType :> ITypeBase).DisplayName())) | false -> "") (sprintf "fun d -> d.%s" (generateLambdaToKey fk.Properties "d")) )
+        lines.Add(sprintf ".HasForeignKey%s(%s)" (match fk.IsUnique with | true -> (sprintf "<%s>" ((fk.DeclaringEntityType :> ITypeBase).DisplayName())) | false -> "") (generatePropertyNameArray fk.Properties) )
         
         let defaultOnDeleteAction = match fk.IsRequired with true -> DeleteBehavior.Cascade | false -> DeleteBehavior.ClientSetNull
 
@@ -590,7 +596,7 @@ type FSharpDbContextGenerator
             sb
                 |> appendEmptyLine
                 |> indent
-                |> append (sprintf "modelBuilder%s" (lines' |> Seq.head))
+                |> append (sprintf "modelBuilder%s |> ignore" (lines' |> Seq.head))
                 |> indent
                 |> appendLines (lines' |> Seq.tail) false
                 |> unindent
