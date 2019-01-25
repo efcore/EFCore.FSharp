@@ -278,14 +278,15 @@ type FSharpDbContextGenerator
             sb
             |> indent
             |> appendEmptyLine
-            |> append (sprintf "%s%s" entityLambdaIdentifier (lines |> Seq.head))
+            |> appendLine entityLambdaIdentifier
             |> indent
             |> ignore
 
-            lines |> Seq.tail
-            |> Seq.iter(fun l -> sb |> appendEmptyLine |> appendLine l |> ignore)
+            lines
+            |> Seq.iter(fun l -> sb |> appendLine l |> ignore)
 
             sb
+            |> appendLine " |> ignore"
             |> unindent
             |> unindent
             |> ignore
@@ -327,7 +328,7 @@ type FSharpDbContextGenerator
             else
                 
                 let lines = ResizeArray<string>()
-                lines.Add(sprintf ".HasKey(fun e -> %s)" (generateLambdaToKey key.Properties "e"))
+                lines.Add(sprintf ".HasKey(fun e -> %s :> obj)" (generateLambdaToKey key.Properties "e"))
                 
                 if explicitName then
                     lines.Add(sprintf ".HasName(%s)" (FSharpHelper.Literal (key.Relational()).Name))
@@ -607,7 +608,7 @@ type FSharpDbContextGenerator
             |> ignore
 
             if _entityTypeBuilderInitialized then
-                sb |> unindent |> appendLine ")" |> ignore
+                sb |> unindent |> appendLine ") |> ignore" |> ignore
 
         )
 
