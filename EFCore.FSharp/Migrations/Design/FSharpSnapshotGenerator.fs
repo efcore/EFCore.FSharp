@@ -279,6 +279,42 @@ type FSharpSnapshotGenerator (code : ICSharpHelper) =
         indexes |> Seq.iter (fun idx -> sb |> appendEmptyLine |> generateIndex funcId idx)
         sb
 
+    let processDataItem (props : IProperty list) (sb:IndentedStringBuilder) (data : IDictionary<string, obj>) =
+        
+        let writeProperty isFirst (p : IProperty) =
+            match data.TryGetValue p.Name with
+            | true, value ->
+                if not (isNull value) then
+                    if isFirst then
+                        sb |> appendLine ","
+                    else
+                        sb
+
+                    sb
+                    |> append (sprintf "%s = %s" (code.Identifier(p.Name)) (code.UnknownLiteral value) )
+                    |> ignore
+                else
+                    ()
+            | _ -> ()
+
+        
+        sb |> indent |> ignore
+
+        props |> Seq.head |> writeProperty true
+        props |> Seq.tail |> Seq.iter(fun p -> writeProperty false p)
+
+        ()
+    let processDataItems (data : IDictionary<string, obj> seq) (propsToOutput : IProperty list) (sb:IndentedStringBuilder) =
+        
+        (data |> Seq.head) |> processDataItem propsToOutput sb
+
+        data
+        |> Seq.tail
+        |> Seq.iter(fun d ->
+                sb |> appendLine ","
+                d |> processDataItem propsToOutput sb
+            )
+        sb
     member this.generateEntityTypeAnnotations (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
 
         let annotations = getAnnotations entityType
@@ -438,9 +474,19 @@ type FSharpSnapshotGenerator (code : ICSharpHelper) =
             |> this.generateForeignKeys funcId (getDeclaredForeignKeys entityType)
             |> this.generateOwnedTypes funcId (entityType |> getDeclaredReferencingForeignKeys |> Seq.filter(fun fk -> fk.IsOwnership))
 
-    member private this.generateData funcId (properties: IProperty seq) data (sb:IndentedStringBuilder) =
-        //TODO: implement
-        sb
+    member private this.generateData builderName (properties: IProperty seq) (data : IDictionary<string, obj> seq) (sb:IndentedStringBuilder) =
+        if Seq.isEmpty data then
+            sb
+        else
+            let propsToOutput = properties |> Seq.toList
+
+            sb
+            |> appendEmptyLine
+            |> appendLine (sprintf "%s.HasData(" builderName)
+            |> indent
+            |> processDataItems data propsToOutput
+            |> unindent
+            |> appendLine ")"
 
     member private this.generateEntityType (builderName:string) (entityType: IEntityType) (sb:IndentedStringBuilder) =
 
