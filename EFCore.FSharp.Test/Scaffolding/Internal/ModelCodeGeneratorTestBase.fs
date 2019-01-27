@@ -37,14 +37,14 @@ type ModelCodeGeneratorTestBase() =
             .AddSingleton<IScaffoldingProviderCodeGenerator, TestScaffoldingProviderCodeGenerator>()
             .AddSingleton<ICSharpDbContextGenerator, FSharpDbContextGenerator>()
             .AddSingleton<IModelCodeGenerator, FSharpModelGenerator>()
-            .AddSingleton<IMigrationsCodeGenerator, FSharpMigrationsGeneratorService>()
+            .AddSingleton<IMigrationsCodeGenerator, FSharpMigrationsGenerator>()
             .AddSingleton<IMigrationsScaffolder, FSharpMigrationsScaffolder>() |> ignore
 
-        let serviceMap (map : ServiceCollectionMap) =
-            map.TryAdd(typeof<ProviderCodeGenerator>, typeof<TestProviderCodeGenerator>, ServiceLifetime.Singleton) |> ignore
+        // let serviceMap (map : ServiceCollectionMap) =
+        //     map.TryAdd(typeof<ProviderCodeGenerator>, typeof<TestProviderCodeGenerator>, ServiceLifetime.Singleton) |> ignore
 
-        EntityFrameworkRelationalServicesBuilder(services)
-            .TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
+        // EntityFrameworkRelationalServicesBuilder(services)
+        //     .TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
 
     static member BuildNonValidatingConventionSet () =
         let services = ServiceCollection()                

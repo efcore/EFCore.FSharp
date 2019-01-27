@@ -12,30 +12,30 @@ open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
-open Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
+open Microsoft.EntityFrameworkCore.Design
 
-module rec FSharpSnapshotGenerator =
+type FSharpSnapshotGenerator (code : ICSharpHelper) =
 
-    let private getAnnotations (o:IAnnotatable) =
+    let getAnnotations (o:IAnnotatable) =
         ResizeArray (o.GetAnnotations())
 
-    let private appendLineIfTrue truth value b =
+    let appendLineIfTrue truth value b =
         if truth then
             b |> appendEmptyLine |> append value
         else
             b |> noop        
 
-    let private findValueConverter (p:IProperty) =
+    let findValueConverter (p:IProperty) =
         let mapping = findMapping p
 
         match mapping |> isNull with
         | true -> p.GetValueConverter()
         | false -> mapping.Converter
 
-    let private generateFluentApiForAnnotation (annotations: IAnnotation ResizeArray) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
+    let generateFluentApiForAnnotation (annotations: IAnnotation ResizeArray) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
 
         let annotationValueFunc' =
             match annotationValueFunc with
@@ -66,7 +66,7 @@ module rec FSharpSnapshotGenerator =
             if hasGenericTypes then
                 sb
                     |> append "<"
-                    |> append (String.Join(",", (genericTypes.Value |> Seq.map(FSharpHelper.Reference))))
+                    |> append (String.Join(",", (genericTypes.Value |> Seq.map(code.Reference))))
                     |> append ">"
                     |> ignore
 
@@ -75,7 +75,7 @@ module rec FSharpSnapshotGenerator =
                 |> ignore
 
             if annotationValue.IsSome && annotationValue.Value |> notNull then
-                sb |> append (annotationValue.Value |> UnknownLiteral) |> ignore
+                sb |> append (annotationValue.Value |> code.UnknownLiteral) |> ignore
 
             sb
                 |> append ")"
@@ -85,7 +85,7 @@ module rec FSharpSnapshotGenerator =
             
         sb
 
-    let private sort (entityTypes:IEntityType list) =
+    let sort (entityTypes:IEntityType list) =
         let entityTypeGraph = new Multigraph<IEntityType, int>()
         entityTypeGraph.AddVertices(entityTypes)
 
@@ -104,8 +104,8 @@ module rec FSharpSnapshotGenerator =
         sb
 
     let generateAnnotation (annotation:IAnnotation) (sb:IndentedStringBuilder) =
-        let name = annotation.Name |> Literal
-        let value = annotation.Value |> UnknownLiteral
+        let name = annotation.Name |> code.Literal
+        let value = annotation.Value |> code.UnknownLiteral
 
         sb
             |> append (sprintf ".HasAnnotation(%s, %s)" name value)
@@ -124,18 +124,18 @@ module rec FSharpSnapshotGenerator =
     let getMappingHints (hints : ConverterMappingHints) =
         seq {
             if hints.Size.HasValue then
-                yield (sprintf "size = Nullable(%s)" (hints.Size.Value |> Literal))               
+                yield (sprintf "size = Nullable(%s)" (hints.Size.Value |> code.Literal))               
             if hints.Precision.HasValue then
-                yield (sprintf "precision = Nullable(%s)" (hints.Precision.Value |> Literal))
+                yield (sprintf "precision = Nullable(%s)" (hints.Precision.Value |> code.Literal))
             if hints.Scale.HasValue then
-                yield (sprintf "scale = Nullable(%s)" (hints.Scale.Value |> Literal))
+                yield (sprintf "scale = Nullable(%s)" (hints.Scale.Value |> code.Literal))
             if hints.IsUnicode.HasValue then
-                yield (sprintf "unicode = Nullable(%s)" (hints.IsUnicode.Value |> Literal))
+                yield (sprintf "unicode = Nullable(%s)" (hints.IsUnicode.Value |> code.Literal))
 
             if hints :? RelationalConverterMappingHints then
                 let relationalHints = hints :?> RelationalConverterMappingHints
                 if relationalHints.IsFixedLength.HasValue then
-                    yield (sprintf "fixedLength = %s" (relationalHints.IsFixedLength.Value |> Literal))
+                    yield (sprintf "fixedLength = %s" (relationalHints.IsFixedLength.Value |> code.Literal))
         }
 
     let generatePropertyAnnotations (p:IProperty) (sb:IndentedStringBuilder) =
@@ -144,7 +144,7 @@ module rec FSharpSnapshotGenerator =
 
         if valueConverter |> notNull && valueConverter.MappingHints |> notNull then
             let hints = valueConverter.MappingHints
-            let storeType = valueConverter.ProviderClrType |> FSharpHelper.Reference
+            let storeType = valueConverter.ProviderClrType |> code.Reference
             let createStoreType = sprintf "(fun v -> Unchecked.defaultof<%s>)" storeType
 
             let mappingHints = hints |> getMappingHints |> join ", "
@@ -188,7 +188,7 @@ module rec FSharpSnapshotGenerator =
         if (baseType |> notNull) then
             sb
                 |> appendEmptyLine
-                |> append (sprintf "%s.HasBaseType(%s)" funcId (baseType.Name |> Literal))
+                |> append (sprintf "%s.HasBaseType(%s)" funcId (baseType.Name |> code.Literal))
         else
             sb
 
@@ -212,9 +212,9 @@ module rec FSharpSnapshotGenerator =
             |> appendEmptyLine
             |> append funcId
             |> append ".Property<"
-            |> append (clrType |> FSharpHelper.Reference)
+            |> append (clrType |> code.Reference)
             |> append ">("
-            |> append (p.Name |> Literal)
+            |> append (p.Name |> code.Literal)
             |> append ")"
             |> indent
             |> appendLineIfTrue p.IsConcurrencyToken ".IsConcurrencyToken()"
@@ -236,7 +236,7 @@ module rec FSharpSnapshotGenerator =
             |> appendEmptyLine
             |> append funcId
             |> append (if isPrimary then ".HasKey(" else ".HasAlternateKey(")
-            |> append (key.Properties |> Seq.map (fun p -> (p.Name |> Literal)) |> join ", ")
+            |> append (key.Properties |> Seq.map (fun p -> (p.Name |> code.Literal)) |> join ", ")
             |> append ")"
             |> indent
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Name Option.None "HasName" Option.None
@@ -263,7 +263,7 @@ module rec FSharpSnapshotGenerator =
             |> appendEmptyLine
             |> append funcId
             |> append ".HasIndex("
-            |> append (String.Join(", ", (idx.Properties |> Seq.map (fun p -> p.Name |> Literal))))
+            |> append (String.Join(", ", (idx.Properties |> Seq.map (fun p -> p.Name |> code.Literal))))
             |> append ")"
             |> indent
             |> appendLineIfTrue idx.IsUnique ".IsUnique()"
@@ -279,7 +279,7 @@ module rec FSharpSnapshotGenerator =
         indexes |> Seq.iter (fun idx -> sb |> appendEmptyLine |> generateIndex funcId idx)
         sb
 
-    let generateEntityTypeAnnotations (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
+    member this.generateEntityTypeAnnotations (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
 
         let annotations = getAnnotations entityType
 
@@ -310,7 +310,7 @@ module rec FSharpSnapshotGenerator =
             |> appendEmptyLine
             |> append funcId
             |> append ".ToTable("
-            |> append (tableName |> Literal)
+            |> append (tableName |> code.Literal)
             |> appendLineIfTrue hasSchema (sprintf ",%A" schema)
             |> append ") |> ignore"
             |> ignore
@@ -330,9 +330,9 @@ module rec FSharpSnapshotGenerator =
                 let propertyClrType = entityType.FindProperty(a.Value |> string).ClrType
                 sb
                     |> append "<"
-                    |> append (propertyClrType |> FSharpHelper.Reference)
+                    |> append (propertyClrType |> code.Reference)
                     |> append ">("
-                    |> append (a.Value |> UnknownLiteral)
+                    |> append (a.Value |> code.UnknownLiteral)
                     |> append ")"
                     |> ignore
             | None ->
@@ -353,7 +353,7 @@ module rec FSharpSnapshotGenerator =
                         a.Value
 
                 sb
-                    |> append (sprintf ".HasValue(%s)" (value |> UnknownLiteral))
+                    |> append (sprintf ".HasValue(%s)" (value |> code.UnknownLiteral))
                     |> ignore
             | None -> ()
 
@@ -377,7 +377,7 @@ module rec FSharpSnapshotGenerator =
 
         sb
 
-    let generateForeignKeyAnnotations (fk: IForeignKey) sb =
+    member private this.generateForeignKeyAnnotations (fk: IForeignKey) sb =
 
         let annotations = getAnnotations fk
 
@@ -385,64 +385,64 @@ module rec FSharpSnapshotGenerator =
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Name Option.None "HasConstraintName" Option.None
             |> generateAnnotations annotations
 
-    let private generateForeignKeyRelation (fk: IForeignKey) sb =
+    member private this.generateForeignKeyRelation (fk: IForeignKey) sb =
         let isUnique = fk.IsUnique
 
         sb
             |> append (if isUnique then ".WithOne(" else ".WithMany(")
-            |> appendIfTrue (fk.PrincipalToDependent |> notNull) (fk.PrincipalToDependent.Name |> Literal)
+            |> appendIfTrue (fk.PrincipalToDependent |> notNull) (fk.PrincipalToDependent.Name |> code.Literal)
             |> appendLine ")"
             |> append ".HasForeignKey("
-            |> appendIfTrue isUnique (sprintf "%s, " (fk.DeclaringEntityType.Name |> Literal))
-            |> append (fk.Properties |> Seq.map (fun p -> p.Name |> Literal) |> join ", ")
+            |> appendIfTrue isUnique (sprintf "%s, " (fk.DeclaringEntityType.Name |> code.Literal))
+            |> append (fk.Properties |> Seq.map (fun p -> p.Name |> code.Literal) |> join ", ")
             |> appendLine ")"
-            |> generateForeignKeyAnnotations fk
+            |> this.generateForeignKeyAnnotations fk
             |> ignore
 
         if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
             sb
                 |> appendEmptyLine
                 |> append ".HasPrincipalKey("
-                |> appendIfTrue isUnique (sprintf "%s, " (fk.PrincipalEntityType.Name |> Literal))
-                |> append (fk.PrincipalKey.Properties |> Seq.map (fun p -> p.Name |> Literal) |> join ", ")
+                |> appendIfTrue isUnique (sprintf "%s, " (fk.PrincipalEntityType.Name |> code.Literal))
+                |> append (fk.PrincipalKey.Properties |> Seq.map (fun p -> p.Name |> code.Literal) |> join ", ")
                 |> append ")"
                 |> ignore
 
         sb            
 
-    let generateForeignKey funcId (fk: IForeignKey) sb =
+    member private this.generateForeignKey funcId (fk: IForeignKey) sb =
         sb
             |> appendEmptyLine
-            |> append (sprintf "%s.HasOne(%s" funcId (fk.PrincipalEntityType.Name |> Literal))
-            |> appendIfTrue (fk.DependentToPrincipal |> notNull) (sprintf ", %s" (fk.DependentToPrincipal.Name |> Literal))
+            |> append (sprintf "%s.HasOne(%s" funcId (fk.PrincipalEntityType.Name |> code.Literal))
+            |> appendIfTrue (fk.DependentToPrincipal |> notNull) (sprintf ", %s" (fk.DependentToPrincipal.Name |> code.Literal))
             |> appendLine ")"
             |> indent
-            |> generateForeignKeyRelation fk
-            |> appendIfTrue (fk.DeleteBehavior <> DeleteBehavior.ClientSetNull) (sprintf ".OnDelete(%s)" (fk.DeleteBehavior |> Literal))
+            |> this.generateForeignKeyRelation fk
+            |> appendIfTrue (fk.DeleteBehavior <> DeleteBehavior.ClientSetNull) (sprintf ".OnDelete(%s)" (fk.DeleteBehavior |> code.Literal))
             |> appendLine " |> ignore"
             |> unindent
 
-    let generateForeignKeys funcId (foreignKeys: IForeignKey seq) sb =
-        foreignKeys |> Seq.iter (fun fk -> generateForeignKey funcId fk sb |> ignore)
+    member private this.generateForeignKeys funcId (foreignKeys: IForeignKey seq) sb =
+        foreignKeys |> Seq.iter (fun fk -> this.generateForeignKey funcId fk sb |> ignore)
         sb
 
-    let generateOwnedType funcId (ownership: IForeignKey) (sb:IndentedStringBuilder) =
-        generateEntityType funcId ownership.DeclaringEntityType sb
+    member private this.generateOwnedType funcId (ownership: IForeignKey) (sb:IndentedStringBuilder) =
+        this.generateEntityType funcId ownership.DeclaringEntityType sb
 
-    let generateOwnedTypes funcId (ownerships: IForeignKey seq) (sb:IndentedStringBuilder) =
-        ownerships |> Seq.iter (fun o -> generateOwnedType funcId o sb)
+    member private this.generateOwnedTypes funcId (ownerships: IForeignKey seq) (sb:IndentedStringBuilder) =
+        ownerships |> Seq.iter (fun o -> this.generateOwnedType funcId o sb)
         sb
 
-    let generateRelationships (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
+    member private this.generateRelationships (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
         sb
-            |> generateForeignKeys funcId (getDeclaredForeignKeys entityType)
-            |> generateOwnedTypes funcId (entityType |> getDeclaredReferencingForeignKeys |> Seq.filter(fun fk -> fk.IsOwnership))
+            |> this.generateForeignKeys funcId (getDeclaredForeignKeys entityType)
+            |> this.generateOwnedTypes funcId (entityType |> getDeclaredReferencingForeignKeys |> Seq.filter(fun fk -> fk.IsOwnership))
 
-    let generateData funcId (properties: IProperty seq) data (sb:IndentedStringBuilder) =
+    member private this.generateData funcId (properties: IProperty seq) data (sb:IndentedStringBuilder) =
+        //TODO: implement
         sb
 
-
-    let generateEntityType (builderName:string) (entityType: IEntityType) (sb:IndentedStringBuilder) =
+    member private this.generateEntityType (builderName:string) (entityType: IEntityType) (sb:IndentedStringBuilder) =
 
         let ownership = findOwnership entityType
 
@@ -453,8 +453,8 @@ module rec FSharpSnapshotGenerator =
 
         let declaration =
             match ownerNav with
-            | None -> (sprintf ".Entity(%s" (entityType.Name |> Literal))
-            | Some o -> (sprintf ".OwnsOne(%s, %s" (entityType.Name |> Literal) (o |> Literal))
+            | None -> (sprintf ".Entity(%s" (entityType.Name |> code.Literal))
+            | Some o -> (sprintf ".OwnsOne(%s, %s" (entityType.Name |> code.Literal) (o |> code.Literal))
 
         let funcId = "b"
 
@@ -471,48 +471,48 @@ module rec FSharpSnapshotGenerator =
                 | Some _ -> noop
                 | None -> generateKeys funcId (entityType |> getDeclaredKeys) (entityType |> findDeclaredPrimaryKey)
             |> generateIndexes funcId (entityType |> getDeclaredIndexes)
-            |> generateEntityTypeAnnotations funcId entityType
+            |> this.generateEntityTypeAnnotations funcId entityType
             |>
                 match ownerNav with
                 | None -> noop
-                | Some _ -> generateRelationships funcId entityType
-            |> generateData funcId (entityType.GetProperties()) (entityType |> getData true)
+                | Some _ -> this.generateRelationships funcId entityType
+            |> this.generateData funcId (entityType.GetProperties()) (entityType |> getData true)
             |> unindent
             |> appendEmptyLine
             |> appendLine ")) |> ignore"
             |> ignore
 
-    let generateEntityTypeRelationships builderName (entityType: IEntityType) (sb:IndentedStringBuilder) =
+    member private this.generateEntityTypeRelationships builderName (entityType: IEntityType) (sb:IndentedStringBuilder) =
 
         sb
             |> appendEmptyLine
             |> append builderName
             |> append ".Entity("
-            |> append (entityType.Name |> Literal)
+            |> append (entityType.Name |> code.Literal)
             |> appendLine(", (fun b ->")
             |> indent
-            |> generateRelationships "b" entityType
+            |> this.generateRelationships "b" entityType
             |> appendLine ")) |> ignore"
             |> ignore
 
 
-    let generateEntityTypes builderName (entities: IEntityType list) (sb:IndentedStringBuilder) =
+    member private this.generateEntityTypes builderName (entities: IEntityType list) (sb:IndentedStringBuilder) =
 
         let entitiesToWrite =
             entities |> Seq.filter (fun e -> (e.HasDefiningNavigation() |> not) && (e |> findOwnership |> isNull))
 
         entitiesToWrite
-            |> Seq.iter(fun e -> generateEntityType builderName e sb)
+            |> Seq.iter(fun e -> this.generateEntityType builderName e sb)
 
         let relationships =
             entitiesToWrite
             |> Seq.filter(fun e -> (e |> getDeclaredForeignKeys |> Seq.isEmpty |> not) || (e |> getDeclaredReferencingForeignKeys |> Seq.exists(fun fk -> fk.IsOwnership)))
 
-        relationships |> Seq.iter(fun e -> generateEntityTypeRelationships builderName e sb)
+        relationships |> Seq.iter(fun e -> this.generateEntityTypeRelationships builderName e sb)
 
         sb
 
-    let generate (builderName:string) (model:IModel) (sb:IndentedStringBuilder) =
+    member private this.generate (builderName:string) (model:IModel) (sb:IndentedStringBuilder) =
 
         let annotations = getAnnotations model
 
@@ -530,4 +530,8 @@ module rec FSharpSnapshotGenerator =
                 |> ignore
 
         let sortedEntities = model.GetEntityTypes() |> Seq.filter(fun et -> not et.IsQueryType) |> Seq.toList |> sort
-        sb |> generateEntityTypes builderName sortedEntities
+        sb |> this.generateEntityTypes builderName sortedEntities |> ignore
+
+    interface Microsoft.EntityFrameworkCore.Migrations.Design.ICSharpSnapshotGenerator with
+        member this.Generate(builderName, model, stringBuilder) =
+            this.generate builderName model stringBuilder

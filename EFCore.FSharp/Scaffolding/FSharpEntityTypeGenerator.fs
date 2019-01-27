@@ -15,24 +15,21 @@ module ScaffoldingTypes =
     type OptionOrNullable = | OptionTypes | NullableTypes
 
 open ScaffoldingTypes
+open Microsoft.EntityFrameworkCore.Design
+open Microsoft.EntityFrameworkCore.Internal
 
-module FSharpEntityTypeGenerator =
+type internal AttributeWriter(name:string) =
+    let parameters = List<string>()
+    member __.AddParameter p =
+        parameters.Add p
+    override __.ToString() =
+        match parameters |> Seq.isEmpty with
+        | true -> sprintf "[<%s>]" name
+        | false -> sprintf "[<%s(%s)>]" name (String.Join(", ", parameters))
 
-    type private AttributeWriter(name:string) =
-
-        let parameters = List<string>()
-
-        member __.AddParameter p =
-            parameters.Add p
-
-        override __.ToString() =
-            match parameters |> Seq.isEmpty with
-            | true -> sprintf "[<%s>]" name
-            | false -> sprintf "[<%s(%s)>]" name (String.Join(", ", parameters))
-
+type FSharpEntityTypeGenerator(code : ICSharpHelper) =
     let createAttributeQuick = AttributeWriter >> string
-
-    let private primitiveTypeNames =
+    let primitiveTypeNames =
         seq {
             yield (typedefof<bool>, "bool")
             yield (typedefof<byte>, "byte")
@@ -47,7 +44,7 @@ module FSharpEntityTypeGenerator =
         }
         |> dict
         
-    let rec private getTypeName optionOrNullable (t:Type) =
+    let rec getTypeName optionOrNullable (t:Type) =
 
         if t.IsArray then
             (getTypeName optionOrNullable (t.GetElementType())) + "[]"
@@ -67,7 +64,7 @@ module FSharpEntityTypeGenerator =
             | true, value -> value
             | _ -> t.Name
 
-    let private generatePrimaryKeyAttribute (p:IProperty) sb =
+    let generatePrimaryKeyAttribute (p:IProperty) sb =
 
         let key = getPrimaryKey p
 
@@ -76,7 +73,7 @@ module FSharpEntityTypeGenerator =
         else
             sb |> appendLine ("KeyAttribute" |> createAttributeQuick)
 
-    let private generateRequiredAttribute (p:IProperty) sb =
+    let generateRequiredAttribute (p:IProperty) sb =
 
         let isNullableOrOptionType (t:Type) =
             let typeInfo = t.GetTypeInfo()
@@ -88,7 +85,7 @@ module FSharpEntityTypeGenerator =
         else
             sb
 
-    let private generateColumnAttribute (p:IProperty) sb =
+    let generateColumnAttribute (p:IProperty) sb =
         let columnName = p.Relational().ColumnName
         let columnType = getConfiguredColumnType p
 
@@ -112,7 +109,7 @@ module FSharpEntityTypeGenerator =
             sb
 
 
-    let private generateMaxLengthAttribute (p:IProperty) sb =
+    let generateMaxLengthAttribute (p:IProperty) sb =
 
         let ml = p.GetMaxLength()
 
@@ -123,13 +120,13 @@ module FSharpEntityTypeGenerator =
                 | false -> "MaxLengthAttribute"
 
             let a = AttributeWriter(attrName)
-            a.AddParameter (FSharpHelper.Literal ml.Value)
+            a.AddParameter (code.Literal ml.Value)
 
             sb |> append (a |> string)
         else
             sb
 
-    let private generateTableAttribute (entityType : IEntityType) sb =
+    let generateTableAttribute (entityType : IEntityType) sb =
         sb |> append "// Annotations"
 
     let GenerateEntityTypeDataAnnotations entityType sb =
@@ -161,7 +158,7 @@ module FSharpEntityTypeGenerator =
             |> GenerateNavigationProperties entityType optionOrNullable
             |> unindent   
 
-    let private generateRecordTypeEntry useDataAnnotations optionOrNullable (p: IProperty) sb =
+    let generateRecordTypeEntry useDataAnnotations optionOrNullable (p: IProperty) sb =
 
         if useDataAnnotations then
             sb
@@ -175,13 +172,13 @@ module FSharpEntityTypeGenerator =
         sb |> appendLine (sprintf "%s: %s" p.Name typeName) |> ignore
         ()
         
-    let private writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
+    let writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
         properties
         |> Seq.iter(fun p -> generateRecordTypeEntry useDataAnnotations optionOrNullable p sb)
         
         sb
 
-    let private generateForeignKeyAttribute (n:INavigation) sb =
+    let generateForeignKeyAttribute (n:INavigation) sb =
 
         if n.IsDependentToPrincipal() && n.ForeignKey.PrincipalKey.IsPrimaryKey() then
             let a = "ForeignKeyAttribute" |> AttributeWriter
@@ -191,7 +188,7 @@ module FSharpEntityTypeGenerator =
         else
             sb
 
-    let private generateInversePropertyAttribute (n:INavigation) sb =
+    let generateInversePropertyAttribute (n:INavigation) sb =
         if n.ForeignKey.PrincipalKey.IsPrimaryKey() then
             let inverse = n.FindInverse()
             if isNull inverse then
@@ -203,7 +200,7 @@ module FSharpEntityTypeGenerator =
         else
             sb
 
-    let private generateNavigateTypeEntry (n:INavigation) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
+    let generateNavigateTypeEntry (n:INavigation) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
         if useDataAnnotations then
             sb
                 |> generateForeignKeyAttribute n
@@ -218,7 +215,7 @@ module FSharpEntityTypeGenerator =
                 referencedTypeName
         sb |> appendLine (sprintf "%s: %s" n.Name navigationType) |> ignore
 
-    let private writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
+    let writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
         nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations skipFinalNewLine optionOrNullable sb)
         sb
 
@@ -246,7 +243,7 @@ module FSharpEntityTypeGenerator =
             |> appendEmptyLine
             
 
-    let WriteCode (entityType: IEntityType) (useDataAnnotation: bool) createTypesAs optionOrNullable sb =
+    let writeCode (entityType: IEntityType) (useDataAnnotation: bool) createTypesAs optionOrNullable sb =
         
         let generate =
             match createTypesAs with
@@ -254,4 +251,10 @@ module FSharpEntityTypeGenerator =
             | RecordType -> GenerateRecord
         
         sb
+            |> indent
             |> generate entityType useDataAnnotation optionOrNullable
+            |> string
+
+    interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpEntityTypeGenerator with
+        member __.WriteCode(entityType, _, useDataAnnotations) =
+            writeCode entityType useDataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes (IndentedStringBuilder())

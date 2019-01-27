@@ -12,7 +12,10 @@ open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.EntityFrameworkCore.Internal
 
 
-type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextGenerator: ICSharpDbContextGenerator) =
+type FSharpModelGenerator
+    (dependencies : ModelCodeGeneratorDependencies,
+     contextGenerator : ICSharpDbContextGenerator,
+     entityTypeGenerator : ICSharpEntityTypeGenerator) =
     inherit ModelCodeGenerator(dependencies)
  
     let fileExtension = ".fs"
@@ -53,7 +56,6 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
                 |> writeNamespaces ``namespace``
                 |> append "module rec " |> append domainFileName |> appendLine " ="
                 |> appendEmptyLine
-                |> indent
 
     override __.Language = "F#"
 
@@ -81,7 +83,7 @@ type FSharpModelGenerator(dependencies: ModelCodeGeneratorDependencies, contextG
         model.GetEntityTypes()
             |> Seq.iter(fun entityType -> 
                 domainFileBuilder
-                    |> FSharpEntityTypeGenerator.WriteCode entityType options.UseDataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes
+                    |> append (entityTypeGenerator.WriteCode(entityType, ``namespace``, options.UseDataAnnotations))
                     |> ignore
             )
         domainFile.Code <- (domainFileBuilder |> string)

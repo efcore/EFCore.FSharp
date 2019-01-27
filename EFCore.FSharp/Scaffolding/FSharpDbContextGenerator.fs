@@ -22,7 +22,8 @@ open Bricelam.EntityFrameworkCore.FSharp
 type FSharpDbContextGenerator
     (providerCodeGenerators: IProviderConfigurationCodeGenerator seq,
         legacyProviderCodeGenerators: IScaffoldingProviderCodeGenerator seq,
-        annotationCodeGenerator : IAnnotationCodeGenerator) =
+        annotationCodeGenerator : IAnnotationCodeGenerator,
+        code : ICSharpHelper) =
 
     let providerCodeGenerator =
         match Seq.isEmpty providerCodeGenerators with
@@ -115,7 +116,7 @@ type FSharpDbContextGenerator
                     | true -> pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions())
                     | false -> pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions()).Chain(contextOptions)
 
-                let fragment = FSharpHelper.Fragment useProviderCall
+                let fragment = code.Fragment useProviderCall
 
                 sprintf "optionsBuilder%s |> ignore" fragment
             | None, Some lpcg -> sprintf "optionsBuilder%s |> ignore" (lpcg.GenerateUseProvider(connectionString, language))
@@ -233,7 +234,7 @@ type FSharpDbContextGenerator
     let generatePropertyNameArray (properties : IReadOnlyList<IProperty>) =
 
         let props =
-            properties |> Seq.map (fun p -> FSharpHelper.Literal p.Name)
+            properties |> Seq.map (fun p -> code.Literal p.Name)
 
         sprintf "[| %s |]" (String.Join("; ", props))
 
@@ -252,7 +253,7 @@ type FSharpDbContextGenerator
                 let line =
                     match isNull methodCall with
                     | true -> generateFluentApiWithLanguage language annotatable a
-                    | false -> FSharpHelper.Fragment methodCall
+                    | false -> code.Fragment methodCall
 
                 if not (isNull line) then
                     lines.Add line
@@ -337,7 +338,7 @@ type FSharpDbContextGenerator
                 lines.Add(sprintf ".HasKey(fun e -> box %s)" (generateLambdaToKey key.Properties "e"))
                 
                 if explicitName then
-                    lines.Add(sprintf ".HasName(%s)" (FSharpHelper.Literal (key.Relational()).Name))
+                    lines.Add(sprintf ".HasName(%s)" (code.Literal (key.Relational()).Name))
 
                 lines.AddRange(getLinesFromAnnotations key annotations)
 
@@ -356,8 +357,8 @@ type FSharpDbContextGenerator
         
             let parameterString =
                 match explicitSchema with
-                | true -> sprintf "%s, %s" (FSharpHelper.Literal tableName) (FSharpHelper.Literal schema)
-                | false -> FSharpHelper.Literal tableName
+                | true -> sprintf "%s, %s" (code.Literal tableName) (code.Literal schema)
+                | false -> code.Literal tableName
 
 
             let lines = ResizeArray<string>()
@@ -373,14 +374,14 @@ type FSharpDbContextGenerator
         annotations.AddRange(index.GetAnnotations())
 
         if not (String.IsNullOrEmpty(string index.[RelationalAnnotationNames.Name])) then
-            lines.Add(sprintf ".HasName(%s)" (FSharpHelper.Literal (index.Relational()).Name))
+            lines.Add(sprintf ".HasName(%s)" (code.Literal (index.Relational()).Name))
             annotations.RemoveAt(annotations.FindIndex(fun i -> i.Name = RelationalAnnotationNames.Name))
 
         if index.IsUnique then
             lines.Add(".IsUnique()")
 
         if not (isNull (index.Relational()).Filter) then
-            lines.Add(sprintf ".HasFilter(%s)" (FSharpHelper.Literal (index.Relational()).Filter))
+            lines.Add(sprintf ".HasFilter(%s)" (code.Literal (index.Relational()).Filter))
             annotations.RemoveAt(annotations.FindIndex(fun i -> i.Name = RelationalAnnotationNames.Filter))
 
         let linesToAdd = getLinesFromAnnotations index annotations
@@ -419,17 +420,17 @@ type FSharpDbContextGenerator
             let columnName = rel.ColumnName
 
             if not (isNull columnName) && columnName <> property.Name then
-                lines.Add(sprintf ".HasColumnName(%s)" (FSharpHelper.Literal columnName))
+                lines.Add(sprintf ".HasColumnName(%s)" (code.Literal columnName))
 
             let columnType = property.GetConfiguredColumnType()
 
             if not (isNull columnName) then
-                lines.Add(sprintf ".HasColumnType(%s)" (FSharpHelper.Literal columnType))
+                lines.Add(sprintf ".HasColumnType(%s)" (code.Literal columnType))
 
             let maxLength = property.GetMaxLength()
             
             if maxLength.HasValue then
-                lines.Add(sprintf ".HasMaxLength(%s)" (FSharpHelper.Literal maxLength.Value))
+                lines.Add(sprintf ".HasMaxLength(%s)" (code.Literal maxLength.Value))
 
         if property.IsUnicode().HasValue then
             lines.Add(sprintf ".IsUnicode(%s)" (match property.IsUnicode().Value with | true -> "" | false -> "false"))
@@ -438,13 +439,13 @@ type FSharpDbContextGenerator
             lines.Add ".IsFixedLength()"
 
         if not (isNull rel.DefaultValue) then
-            lines.Add(sprintf ".HasDefaultValue(%s)" (FSharpHelper.UnknownLiteral rel.DefaultValue))
+            lines.Add(sprintf ".HasDefaultValue(%s)" (code.UnknownLiteral rel.DefaultValue))
 
         if not (isNull rel.DefaultValueSql) then
-            lines.Add(sprintf ".HasDefaultValueSql(%s)" (FSharpHelper.Literal rel.DefaultValueSql))
+            lines.Add(sprintf ".HasDefaultValueSql(%s)" (code.Literal rel.DefaultValueSql))
 
         if not (isNull rel.ComputedColumnSql) then
-            lines.Add(sprintf ".HasComputedColumnSql(%s)" (FSharpHelper.Literal rel.ComputedColumnSql))
+            lines.Add(sprintf ".HasComputedColumnSql(%s)" (code.Literal rel.ComputedColumnSql))
 
         let valueGenerated = property.ValueGenerated
         let mutable isRowVersion = false
@@ -489,7 +490,7 @@ type FSharpDbContextGenerator
         let lines = ResizeArray<string>()
 
         lines.Add(sprintf ".HasOne(%s)" (match isNull fk.DependentToPrincipal with | false -> (sprintf "fun d -> d.%s" fk.DependentToPrincipal.Name)  | true -> ""))
-        lines.Add(sprintf ".%s(%s)" (match fk.IsUnique with | true -> "WithOne" | false -> "WithMany") (match isNull fk.PrincipalToDependent with | false -> FSharpHelper.Literal fk.PrincipalToDependent.Name | true -> ""))
+        lines.Add(sprintf ".%s(%s)" (match fk.IsUnique with | true -> "WithOne" | false -> "WithMany") (match isNull fk.PrincipalToDependent with | false -> code.Literal fk.PrincipalToDependent.Name | true -> ""))
 
         if not (fk.PrincipalKey.IsPrimaryKey()) then
             canUseDataAnnotations <- false
@@ -501,11 +502,11 @@ type FSharpDbContextGenerator
 
         if fk.DeleteBehavior <> defaultOnDeleteAction then
             canUseDataAnnotations <- false
-            lines.Add(sprintf ".OnDelete(%s)" (FSharpHelper.Literal fk.DeleteBehavior))
+            lines.Add(sprintf ".OnDelete(%s)" (code.Literal fk.DeleteBehavior))
 
         if not (String.IsNullOrEmpty(string fk.[RelationalAnnotationNames.Name])) then
             canUseDataAnnotations <- false
-            lines.Add(sprintf ".HasConstraintName(%s)" (FSharpHelper.Literal (fk.Relational().Name)))
+            lines.Add(sprintf ".HasConstraintName(%s)" (code.Literal (fk.Relational().Name)))
             annotations.RemoveAt(annotations.FindIndex(fun a -> a.Name = RelationalAnnotationNames.Name))
 
 
@@ -522,7 +523,7 @@ type FSharpDbContextGenerator
                 let line =
                     match isNull methodCall with
                     | true -> generateFluentApiWithLanguage language fk a
-                    | false -> FSharpHelper.Fragment methodCall
+                    | false -> code.Fragment methodCall
 
                 if not (isNull line) then
                     canUseDataAnnotations <- false
