@@ -1,4 +1,8 @@
 Microsoft.EntityFrameworkCore.Sqlite
-xunit
+Microsoft.EntityFrameworkCore.SqlServer
+Microsoft.EntityFrameworkCore.Specification.Tests
+Microsoft.CodeAnalysis
+FSharp.Compiler.Service
+Fantomas
 xunit.runner.visualstudio
-FSharp.Core
+FsUnit.xUnit

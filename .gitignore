@@ -289,3 +289,4 @@ tools/**
 /packages/
 /paket-files
 /.fake
+.vscode/
