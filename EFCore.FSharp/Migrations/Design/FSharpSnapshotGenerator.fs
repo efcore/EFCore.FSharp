@@ -456,7 +456,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper) =
             |> indent
             |> this.generateForeignKeyRelation fk
             |> appendIfTrue (fk.DeleteBehavior <> DeleteBehavior.ClientSetNull) (sprintf ".OnDelete(%s)" (fk.DeleteBehavior |> code.Literal))
-            |> appendLine " |> ignore"
+            |> appendLine "|> ignore"
             |> unindent
 
     member private this.generateForeignKeys funcId (foreignKeys: IForeignKey seq) sb =
@@ -539,6 +539,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper) =
             |> appendLine(", (fun b ->")
             |> indent
             |> this.generateRelationships "b" entityType
+            |> unindent
             |> appendLine ")) |> ignore"
             |> ignore
 
