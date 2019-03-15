@@ -40,10 +40,11 @@ type FSharpDbContextGenerator
     let language = "FSharp";
 
     let defaultNamespaces = [
-        "System";
-        "System.Collections.Generic";
-        "Microsoft.EntityFrameworkCore";
-        "Microsoft.EntityFrameworkCore.Metadata";
+        "System"
+        "System.Collections.Generic"
+        "Microsoft.EntityFrameworkCore"
+        "Microsoft.EntityFrameworkCore.Metadata"
+        "Bricelam.EntityFrameworkCore.FSharp.Extensions"
     ]
 
     let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
@@ -335,7 +336,7 @@ type FSharpDbContextGenerator
             else
                 
                 let lines = ResizeArray<string>()
-                lines.Add(sprintf ".HasKey(fun e -> box %s)" (generateLambdaToKey key.Properties "e"))
+                lines.Add(sprintf ".HasKey(fun e -> %s :> obj)" (generateLambdaToKey key.Properties "e"))
                 
                 if explicitName then
                     lines.Add(sprintf ".HasName(%s)" (code.Literal (key.Relational()).Name))
@@ -566,6 +567,7 @@ type FSharpDbContextGenerator
 
     let generateOnModelCreating (model:IModel) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
         sb.AppendLine("override this.OnModelCreating(modelBuilder: ModelBuilder) =")
+            |> appendLineIndent "modelBuilder.UseFSharp()"
             |> appendLineIndent "base.OnModelCreating(modelBuilder)"
             |> ignore
 

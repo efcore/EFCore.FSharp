@@ -19,3 +19,4 @@ module Conversion =
 type OptionConverter<'T> () =
   inherit Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<'T option, 'T>
             (Conversion.fromOption, Conversion.toOption)
+            
