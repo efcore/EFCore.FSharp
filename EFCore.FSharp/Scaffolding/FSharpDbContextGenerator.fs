@@ -475,7 +475,7 @@ type FSharpDbContextGenerator
         lines.AddRange generatedLines
 
         match lines.Count with
-        | 1 -> ()
+        //| 1 -> ()
         | 2 ->
             let lines' = ResizeArray<string>()
             lines'.Add (lines.[0] + lines.[1])

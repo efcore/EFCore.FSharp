@@ -2,6 +2,7 @@ namespace Bricelam.EntityFrameworkCore.FSharp
 
 open System
 open System.Collections.Generic
+open System.Reflection
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 
@@ -31,10 +32,13 @@ module Extensions =
             
             let registerOptionTypes () =
             
+                let filterOptionalProperties (p : PropertyInfo) =
+                    p.PropertyType.GetGenericTypeDefinition() = typedefof<Option<_>>
+
                 let types =
                     this.Model.GetEntityTypes()
-                    |> Seq.collect (fun e -> e.ClrType.GetProperties()  |> Seq.filter(fun p -> p.PropertyType = typedefof<Option<_>>))
-                    |> Seq.map (fun p -> p.ReflectedType)
+                    |> Seq.collect (fun e -> e.ClrType.GetProperties()  |> Seq.filter filterOptionalProperties)
+                    |> Seq.map (fun p -> p.PropertyType)
 
                 types
                 |> Seq.iter(fun t ->
