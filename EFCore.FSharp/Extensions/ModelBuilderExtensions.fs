@@ -8,6 +8,7 @@ open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 
 module Extensions =
 
+    let private genericOptionType = typedefof<Option<_>>
     let private genericOptionConverterType = typedefof<OptionConverter<_>>
 
     type ModelBuilder with
@@ -16,9 +17,16 @@ module Extensions =
             this.UseValueConverterForType(typeof<'a>, converter)
 
         member this.UseValueConverterForType(``type`` : Type, converter : ValueConverter) =
+            
+            let underlyingType = ``type`` |> SharedTypeExtensions.unwrapOptionType
+            
             this.Model.GetEntityTypes()
             |> Seq.iter(fun e ->
-                let properties = e.ClrType.GetProperties() |> Seq.filter(fun p -> p.PropertyType = ``type``)
+                let properties =
+                    e.ClrType.GetProperties()
+                    |> Seq.filter(fun p ->
+                        let t = p.PropertyType
+                        SharedTypeExtensions.isOptionType t && SharedTypeExtensions.unwrapOptionType t = underlyingType)
 
                 properties
                 |> Seq.iter(fun p ->
@@ -33,21 +41,32 @@ module Extensions =
             let registerOptionTypes () =
             
                 let filterOptionalProperties (p : PropertyInfo) =
-                    p.PropertyType.GetGenericTypeDefinition() = typedefof<Option<_>>
+                    SharedTypeExtensions.isOptionType p.PropertyType
 
                 let types =
                     this.Model.GetEntityTypes()
-                    |> Seq.collect (fun e -> e.ClrType.GetProperties()  |> Seq.filter filterOptionalProperties)
+                    |> Seq.collect (fun e -> e.ClrType.GetProperties())
+                    |> Seq.filter filterOptionalProperties
                     |> Seq.map (fun p -> p.PropertyType)
 
                 types
                 |> Seq.iter(fun t ->
 
-                    let converterType = genericOptionConverterType.MakeGenericType(t)
+                    let underlyingType = SharedTypeExtensions.unwrapOptionType t
+
+                    let converterType = genericOptionConverterType.MakeGenericType(underlyingType)
                     let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
 
                     this.UseValueConverterForType(t, converter) |> ignore
                 )
 
             registerOptionTypes ()            
-            
+
+    let useFSharp (modelBuilder : ModelBuilder) =
+        modelBuilder.UseFSharp()
+
+    let useValueConverter<'a> (converter : ValueConverter) (modelBuilder : ModelBuilder) =
+        modelBuilder.UseValueConverterForType(converter)
+
+    let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
+        modelBuilder.UseValueConverterForType(``type``, converter)            
