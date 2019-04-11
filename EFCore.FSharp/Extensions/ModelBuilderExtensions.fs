@@ -1,14 +1,11 @@
 namespace Bricelam.EntityFrameworkCore.FSharp
 
 open System
-open System.Collections.Generic
-open System.Reflection
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 
 module Extensions =
 
-    let private genericOptionType = typedefof<Option<_>>
     let private genericOptionConverterType = typedefof<OptionConverter<_>>
 
     type ModelBuilder with
@@ -18,15 +15,16 @@ module Extensions =
 
         member this.UseValueConverterForType(``type`` : Type, converter : ValueConverter) =
             
-            let underlyingType = ``type`` |> SharedTypeExtensions.unwrapOptionType
-            
             this.Model.GetEntityTypes()
             |> Seq.iter(fun e ->
                 let properties =
                     e.ClrType.GetProperties()
-                    |> Seq.filter(fun p ->
-                        let t = p.PropertyType
-                        SharedTypeExtensions.isOptionType t && SharedTypeExtensions.unwrapOptionType t = underlyingType)
+                    |> Seq.filter(fun p ->                        
+                        if SharedTypeExtensions.isOptionType p.PropertyType then
+                            let underlyingType = SharedTypeExtensions.unwrapOptionType p.PropertyType
+                            ``type`` = underlyingType
+                        else
+                            false)
 
                 properties
                 |> Seq.iter(fun p ->
@@ -40,15 +38,12 @@ module Extensions =
             
             let registerOptionTypes () =
             
-                let filterOptionalProperties (p : PropertyInfo) =
-                    SharedTypeExtensions.isOptionType p.PropertyType
-
                 let types =
                     this.Model.GetEntityTypes()
                     |> Seq.collect (fun e -> e.ClrType.GetProperties())
-                    |> Seq.filter filterOptionalProperties
                     |> Seq.map (fun p -> p.PropertyType)
-
+                    |> Seq.filter SharedTypeExtensions.isOptionType
+                    
                 types
                 |> Seq.iter(fun t ->
 
@@ -66,7 +61,7 @@ module Extensions =
         modelBuilder.UseFSharp()
 
     let useValueConverter<'a> (converter : ValueConverter) (modelBuilder : ModelBuilder) =
-        modelBuilder.UseValueConverterForType(converter)
+        modelBuilder.UseValueConverterForType<'a>(converter)
 
     let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType(``type``, converter)            

@@ -3,7 +3,7 @@ namespace Bricelam.EntityFrameworkCore.FSharp
 open System
 open System.Reflection
 
-module SharedTypeExtensions =
+module internal SharedTypeExtensions =
     
     let isValidEntityType (t:Type) =
             t.GetTypeInfo().IsClass
