@@ -567,7 +567,6 @@ type FSharpDbContextGenerator
 
     let generateOnModelCreating (model:IModel) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
         sb.AppendLine("override this.OnModelCreating(modelBuilder: ModelBuilder) =")
-            |> appendLineIndent "modelBuilder.UseFSharp()"
             |> appendLineIndent "base.OnModelCreating(modelBuilder)"
             |> ignore
 
@@ -623,7 +622,10 @@ type FSharpDbContextGenerator
 
         model.Relational().Sequences |> Seq.iter(fun s -> generateSequence s sb |> ignore)
 
-        sb |> unindent
+        sb
+        |> appendEmptyLine
+        |> appendLine "modelBuilder.RegisterOptionTypes()"
+        |> unindent
 
     let generateClass model contextName connectionString useDataAnnotations sb =
         sb

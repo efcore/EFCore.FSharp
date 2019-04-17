@@ -17,16 +17,8 @@ module Extensions =
             
             this.Model.GetEntityTypes()
             |> Seq.iter(fun e ->
-                let properties =
-                    e.ClrType.GetProperties()
-                    |> Seq.filter(fun p ->                        
-                        if SharedTypeExtensions.isOptionType p.PropertyType then
-                            let underlyingType = SharedTypeExtensions.unwrapOptionType p.PropertyType
-                            ``type`` = underlyingType
-                        else
-                            false)
-
-                properties
+                e.ClrType.GetProperties()
+                |> Seq.filter(fun p -> p.PropertyType = ``type``)
                 |> Seq.iter(fun p ->
                     this.Entity(e.Name).Property(p.Name).HasConversion(converter) |> ignore
                 )
@@ -34,31 +26,27 @@ module Extensions =
 
             this
 
-        member this.UseFSharp () =
+        member this.RegisterOptionTypes () =
+
+            let makeOptionConverter t =
+                let underlyingType = SharedTypeExtensions.unwrapOptionType t
+                let converterType = genericOptionConverterType.MakeGenericType(underlyingType)
+                let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
+                converter
             
-            let registerOptionTypes () =
-            
-                let types =
-                    this.Model.GetEntityTypes()
-                    |> Seq.collect (fun e -> e.ClrType.GetProperties())
-                    |> Seq.map (fun p -> p.PropertyType)
-                    |> Seq.filter SharedTypeExtensions.isOptionType
-                    
-                types
-                |> Seq.iter(fun t ->
+            let converterDetails =
+                this.Model.GetEntityTypes()
+                |> Seq.collect (fun e -> e.GetProperties())
+                |> Seq.filter (fun p -> SharedTypeExtensions.isOptionType p.ClrType)
+                |> Seq.map(fun p -> (p.Name, p.DeclaringType.Name, (makeOptionConverter p.ClrType)) )
+                
+            converterDetails
+            |> Seq.iter(fun (propName, entityName, converter) ->
+                this.Entity(entityName).Property(propName).HasConversion(converter) |> ignore
+            )
 
-                    let underlyingType = SharedTypeExtensions.unwrapOptionType t
-
-                    let converterType = genericOptionConverterType.MakeGenericType(underlyingType)
-                    let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
-
-                    this.UseValueConverterForType(t, converter) |> ignore
-                )
-
-            registerOptionTypes ()            
-
-    let useFSharp (modelBuilder : ModelBuilder) =
-        modelBuilder.UseFSharp()
+    let registerOptionTypes (modelBuilder : ModelBuilder) =
+        modelBuilder.RegisterOptionTypes()
 
     let useValueConverter<'a> (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType<'a>(converter)
