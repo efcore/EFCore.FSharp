@@ -45,9 +45,7 @@ module TestServiceFactory =
 
     let private getImplementationTypes (serviceType : Type) =
 
-        match serviceType.IsInterface with
-        | false -> [ { Type = serviceType; ImplementationType = serviceType } ]
-        | true ->
+        if serviceType.IsInterface then
             let serviceTypeOpt = tryGetEnumerableType serviceType
 
             let st = match serviceTypeOpt with | Some s -> s | None -> serviceType
@@ -68,6 +66,8 @@ module TestServiceFactory =
                 implementationTypes
                     |> Seq.map(fun t -> { Type = s; ImplementationType = t })
                     |> Seq.toList
+        else
+            [ { Type = serviceType; ImplementationType = serviceType } ]            
         
     let rec private addType (serviceCollection :ServiceCollection) (serviceType: Type) (specialCases : Implementation list) =
         let implementation =

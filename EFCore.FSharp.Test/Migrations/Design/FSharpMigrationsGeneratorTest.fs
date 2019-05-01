@@ -64,10 +64,10 @@ module FSharpMigrationsGeneratorTest =
             if not (invalidAnnotations.Contains(annotationName)) then
                 
                 let value, expected =
-                    match validAnnotations.ContainsKey(annotationName) with
-                    | true ->
+                    if validAnnotations.ContainsKey(annotationName) then
                         validAnnotations.[annotationName]
-                    | false -> Random() :> obj, generationDefault
+                    else
+                        Random() :> obj, generationDefault
 
                 metadataItem.[annotationName] <- value
 

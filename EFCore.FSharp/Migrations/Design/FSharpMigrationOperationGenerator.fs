@@ -30,24 +30,24 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> appendLine (value |> code.UnknownLiteral)      
 
     let writeParameterIfTrue trueOrFalse name value sb =
-        match trueOrFalse with
-        | true -> sb |> writeParameter name value
-        | false -> sb
+        if trueOrFalse then
+            sb |> writeParameter name value
+        else
+            sb
 
     let writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
         sb |> writeParameterIfTrue (value |> notNull) name value
 
     let writeNullable name (nullableParameter: Nullable<_>) sb =
 
-        match nullableParameter.HasValue with
-        | true ->
+        if nullableParameter.HasValue then
             let t = nullableParameter.GetType() |> string
             let value = nullableParameter |> code.Literal
             let fmt = sprintf ", %s = Nullable<%s>(%s)" name t value
 
             sb |> appendLine fmt
-
-        | false -> sb
+        else
+            sb
 
     let annotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
         annotations

@@ -197,11 +197,10 @@ and FakeDbDataReader (?columnNames:string[], ?results: ResizeArray<obj[]>) =
 
     override this.Read () =
         _currentRow <-
-            match _rowIndex < _results.Count with
-            | true ->
+            if _rowIndex < _results.Count then
                 _rowIndex <- _rowIndex + 1
                 _results.[_rowIndex]
-            | false -> null
+            else null
 
         not (isNull _currentRow)
 
@@ -211,11 +210,10 @@ and FakeDbDataReader (?columnNames:string[], ?results: ResizeArray<obj[]>) =
         _readAsyncCount <- _readAsyncCount + 1
 
         _currentRow <-
-            match _rowIndex < _results.Count with
-            | true ->
+            if _rowIndex < _results.Count then
                 _rowIndex <- _rowIndex + 1
                 _results.[_rowIndex]
-            | false -> null
+            else null
 
         not (isNull _currentRow) |> Task.FromResult
 

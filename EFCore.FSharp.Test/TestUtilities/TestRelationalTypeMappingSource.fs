@@ -118,26 +118,27 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
                 | false, false -> "just_string"
 
             let size =
-                match mappingInfo.Size.HasValue with
-                | true -> mappingInfo.Size
-                | false ->
-                    match mappingInfo.IsKeyOrIndex with
-                    | true ->
+                if mappingInfo.Size.HasValue then
+                    mappingInfo.Size
+                else
+                    if mappingInfo.IsKeyOrIndex then
                         let s = if isAnsi then 900 else 450
                         s |> Nullable
-                    | false -> Nullable<int>()
+                    else
+                        Nullable<int>()
  
             let name =
-                match isStoreTypeNameNull with
-                | false -> storeTypeName
-                | true ->
-                    let sizeStr = match size.HasValue with | true -> string size.Value | false -> "max"
+                if isStoreTypeNameNull then
+                    let sizeStr = if size.HasValue then string size.Value else "max"
                     sprintf "%s(%s)" baseName sizeStr
+                else
+                    storeTypeName
 
             let dbType =
-                match isAnsi with
-                | true -> Nullable<DbType>(DbType.AnsiString)
-                | false -> Nullable<DbType>()
+                if isAnsi then
+                    Nullable<DbType>(DbType.AnsiString)
+                else
+                    Nullable<DbType>()
 
             TestStringTypeMapping(
                 name,
@@ -147,28 +148,25 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
                 isFixedLength) :> RelationalTypeMapping
             
         | t when t = typeof<byte[]> ->
-            match mappingInfo.IsRowVersion.GetValueOrDefault() with
-            | true -> _rowversion
-            | false ->
-
+            if mappingInfo.IsRowVersion.GetValueOrDefault() then
+                _rowversion
+            else
                 let size =
-                    match mappingInfo.Size.HasValue with
-                    | true -> mappingInfo.Size
-                    | false ->
-                        match mappingInfo.IsKeyOrIndex with
-                        | true ->
+                    if mappingInfo.Size.HasValue then
+                        mappingInfo.Size
+                    else
+                        if mappingInfo.IsKeyOrIndex then
                             Nullable<int>(900)
-                        | false -> Nullable<int>()
+                        else
+                            Nullable<int>()
 
                 let name =
-                    match isNull storeTypeName with
-                    | false -> storeTypeName
-                    | true ->
+                    if isNull storeTypeName then
                         let sizeStr =
-                            match size.HasValue with
-                            | true -> string size.Value
-                            | false -> "max"
+                            if size.HasValue then string size.Value else "max"
                         sprintf "just_binary(%s)" sizeStr
+                    else
+                        storeTypeName
 
                 ByteArrayTypeMapping(name, Nullable<DbType>(DbType.Binary), size) :> RelationalTypeMapping
 
