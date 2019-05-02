@@ -23,9 +23,10 @@ type internal AttributeWriter(name:string) =
     member __.AddParameter p =
         parameters.Add p
     override __.ToString() =
-        match parameters |> Seq.isEmpty with
-        | true -> sprintf "[<%s>]" name
-        | false -> sprintf "[<%s(%s)>]" name (String.Join(", ", parameters))
+        if Seq.isEmpty parameters then
+            sprintf "[<%s>]" name
+        else
+            sprintf "[<%s(%s)>]" name (String.Join(", ", parameters))
 
 type FSharpEntityTypeGenerator(code : ICSharpHelper) =
     let createAttributeQuick = AttributeWriter >> string
@@ -115,9 +116,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
 
         if ml.HasValue then
             let attrName = 
-               match p.ClrType = typedefof<string> with
-                | true -> "StringLengthAttribute"
-                | false -> "MaxLengthAttribute"
+               if p.ClrType = typedefof<string> then "StringLengthAttribute" else "MaxLengthAttribute"
 
             let a = AttributeWriter(attrName)
             a.AddParameter (code.Literal ml.Value)

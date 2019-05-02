@@ -31,9 +31,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper) =
     let findValueConverter (p:IProperty) =
         let mapping = findMapping p
 
-        match mapping |> isNull with
-        | true -> p.GetValueConverter()
-        | false -> mapping.Converter
+        if isNull mapping then p.GetValueConverter() else mapping.Converter
 
     let generateFluentApiForAnnotation (annotations: IAnnotation ResizeArray) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
 
@@ -202,11 +200,9 @@ type FSharpSnapshotGenerator (code : ICSharpHelper) =
 
             isNullable <> p.IsNullable
 
-        let converter = p |> findValueConverter
+        let converter = findValueConverter p
         let clrType =
-            match converter |> isNull with
-            | true -> p.ClrType
-            | false -> converter.ProviderClrType
+            if isNull converter then p.ClrType else converter.ProviderClrType
 
         sb
             |> appendEmptyLine
@@ -494,9 +490,10 @@ type FSharpSnapshotGenerator (code : ICSharpHelper) =
         let ownership = findOwnership entityType
 
         let ownerNav =
-            match ownership |> isNull with
-            | true -> None
-            | false -> ownership.PrincipalToDependent.Name |> Some
+            if isNull ownership then
+                None
+            else
+                Some ownership.PrincipalToDependent.Name
 
         let declaration =
             match ownerNav with

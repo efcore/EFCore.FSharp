@@ -14,9 +14,10 @@ type TestProviderCodeGenerator(dependencies) =
     override this.GenerateUseProvider(connectionString, providerOptions) =
         
         let options =
-            match isNull providerOptions with
-            | true -> [| (connectionString :> obj) |]
-            | false -> [| (connectionString :> obj); (NestedClosureCodeFragment("x", providerOptions) :> obj) |]
+            if isNull providerOptions then
+                [| (connectionString :> obj) |]
+            else            
+                [| (connectionString :> obj); (NestedClosureCodeFragment("x", providerOptions) :> obj) |]
         
         MethodCallCodeFragment("UseTestProvider", options)
 

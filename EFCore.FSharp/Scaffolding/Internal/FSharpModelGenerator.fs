@@ -41,9 +41,10 @@ type FSharpModelGenerator
     let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) domainFileName =
 
         let namespaces =
-            match useDataAnnotations with
-            | true -> defaultNamespaces |> Seq.append annotationNamespaces |> Seq.append (model |> getNamespacesFromModel)
-            | false -> defaultNamespaces  |> Seq.append (model |> getNamespacesFromModel)
+            if useDataAnnotations then
+                defaultNamespaces |> Seq.append annotationNamespaces |> Seq.append (model |> getNamespacesFromModel)
+            else
+                defaultNamespaces  |> Seq.append (model |> getNamespacesFromModel)
 
         let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
             sb

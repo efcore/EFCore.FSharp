@@ -3,7 +3,7 @@ namespace Bricelam.EntityFrameworkCore.FSharp
 open System
 open System.Reflection
 
-module SharedTypeExtensions =
+module internal SharedTypeExtensions =
     
     let isValidEntityType (t:Type) =
             t.GetTypeInfo().IsClass
@@ -19,14 +19,10 @@ module SharedTypeExtensions =
         && typeInfo.GetGenericTypeDefinition() = typedefof<Option<_>>
 
     let unwrapNullableType (t:Type) =
-        match t |> isNullableType with
-        | true -> t |> Nullable.GetUnderlyingType
-        | false -> t
+        if isNullableType t then Nullable.GetUnderlyingType t else t
 
     let unwrapOptionType (t:Type) =
-        match t |> isOptionType with
-        | true -> t.GenericTypeArguments.[0]
-        | false -> t
+        if isOptionType t then t.GenericTypeArguments.[0] else t
 
     let makeNullable (nullable : bool) (t : Type) =
         if isNullableType t = nullable then
@@ -40,17 +36,16 @@ module SharedTypeExtensions =
         let isNullable = isNullableType t
 
         let underlyingNonNullableType =
-            match isNullable with
-            | true -> unwrapNullableType t
-            | false -> t
+            if isNullable then unwrapNullableType t else t
 
         if not (underlyingNonNullableType.GetTypeInfo()).IsEnum then
             t
         else
             let underlyingEnumType = Enum.GetUnderlyingType(underlyingNonNullableType)
-            match isNullable with
-            | true -> makeNullable true underlyingEnumType
-            | false -> underlyingEnumType
+            if isNullable then
+                makeNullable true underlyingEnumType
+            else
+                underlyingEnumType
 
     let isInteger (t:Type) = 
         let t' = t |> unwrapNullableType |> unwrapOptionType

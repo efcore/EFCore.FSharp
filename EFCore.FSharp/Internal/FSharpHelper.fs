@@ -163,11 +163,10 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
                     builder.Append(this.ReferenceFullName (t.DeclaringType) useFullName).Append(".") |> ignore
 
                 let name =
-                    match useFullName with
-                    | true -> t.DisplayName()
-                    | false -> t.ShortDisplayName()
+                    if useFullName then t.DisplayName() else t.ShortDisplayName()
 
                 builder.Append(name) |> string
+
     member private this.ensureDecimalPlaces (number:string) =
         if number.IndexOf('.') >= 0 then number else number + ".0"
 
@@ -279,11 +278,10 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
         sb |> append "(" |> ignore
 
-        match (this.handleList args false sb) with
-        | true ->
+        if (this.handleList args false sb) then
             sb |> append ")" |> ignore
             true
-        | false -> false
+        else false
 
     member private this.handleList exps simple sb =
         let mutable separator = String.Empty
@@ -330,9 +328,9 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
                 if (not (this.handleExpression callExpr.Object false sb)) then
                     exitEarly <- true
             
-            match exitEarly with
-            | true -> false
-            | false ->
+            if exitEarly then
+                false
+            else
                 sb |> append "." |> append callExpr.Method.Name |> ignore
                 this.handleArguments callExpr.Arguments sb
 
@@ -374,9 +372,10 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         )
 
         let folder previous current =
-            match String.IsNullOrEmpty previous with
-            | true -> this.getSimpleEnumValue t (Enum.GetName(t, current))
-            | false -> previous + " | " + this.getSimpleEnumValue t (Enum.GetName(t, current))
+            if String.IsNullOrEmpty previous then
+                this.getSimpleEnumValue t (Enum.GetName(t, current))
+            else
+                previous + " | " + this.getSimpleEnumValue t (Enum.GetName(t, current))
 
         allValues |> Seq.fold folder ""
 
@@ -385,9 +384,10 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         let t = value.GetType()
         let name = Enum.GetName(t, value)
 
-        match isNull name with
-        | true -> this.getCompositeEnumValue t value
-        | false -> this.getSimpleEnumValue t name
+        if isNull name then
+            this.getCompositeEnumValue t value
+        else
+            this.getSimpleEnumValue t name
 
     member private this.LiteralList (vertical: bool) (sb:IndentedStringBuilder) (values: IReadOnlyList<obj>) =
         this.literalList values vertical sb
@@ -488,9 +488,10 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
         b.Append(result) |> ignore
 
-        match f.ChainedCall |> isNull with
-            | false -> this.buildFragment f.ChainedCall b
-            | true -> b
+        if isNull f.ChainedCall then
+            b
+        else        
+            this.buildFragment f.ChainedCall b
 
     member private this.unknownLiteral (value: obj) =
         if isNull value then
@@ -526,8 +527,14 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
                 let literalType = value.GetType()
                 let mapping = relationalTypeMappingSource.FindMapping literalType
 
-                match isNull mapping with
-                | false ->
+                if isNull mapping then
+                    let t = value.GetType()
+                    let type' =
+                        if t |> isNullableType then t |> unwrapNullableType
+                        elif t |> isOptionType then t |> unwrapOptionType
+                        else t
+                    invalidOp (type' |> DesignStrings.UnknownLiteral)
+                else
                     let builder = new IndentedStringBuilder()
                     let expression = mapping.GenerateCodeLiteral(value)
                     let handled = this.handleExpression expression false builder
@@ -541,15 +548,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
                             )
 
                         args |> DesignStrings.LiteralExpressionNotSupported |> NotSupportedException |> raise
-                                
-                | true ->
-                    let t = value.GetType()
-                    let type' =
-                        if t |> isNullableType then t |> unwrapNullableType
-                        elif t |> isOptionType then t |> unwrapOptionType
-                        else t
-                    invalidOp (type' |> DesignStrings.UnknownLiteral)
-
+                         
 
 
     interface ICSharpHelper with

@@ -49,7 +49,7 @@ module FSharpUtilities =
         "new byte[] {" + String.Join(", ", value) + "}"
 
     let private generateLiteralBool (value: bool) =
-        match value with | true -> "true" | false -> "false"
+        if value then "true" else "false"
 
     let private generateLiteralInt32 (value: int) =
         value.ToString(CultureInfo.InvariantCulture)
@@ -204,9 +204,10 @@ module FSharpUtilities =
         sb.Append("(").Append(methodCallCodeFragment.Method).Append(")")
 
     let delimitString (str: string) =
-        match str.Contains(Environment.NewLine) with
-        | true -> str |> escapeVerbatimString |> sprintf "@\"%s\""
-        | false -> str |> escapeString |> sprintf "\"%s\""
+        if str.Contains(Environment.NewLine) then
+            str |> escapeVerbatimString |> sprintf "@\"%s\""
+        else
+            str |> escapeString |> sprintf "\"%s\""
 
     let rec getTypeName (t:Type) =
         if isNull t then

@@ -26,10 +26,10 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         let ns = getNamespaces columnOperation.ClrType
 
         let ns' =
-            match columnOperation :? AlterColumnOperation with
-            | true ->
+            if columnOperation :? AlterColumnOperation then
                 (columnOperation :?> AlterColumnOperation).OldColumn.ClrType |> getNamespaces
-            | false -> Seq.empty<String>
+            else
+                Seq.empty<String>
 
         ns |> Seq.append ns'
 

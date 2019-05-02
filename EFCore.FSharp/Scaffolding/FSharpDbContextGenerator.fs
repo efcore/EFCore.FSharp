@@ -26,11 +26,12 @@ type FSharpDbContextGenerator
         code : ICSharpHelper) =
 
     let providerCodeGenerator =
-        match Seq.isEmpty providerCodeGenerators with
-        | false -> providerCodeGenerators |> Seq.tryLast
-        | true ->
+        if Seq.isEmpty providerCodeGenerators then
             let name = "providerCodeGenerators"
             invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
+        else
+            providerCodeGenerators |> Seq.tryLast
+            
         
     let legacyProviderCodeGenerator = legacyProviderCodeGenerators |> Seq.tryLast
         
@@ -40,10 +41,11 @@ type FSharpDbContextGenerator
     let language = "FSharp";
 
     let defaultNamespaces = [
-        "System";
-        "System.Collections.Generic";
-        "Microsoft.EntityFrameworkCore";
-        "Microsoft.EntityFrameworkCore.Metadata";
+        "System"
+        "System.Collections.Generic"
+        "Microsoft.EntityFrameworkCore"
+        "Microsoft.EntityFrameworkCore.Metadata"
+        "Bricelam.EntityFrameworkCore.FSharp.Extensions"
     ]
 
     let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
@@ -112,9 +114,10 @@ type FSharpDbContextGenerator
             | Some pcg, _ ->
                 let contextOptions = pcg.GenerateContextOptions()
                 let useProviderCall =
-                    match isNull contextOptions with
-                    | true -> pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions())
-                    | false -> pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions()).Chain(contextOptions)
+                    if isNull contextOptions then
+                        pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions())
+                    else
+                        pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions()).Chain(contextOptions)
 
                 let fragment = code.Fragment useProviderCall
 
@@ -139,18 +142,20 @@ type FSharpDbContextGenerator
         annotations |> Seq.filter (fun a -> a.Name <> annotationToRemove)
 
     let checkAnnotation (model:IModel) (annotation: IAnnotation) =
-        match annotationCodeGenerator.IsHandledByConvention(model, annotation) with
-        | true -> (annotation |> Some, None)
-        | false ->
+        if annotationCodeGenerator.IsHandledByConvention(model, annotation) then
+            (annotation |> Some, None)
+        else
             let methodCall = annotationCodeGenerator.GenerateFluentApi(model, annotation)
             let line =
-                match isNull methodCall with
-                | true -> annotationCodeGenerator.GenerateFluentApi(model, annotation, language)
-                | false -> FSharpUtilities.generate(methodCall)
+                if isNull methodCall then
+                    annotationCodeGenerator.GenerateFluentApi(model, annotation, language)
+                else
+                    FSharpUtilities.generate(methodCall)
 
-            match isNull line with
-                | false -> (annotation |> Some, line |> Some)
-                | _ -> (None, None)
+            if isNull line then
+                (None, None)
+            else            
+                (annotation |> Some, line |> Some)
 
     let generateAnnotations (annotations: IAnnotation seq) =
         annotations
@@ -165,19 +170,21 @@ type FSharpDbContextGenerator
     let generateSequence (s: ISequence) (sb:IndentedStringBuilder) =
 
         let writeLineIfTrue truth name parameter (sb:IndentedStringBuilder) =
-            match truth with
-            | true -> sb |> appendLine (sprintf ".%s(%A)" name parameter)
-            | false -> sb
+            if truth then
+                sb |> appendLine (sprintf ".%s(%A)" name parameter)
+            else sb
 
         let methodName =
-            match s.ClrType = Sequence.DefaultClrType with
-            | true -> "HasSequence"
-            | false -> sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName(s.ClrType))
+            if s.ClrType = Sequence.DefaultClrType then
+                "HasSequence"
+            else
+                sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName(s.ClrType))
 
         let parameters =
-            match (s.Schema |> String.IsNullOrEmpty) && (s.Model.Relational().DefaultSchema <> s.Schema) with
-            | true -> sprintf "%s, %s" (s.Name |> FSharpUtilities.delimitString) (s.Schema |> FSharpUtilities.delimitString)
-            | false -> s.Name |> FSharpUtilities.delimitString
+            if (s.Schema |> String.IsNullOrEmpty) && (s.Model.Relational().DefaultSchema <> s.Schema) then
+                sprintf "%s, %s" (s.Name |> FSharpUtilities.delimitString) (s.Schema |> FSharpUtilities.delimitString)
+            else
+                s.Name |> FSharpUtilities.delimitString
 
         sb
             |> appendLine (sprintf "modelBuilder.%s(%s)" methodName parameters)
@@ -251,9 +258,10 @@ type FSharpDbContextGenerator
                 let methodCall = generateFluentApi annotatable a
 
                 let line =
-                    match isNull methodCall with
-                    | true -> generateFluentApiWithLanguage language annotatable a
-                    | false -> code.Fragment methodCall
+                    if isNull methodCall then
+                        generateFluentApiWithLanguage language annotatable a
+                    else
+                        code.Fragment methodCall
 
                 if not (isNull line) then
                     lines.Add line
@@ -335,7 +343,7 @@ type FSharpDbContextGenerator
             else
                 
                 let lines = ResizeArray<string>()
-                lines.Add(sprintf ".HasKey(fun e -> box %s)" (generateLambdaToKey key.Properties "e"))
+                lines.Add(sprintf ".HasKey(fun e -> %s :> obj)" (generateLambdaToKey key.Properties "e"))
                 
                 if explicitName then
                     lines.Add(sprintf ".HasName(%s)" (code.Literal (key.Relational()).Name))
@@ -356,9 +364,10 @@ type FSharpDbContextGenerator
         if explicitTable then
         
             let parameterString =
-                match explicitSchema with
-                | true -> sprintf "%s, %s" (code.Literal tableName) (code.Literal schema)
-                | false -> code.Literal tableName
+                if explicitSchema then
+                    sprintf "%s, %s" (code.Literal tableName) (code.Literal schema)
+                else
+                    code.Literal tableName
 
 
             let lines = ResizeArray<string>()
@@ -433,7 +442,7 @@ type FSharpDbContextGenerator
                 lines.Add(sprintf ".HasMaxLength(%s)" (code.Literal maxLength.Value))
 
         if property.IsUnicode().HasValue then
-            lines.Add(sprintf ".IsUnicode(%s)" (match property.IsUnicode().Value with | true -> "" | false -> "false"))
+            lines.Add(sprintf ".IsUnicode(%s)" (if property.IsUnicode().Value then "" else "false"))
 
         if rel.IsFixedLength then
             lines.Add ".IsFixedLength()"
@@ -459,9 +468,7 @@ type FSharpDbContextGenerator
                     | ValueGenerated.OnAdd -> "ValueGeneratedOnAdd"
                     | ValueGenerated.OnAddOrUpdate ->
                         isRowVersion <- property.IsConcurrencyToken
-                        match isRowVersion with
-                        | true -> "IsRowVersion"
-                        | false -> "ValueGeneratedOnAddOrUpdate"
+                        if isRowVersion then "IsRowVersion" else "ValueGeneratedOnAddOrUpdate"
                     | ValueGenerated.Never -> "ValueGeneratedNever"
                     | _ -> ""
 
@@ -474,11 +481,13 @@ type FSharpDbContextGenerator
         lines.AddRange generatedLines
 
         match lines.Count with
-        | 1 -> ()
         | 2 ->
-            let lines' = ResizeArray<string>()
-            lines'.Add (lines.[0] + lines.[1])
-            appendMultiLineFluentApi property.DeclaringEntityType lines' sb
+            let concatLines =
+                seq {
+                    yield (lines.[0] + lines.[1])
+                }
+            
+            appendMultiLineFluentApi property.DeclaringEntityType concatLines sb
         | _ -> appendMultiLineFluentApi property.DeclaringEntityType lines sb
 
 
@@ -489,16 +498,16 @@ type FSharpDbContextGenerator
 
         let lines = ResizeArray<string>()
 
-        lines.Add(sprintf ".HasOne(%s)" (match isNull fk.DependentToPrincipal with | false -> (sprintf "fun d -> d.%s" fk.DependentToPrincipal.Name)  | true -> ""))
-        lines.Add(sprintf ".%s(%s)" (match fk.IsUnique with | true -> "WithOne" | false -> "WithMany") (match isNull fk.PrincipalToDependent with | false -> code.Literal fk.PrincipalToDependent.Name | true -> ""))
+        lines.Add(sprintf ".HasOne(%s)" (if isNull fk.DependentToPrincipal then "" else (sprintf "fun d -> d.%s" fk.DependentToPrincipal.Name)))
+        lines.Add(sprintf ".%s(%s)" (if fk.IsUnique then "WithOne" else "WithMany") (if isNull fk.PrincipalToDependent then "" else code.Literal fk.PrincipalToDependent.Name))
 
         if not (fk.PrincipalKey.IsPrimaryKey()) then
             canUseDataAnnotations <- false
-            lines.Add(sprintf ".HasPrincipalKey%s(%s)" (match fk.IsUnique with | true -> (sprintf "<%s>" ((fk.PrincipalEntityType :> ITypeBase).DisplayName())) | false -> "") (generatePropertyNameArray fk.PrincipalKey.Properties) )
+            lines.Add(sprintf ".HasPrincipalKey%s(%s)" (if fk.IsUnique then (sprintf "<%s>" ((fk.PrincipalEntityType :> ITypeBase).DisplayName())) else "") (generatePropertyNameArray fk.PrincipalKey.Properties) )
 
-        lines.Add(sprintf ".HasForeignKey%s(%s)" (match fk.IsUnique with | true -> (sprintf "<%s>" ((fk.DeclaringEntityType :> ITypeBase).DisplayName())) | false -> "") (generatePropertyNameArray fk.Properties) )
+        lines.Add(sprintf ".HasForeignKey%s(%s)" (if fk.IsUnique then (sprintf "<%s>" ((fk.DeclaringEntityType :> ITypeBase).DisplayName())) else "") (generatePropertyNameArray fk.Properties) )
         
-        let defaultOnDeleteAction = match fk.IsRequired with true -> DeleteBehavior.Cascade | false -> DeleteBehavior.ClientSetNull
+        let defaultOnDeleteAction = if fk.IsRequired then DeleteBehavior.Cascade else DeleteBehavior.ClientSetNull
 
         if fk.DeleteBehavior <> defaultOnDeleteAction then
             canUseDataAnnotations <- false
@@ -521,9 +530,10 @@ type FSharpDbContextGenerator
                 let methodCall = generateFluentApi fk a
 
                 let line =
-                    match isNull methodCall with
-                    | true -> generateFluentApiWithLanguage language fk a
-                    | false -> code.Fragment methodCall
+                    if isNull methodCall then
+                        generateFluentApiWithLanguage language fk a
+                    else
+                        code.Fragment methodCall
 
                 if not (isNull line) then
                     canUseDataAnnotations <- false
@@ -621,7 +631,10 @@ type FSharpDbContextGenerator
 
         model.Relational().Sequences |> Seq.iter(fun s -> generateSequence s sb |> ignore)
 
-        sb |> unindent
+        sb
+        |> appendEmptyLine
+        |> appendLine "modelBuilder.RegisterOptionTypes()"
+        |> unindent
 
     let generateClass model contextName connectionString useDataAnnotations sb =
         sb

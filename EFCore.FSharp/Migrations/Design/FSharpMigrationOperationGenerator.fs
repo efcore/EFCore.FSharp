@@ -30,24 +30,24 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> appendLine (value |> code.UnknownLiteral)      
 
     let writeParameterIfTrue trueOrFalse name value sb =
-        match trueOrFalse with
-        | true -> sb |> writeParameter name value
-        | false -> sb
+        if trueOrFalse then
+            sb |> writeParameter name value
+        else
+            sb
 
     let writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
         sb |> writeParameterIfTrue (value |> notNull) name value
 
     let writeNullable name (nullableParameter: Nullable<_>) sb =
 
-        match nullableParameter.HasValue with
-        | true ->
+        if nullableParameter.HasValue then
             let t = nullableParameter.GetType() |> string
             let value = nullableParameter |> code.Literal
             let fmt = sprintf ", %s = Nullable<%s>(%s)" name t value
 
             sb |> appendLine fmt
-
-        | false -> sb
+        else
+            sb
 
     let annotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
         annotations
@@ -198,6 +198,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 else
                     noop
             |> append ")"
+            |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> code.Reference))
             |> annotations (op.GetAnnotations())
             |> oldAnnotations (op.OldColumn.GetAnnotations())
             |> unindent
@@ -316,6 +317,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     else
                         noop
                 |> append ")"
+                |> appendIfTrue (c.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (c.ClrType |> unwrapOptionType |> code.Reference))
                 |> indent
                 |> annotations (c.GetAnnotations())
                 |> unindent
