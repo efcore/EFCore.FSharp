@@ -18,16 +18,27 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
     let toOnedimensionalArray firstDimension (a : obj[,]) =
         Array.init a.Length (fun i -> if firstDimension then a.[i, 0] else a.[0, i])
 
+    let sanitiseName name =
+        if FSharpUtilities.isKeyword name then sprintf "``%s``" name else name
+
     let writeName nameValue sb =
         sb
             |> append "name = " |> appendLine (nameValue |> code.UnknownLiteral)
 
+    let sanitiseValue (value : obj) =
+        let baseValue = value |> code.UnknownLiteral
+        
+        match value with
+        | :? Nullable<_> -> sprintf "Nullable(%s)" baseValue
+        | _ -> baseValue
+
     let writeParameter name value sb =
-        sb
-            |> append ","
-            |> append (if FSharpUtilities.isKeyword name then sprintf "``%s``" name else name)
-            |> append " = "
-            |> appendLine (value |> code.UnknownLiteral)      
+        
+        let n = sanitiseName name
+        let v = value |> sanitiseValue
+        let fmt = sprintf ", %s = %s" n v
+
+        sb |> append fmt
 
     let writeParameterIfTrue trueOrFalse name value sb =
         if trueOrFalse then
@@ -38,14 +49,13 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
     let writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
         sb |> writeParameterIfTrue (value |> notNull) name value
 
-    let writeNullable name (nullableParameter: Nullable<_>) sb =
+    let writeNullableParameterIfValue name (nullableParameter: Nullable<_>) sb =
 
         if nullableParameter.HasValue then
-            let t = nullableParameter.GetType() |> string
-            let value = nullableParameter |> code.Literal
-            let fmt = sprintf ", %s = Nullable<%s>(%s)" name t value
+            let value = nullableParameter |> sanitiseValue
+            let fmt = sprintf ", %s = %s" (sanitiseName name) value
 
-            sb |> appendLine fmt
+            sb |> append fmt
         else
             sb
 
@@ -94,8 +104,9 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeOptionalParameter "type" op.ColumnType
-            |> writeParameterIfTrue (op.IsUnicode ?= false) "unicode" "false"
-            |> writeNullable "maxLength" op.MaxLength
+            |> writeNullableParameterIfValue "unicode" op.IsUnicode
+            |> writeNullableParameterIfValue "maxLength" op.MaxLength
+            |> writeNullableParameterIfValue "fixedLength" op.IsFixedLength
             |> writeParameterIfTrue op.IsRowVersion "rowVersion" true
             |> writeParameter "nullable" op.IsNullable
             |>
@@ -169,8 +180,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameter "table" op.Table
             |> writeOptionalParameter "type" op.ColumnType
-            |> writeParameterIfTrue (op.IsUnicode ?= false) "unicode" "false"
-            |> writeNullable "maxLength" op.MaxLength
+            |> writeNullableParameterIfValue "unicode" op.IsUnicode
+            |> writeNullableParameterIfValue "maxLength" op.MaxLength
             |> writeParameterIfTrue op.IsRowVersion "rowVersion" true
             |> writeParameter "nullable" op.IsNullable
             |>
@@ -184,8 +195,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     noop
             |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
             |> writeOptionalParameter "oldType" op.OldColumn.ColumnType
-            |> writeParameterIfTrue (op.OldColumn.IsUnicode ?= false) "oldUnicode" "false"
-            |> writeNullable "oldMaxLength" op.OldColumn.MaxLength
+            |> writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
+            |> writeNullableParameterIfValue "oldMaxLength" op.OldColumn.MaxLength
             |> writeParameterIfTrue op.OldColumn.IsRowVersion "oldRowVersion" true
             |> writeParameter "oldNullable" op.OldColumn.IsNullable
             |>
@@ -219,12 +230,12 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeName op.Name
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
-            |> writeNullable "minValue " op.MinValue
-            |> writeNullable "maxValue " op.MaxValue
+            |> writeNullableParameterIfValue "minValue " op.MinValue
+            |> writeNullableParameterIfValue "maxValue " op.MaxValue
             |> writeParameterIfTrue op.IsCyclic "cyclic" "true"
             |> writeParameterIfTrue (op.OldSequence.IncrementBy <> 1) "oldIncrementBy" op.OldSequence.IncrementBy
-            |> writeNullable "oldMinValue " op.OldSequence.MinValue
-            |> writeNullable "oldMaxValue " op.OldSequence.MaxValue
+            |> writeNullableParameterIfValue "oldMinValue " op.OldSequence.MinValue
+            |> writeNullableParameterIfValue "oldMaxValue " op.OldSequence.MaxValue
             |> writeParameterIfTrue op.OldSequence.IsCyclic "oldCyclic" "true"
             |> append ")"
             |> annotations (op.GetAnnotations())
@@ -280,8 +291,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeOptionalParameter "schema" op.Schema
             |> writeParameterIfTrue (op.StartValue <> 1L) "startValue" op.StartValue
             |> writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
-            |> writeNullable "minValue " op.MinValue
-            |> writeNullable "maxValue " op.MaxValue
+            |> writeNullableParameterIfValue "minValue " op.MinValue
+            |> writeNullableParameterIfValue "maxValue " op.MaxValue
             |> writeParameterIfTrue op.IsCyclic "cyclic" "true"
             |> append ")"
             |> annotations (op.GetAnnotations())
@@ -304,8 +315,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 |> append "nullable = " |> append (c.IsNullable |> code.Literal)
                 |> writeParameterIfTrue (c.Name <> propertyName) "name" c.Name
                 |> writeParameterIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
-                |> writeParameterIfTrue (c.IsUnicode.HasValue && (not c.IsUnicode.Value)) "unicode" false
-                |> writeNullable "maxLength" c.MaxLength
+                |> writeNullableParameterIfValue "unicode" c.IsUnicode
+                |> writeNullableParameterIfValue "maxLength" c.MaxLength
                 |> writeParameterIfTrue (c.IsRowVersion) "rowVersion" c.IsRowVersion
                 |>
                     if c.DefaultValueSql |> notNull then
