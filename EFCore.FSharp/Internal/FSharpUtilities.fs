@@ -200,6 +200,9 @@ module FSharpUtilities =
             "yield";
           |]
 
+    let isKeyword str =
+        _keywords |> Seq.contains str
+
     let handleMethodCallCodeFragment (sb:StringBuilder) (methodCallCodeFragment: MethodCallCodeFragment) =
         sb.Append("(").Append(methodCallCodeFragment.Method).Append(")")
 
