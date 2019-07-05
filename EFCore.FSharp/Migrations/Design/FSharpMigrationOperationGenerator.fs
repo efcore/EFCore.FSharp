@@ -25,7 +25,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
     let writeParameter name value sb =
         sb
             |> append ","
-            |> append name
+            |> append (if FSharpUtilities.isKeyword name then sprintf "``%s``" name else name)
             |> append " = "
             |> appendLine (value |> code.UnknownLiteral)      
 
