@@ -60,31 +60,40 @@ type FSharpModelGenerator
 
     override __.Language = "F#"
 
-    override __.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, options: ModelCodeGenerationOptions) =
+    override __.GenerateModel(model: IModel, options: ModelCodeGenerationOptions) =
         let resultingFiles = ScaffoldedModel()
 
-        let generatedCode = contextGenerator.WriteCode(model, ``namespace``, contextName, connectionString, options.UseDataAnnotations, options.SuppressConnectionStringWarning)
+        let generatedCode = 
+            contextGenerator.WriteCode(model, 
+                                        options.ContextName, 
+                                        options.ConnectionString,
+                                        options.ContextNamespace,
+                                        options.ModelNamespace, 
+                                        options.UseDataAnnotations, 
+                                        options.SuppressConnectionStringWarning)
 
-        let dbContextFileName = contextName + fileExtension;
+        let dbContextFileName = options.ContextName + fileExtension;
 
         let contextFile =
             ScaffoldedFile(
                 Code = generatedCode,
-                Path = Path.Combine(contextDir, dbContextFileName))
+                Path = Path.Combine(options.ContextDir, dbContextFileName))
                 
         resultingFiles.ContextFile <- contextFile
 
-        let domainFileName = contextName.Replace("Context", "Domain")
+        let dbContextFileName = options.ContextName
 
         let domainFile = ScaffoldedFile()
-        domainFile.Path <- (domainFileName + fileExtension)
+        domainFile.Path <- (dbContextFileName + fileExtension)
 
-        let domainFileBuilder = createDomainFileContent model options.UseDataAnnotations ``namespace`` domainFileName
+        let domainFileBuilder = createDomainFileContent model options.UseDataAnnotations options.ContextNamespace dbContextFileName
 
         model.GetEntityTypes()
             |> Seq.iter(fun entityType -> 
                 domainFileBuilder
-                    |> append (entityTypeGenerator.WriteCode(entityType, ``namespace``, options.UseDataAnnotations))
+                    |> append (entityTypeGenerator.WriteCode(entityType, 
+                                                                options.ModelNamespace, 
+                                                                options.UseDataAnnotations))
                     |> ignore
             )
         domainFile.Code <- (domainFileBuilder |> string)

@@ -9,9 +9,10 @@ type TestModificationCommandBatchFactory(commandBuilderFactory, sqlGenerationHel
 
     interface IModificationCommandBatchFactory with
         member this.Create () =
-            SingularModificationCommandBatch(
-                commandBuilderFactory,
-                sqlGenerationHelper,
-                updateSqlGenerator,
-                valueBufferFactoryFactory) :> _
+            let dependencies = 
+                ModificationCommandBatchFactoryDependencies(commandBuilderFactory,
+                                                            sqlGenerationHelper,
+                                                            updateSqlGenerator,
+                                                            valueBufferFactoryFactory, null, null)
+            SingularModificationCommandBatch(dependencies) :> _
 

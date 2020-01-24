@@ -25,6 +25,7 @@ open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
 open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal
 open Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 open Microsoft.EntityFrameworkCore.Migrations.Design
+open Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure
 
 type ModelCodeGeneratorTestBase() =
 
@@ -33,8 +34,7 @@ type ModelCodeGeneratorTestBase() =
             .AddSingleton<IRelationalTypeMappingSource, SqlServerTypeMappingSource>()
             .AddSingleton<IDatabaseModelFactory, SqlServerDatabaseModelFactory>()
             .AddSingleton<IProviderConfigurationCodeGenerator, SqlServerCodeGenerator>()
-            .AddSingleton<IAnnotationCodeGenerator, SqlServerAnnotationCodeGenerator>()
-            .AddSingleton<IScaffoldingProviderCodeGenerator, TestScaffoldingProviderCodeGenerator>()
+            .AddSingleton<IAnnotationCodeGenerator, SqlServerAnnotationCodeGenerator>()            
             .AddSingleton<ICSharpDbContextGenerator, FSharpDbContextGenerator>()
             .AddSingleton<IModelCodeGenerator, FSharpModelGenerator>()
             .AddSingleton<IMigrationsCodeGenerator, FSharpMigrationsGenerator>()
@@ -57,14 +57,20 @@ type ModelCodeGeneratorTestBase() =
 
         let serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope()        
         let context = serviceScope.ServiceProvider.GetService<DbContext>()
-            
-        CompositeConventionSetBuilder(context.GetService<IEnumerable<IConventionSetBuilder>>().ToList())
-            .AddConventions(context.GetService<ICoreConventionSetBuilder>().CreateConventionSet())
         
+        let conventionSet = 
+            (context :> IInfrastructure<IServiceProvider>)
+                .Instance
+                .GetRequiredService<IConventionSetBuilder>()
+                .CreateConventionSet()
 
+        ConventionSet.Remove(conventionSet.ModelFinalizedConventions, (typeof<ValidatingConvention>)) |> ignore
+
+        conventionSet
+        
     member this.Test((buildModel : ModelBuilder -> unit), (options : ModelCodeGenerationOptions), (assertScaffold : ScaffoldedModel -> unit), (assertModel : IModel -> unit)) =
         let modelBuilder = ModelBuilder(ModelCodeGeneratorTestBase.BuildNonValidatingConventionSet())
-        modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersionAnnotation) |> ignore
+        modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
         buildModel(modelBuilder)
 
         let model = modelBuilder.FinalizeModel()
@@ -80,10 +86,6 @@ type ModelCodeGeneratorTestBase() =
         let scaffoldedModel =
             generator.GenerateModel(
                 model,
-                "TestNamespace",
-                String.Empty,
-                "TestDbContext",
-                "Initial Catalog=TestDatabase",
                 options)
         assertScaffold(scaffoldedModel);
 

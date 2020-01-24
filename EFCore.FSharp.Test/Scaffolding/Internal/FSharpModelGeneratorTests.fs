@@ -18,8 +18,7 @@ module FSharpModelGeneratorTests =
         let services = 
             ServiceCollection()
                 .AddEntityFrameworkSqlServer()
-                .AddEntityFrameworkDesignTimeServices()
-                .AddSingleton<IScaffoldingProviderCodeGenerator, TestScaffoldingProviderCodeGenerator>()
+                .AddEntityFrameworkDesignTimeServices()                
                 .AddSingleton<IAnnotationCodeGenerator, AnnotationCodeGenerator>()
                 .AddSingleton<ProviderCodeGenerator, TestProviderCodeGenerator>()
                 .AddSingleton<IProviderConfigurationCodeGenerator, TestProviderCodeGenerator>()
@@ -45,14 +44,15 @@ module FSharpModelGeneratorTests =
         let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
         modelBuilder.Entity("TestEntity").Property<int>("Id").HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 0) |> ignore
 
+        let options = ModelCodeGenerationOptions()
+        options.ModelNamespace <- "TestNamespace"
+        options.ContextName <- "TestContext"
+        options.ConnectionString <- "Initial Catalog=TestDatabase"
+
         let result =
             generator.GenerateModel(
                 modelBuilder.Model,
-                "TestNamespace",
-                Path.Combine("..", "TestContextDir" + (string Path.DirectorySeparatorChar)),
-                "TestContext",
-                "Data Source=Test",
-                new ModelCodeGenerationOptions())
+                options)
 
         result.ContextFile.Path |> should equal (Path.Combine("..", "TestContextDir", "TestContext.fs"))
         Assert.NotEmpty(result.ContextFile.Code)

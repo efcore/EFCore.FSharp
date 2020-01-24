@@ -22,8 +22,6 @@ module internal IndentedStringBuilderUtilities =
     let appendEmptyLine sb =
         sb |> appendLine String.Empty
 
-    let noop sb = sb
-
     let appendIfTrue truth value b =
         if truth then
             b |> append value

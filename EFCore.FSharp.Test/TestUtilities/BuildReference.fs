@@ -4,9 +4,8 @@ open System
 open System.IO
 open Microsoft.CodeAnalysis
 open Microsoft.Extensions.DependencyModel
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Ast
 open Fantomas
+open FSharp.Compiler.SourceCodeServices
 
 type BuildReference = {
     CopyLocal : bool
@@ -85,9 +84,13 @@ type BuildSource = {
             
             let src = String.Join(Environment.NewLine, loadRefs) + Environment.NewLine + Environment.NewLine + (this.Sources |>Seq.head)
 
-            let ast = CodeFormatter.parse true src
+            let ast = CodeFormatter.ParseAsync ("", SourceOrigin.SourceString src, FSharpParsingOptions.Default, FSharpChecker.Create()) |> Async.RunSynchronously
             
-            let errors, code, assOpt = checker.CompileToDynamicAssembly([ast], projectName, BuildSource.ReferenceNames, None) |> Async.RunSynchronously
+            let asts = 
+                ast 
+                |> Array.map fst 
+                |> List.ofArray
+            let errors, code, assOpt = checker.CompileToDynamicAssembly(asts, projectName, BuildSource.ReferenceNames, None) |> Async.RunSynchronously
             
 
             let assembly = 

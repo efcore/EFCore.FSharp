@@ -1,7 +1,6 @@
 ﻿namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
-open System.Collections.Generic
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Migrations.Operations
@@ -9,10 +8,7 @@ open Microsoft.EntityFrameworkCore.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
-open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
-open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Migrations.Design
 
 type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigrationsGeneratorDependencies) = 
@@ -36,9 +32,9 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
     let getAnnotationNamespaces (items: IAnnotatable seq) = 
         let ignoredAnnotations = 
             [
-                RelationshipDiscoveryConvention.NavigationCandidatesAnnotationName
-                RelationshipDiscoveryConvention.AmbiguousNavigationsAnnotationName
-                InversePropertyAttributeConvention.InverseNavigationsAnnotationName
+                CoreAnnotationNames.NavigationCandidates
+                CoreAnnotationNames.AmbiguousNavigations
+                CoreAnnotationNames.InverseNavigations
             ]
 
         items
@@ -72,12 +68,12 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         let e = 
             (model.GetEntityTypes())
             |> Seq.collect (fun e -> 
-
+                
                 (toAnnotatable e)
-                ::  (e.GetDeclaredProperties() |> Seq.map toAnnotatable |> Seq.toList)
-                @  (e.GetDeclaredKeys() |> Seq.map toAnnotatable |> Seq.toList)
-                @  (e.GetDeclaredForeignKeys() |> Seq.map toAnnotatable |> Seq.toList)
-                @  (e.GetDeclaredIndexes() |> Seq.map toAnnotatable |> Seq.toList)
+                ::  (e.GetProperties() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetKeys() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetForeignKeys() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetIndexes() |> Seq.map toAnnotatable |> Seq.toList)
                 )
             |> Seq.toList            
 
@@ -102,22 +98,24 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         columnOperations |> Seq.append columnsInCreateTableOperations |> Seq.append annotatables
 
     let getModelNamspaces (model: IModel) =
-        
+        let typeMapping (property: IProperty) =
+            dependencies.RelationalTypeMappingSource.FindMapping(property)
+
         let namespaces =
             model.GetEntityTypes()
-                |> Seq.collect
-                    (fun e -> e.GetDeclaredProperties()
-                                |> Seq.collect (fun p ->
-                                                    let mapping = p.FindMapping()
-                                                    let ns =
-                                                        if  mapping |> isNull ||
-                                                            mapping.Converter |> isNull ||
-                                                            mapping.Converter.ProviderClrType |> isNull then
-                                                            p.ClrType
-                                                        else
-                                                            mapping.Converter.ProviderClrType
-                                                    getNamespaces ns))
-                |> Seq.toList                                
+            |> Seq.collect (fun e -> 
+                e.GetProperties()
+                |> Seq.collect (fun p ->
+                                    let mapping = typeMapping p
+                                    let ns =
+                                        if  mapping |> isNull ||
+                                            mapping.Converter |> isNull ||
+                                            mapping.Converter.ProviderClrType |> isNull then
+                                            p.ClrType
+                                        else
+                                            mapping.Converter.ProviderClrType
+                                    getNamespaces ns))
+            |> Seq.toList                                
 
         let annotationNamespaces = model |> getAnnotatablesByModel |> getAnnotationNamespaces
 
@@ -166,7 +164,7 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         let sb = IndentedStringBuilder()
 
         let allOperations =  (upOperations |> Seq.append downOperations)
-        let namespaces = allOperations |> getAllNamespaces |> Seq.append [contextType.Namespace]
+        let namespaces = allOperations |> getAllNamespaces |> Seq.append [contextType.Namespace]   
 
         sb
         |> appendAutoGeneratedTag

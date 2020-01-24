@@ -117,7 +117,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 elif not(isNull op.DefaultValue) then
                     writeParameter "defaultValue" op.DefaultValue
                 else
-                    noop
+                    id
             |> append ")"
             |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> code.Reference))
 
@@ -192,7 +192,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 elif op.DefaultValue |> notNull then
                     writeParameter "defaultValue" op.DefaultValue
                 else
-                    noop
+                    id
             |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
             |> writeOptionalParameter "oldType" op.OldColumn.ColumnType
             |> writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
@@ -207,7 +207,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 elif op.OldColumn.DefaultValue |> notNull then
                     writeParameter "oldDefaultValue" op.OldColumn.DefaultValue
                 else
-                    noop
+                    id
             |> append ")"
             |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> code.Reference))
             |> annotations (op.GetAnnotations())
@@ -284,7 +284,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 if op.ClrType <> typedefof<Int64> then
                     append (sprintf "<%s>" (op.ClrType |> code.Reference))
                 else
-                    noop
+                    id
             |> appendLine "("
             |> indent
             |> writeName op.Name
@@ -326,7 +326,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     elif c.DefaultValue |> notNull then
                         append (sprintf ", defaultValue = %s" (c.DefaultValue |> code.UnknownLiteral))
                     else
-                        noop
+                        id
                 |> append ")"
                 |> appendIfTrue (c.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (c.ClrType |> unwrapOptionType |> code.Reference))
                 |> indent

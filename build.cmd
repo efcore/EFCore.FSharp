@@ -1,2 +1,2 @@
 dotnet restore build.proj
-dotnet fake build %*
+dotnet fake -v build %*
