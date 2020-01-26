@@ -257,7 +257,7 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
     override __.FileExtension with get() = ".fs"
 
     // Defined in the order of when it's called during migration add
-    override this.GenerateMigration (_, migrationName, upOperations, downOperations) =
+    override this.GenerateMigration (migrationNamespace, migrationName, upOperations, downOperations) =
         tempUpOperations <- Seq.toList upOperations
         tempDownOperations <- Seq.toList downOperations 
         tempMigrationName <- migrationName
