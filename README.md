@@ -2,8 +2,8 @@
 Very rough upgrade to dot net core 3.1 of the good work done [here](https://github.com/bricelam/EFCore.FSharp).
 
 ## Known upgrade issues
-- Generics have a `+` in names. This needs to be manually removed.
-- Failing unit test in `FSharpMigrationsGeneratorTest`. There was significant change from EF 2.2 -> 3.1 in the MigrationsGenerator that made it non trivial to update. This may cause some odd behaviour. 
+- Generics have and some strings have `+` in names. This needs to be manually removed.
+- Code generation failing in some circumstances...
 
 ## Getting started
 - Add a reference to the `.nuget` package in the release folder.
