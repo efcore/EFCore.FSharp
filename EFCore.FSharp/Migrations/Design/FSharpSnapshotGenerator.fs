@@ -483,47 +483,130 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         sb
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Name Option.None "HasConstraintName" Option.None
-            |> generateAnnotations annotations
+            |> generateAnnotations annotations       
 
-    member private this.generateForeignKeyRelation (fk: IForeignKey) sb =
-        let isUnique = fk.IsUnique
+    member private this.generateForeignKey funcId (fk: IForeignKey) sb =
 
-        sb
-            |> append (if isUnique then ".WithOne(" else ".WithMany(")
-            |> appendIfTrue (fk.PrincipalToDependent |> notNull) (fk.PrincipalToDependent.Name |> code.Literal)
-            |> appendLine ")"
-            |> append ".HasForeignKey("
-            |> appendIfTrue isUnique (sprintf "%s, " (fk.DeclaringEntityType.Name |> code.Literal))
-            |> append (fk.Properties |> Seq.map (fun p -> p.Name |> code.Literal) |> join ", ")
-            |> appendLine ")"
-            |> this.generateForeignKeyAnnotations fk
+        let literalPropNames (properties: seq<IProperty>) = 
+            properties
+            |> Seq.map (fun p -> p.Name |> code.Literal)
+
+        if not fk.IsOwnership then
+            let dependent = 
+                if isNull fk.DependentToPrincipal then 
+                    code.UnknownLiteral null 
+                 else 
+                    fk.DependentToPrincipal.Name |> code.Literal
+
+            sb
+            |> append funcId
+            |> append ".HasOne("
+            |> append (fk.PrincipalEntityType.Name |> code.Literal)
+            |> append ","
+            |> append dependent
+            |> ignore
+        else
+            sb
+            |> append funcId
+            |> append ".WithOwner("
             |> ignore
 
-        if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
+            if notNull fk.DependentToPrincipal then
+                sb
+                |> append (fk.DependentToPrincipal.Name |> code.Literal)
+                |> ignore
+
+        sb
+        |> append ")"
+        |> appendEmptyLine
+        |> indent
+        |> ignore
+
+        if fk.IsUnique && (not fk.IsOwnership) then
             sb
+            |> append ".WithOne("
+            |> ignore
+
+            if notNull fk.PrincipalToDependent then
+                sb
+                |> append (fk.PrincipalToDependent.Name |> code.Literal)
+                |> ignore
+
+            sb
+            |> append (")")
+            |> append ".HasForeignKey("
+            |> append (fk.DeclaringEntityType.Name |> code.Literal)
+            |> append ", "
+            |> append (String.Join(",", (literalPropNames fk.Properties)))
+            |> append ")"
+            |> ignore
+
+            this.generateForeignKeyAnnotations fk sb |> ignore
+
+            if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
+                sb
                 |> appendEmptyLine
                 |> append ".HasPrincipalKey("
-                |> appendIfTrue isUnique (sprintf "%s, " (fk.PrincipalEntityType.Name |> code.Literal))
-                |> append (fk.PrincipalKey.Properties |> Seq.map (fun p -> p.Name |> code.Literal) |> join ", ")
+                |> append (fk.PrincipalEntityType.Name |> code.Literal)
+                |> append ", "
+                |> append (String.Join(", ", (literalPropNames fk.PrincipalKey.Properties)))
                 |> append ")"
                 |> ignore
 
-        sb            
+        else
+            if not fk.IsOwnership then
+                sb
+                |> append ".WithMany("
+                |> ignore
 
-    member private this.generateForeignKey funcId (fk: IForeignKey) sb =
-        sb
+                if notNull fk.PrincipalToDependent then
+                    sb
+                    |> append (fk.PrincipalToDependent.Name |> code.Literal)
+                    |> ignore
+
+                sb
+                |> append ")"
+                |> ignore
+
+            sb
             |> appendEmptyLine
-            |> append (sprintf "%s.HasOne(%s" funcId (fk.PrincipalEntityType.Name |> code.Literal))
-            |> appendIfTrue (fk.DependentToPrincipal |> notNull) (sprintf ", %s" (fk.DependentToPrincipal.Name |> code.Literal))
-            |> appendLine ")"
-            |> indent
-            |> this.generateForeignKeyRelation fk
-            |> appendIfTrue (fk.DeleteBehavior <> DeleteBehavior.ClientSetNull) (sprintf ".OnDelete(%s)" (fk.DeleteBehavior |> code.Literal))
-            |> appendLine "|> ignore"
-            |> unindent
+            |> append ".HasForeignKey("
+            |> append (String.Join(", ", (literalPropNames fk.Properties)))
+            |> append ")"
+            |> ignore
+
+            this.generateForeignKeyAnnotations fk sb |> ignore
+
+            if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
+                sb
+                |> appendEmptyLine
+                |> append ".HasPrincipalKey("
+                |> append (String.Join(", ", (literalPropNames fk.PrincipalKey.Properties)))
+                |> append ")"
+                |> ignore
+
+        if not fk.IsOwnership then
+            if fk.DeleteBehavior <> DeleteBehavior.ClientSetNull then
+                sb
+                |> appendEmptyLine
+                |> append ".OnDelete("
+                |> append (fk.DeleteBehavior |> code.Literal)
+                |> append ")"
+                |> ignore
+
+            if fk.IsRequired then
+                sb
+                |> appendEmptyLine
+                |> append ".IsRequired()"
+                |> ignore
+
+        sb
+        |> appendLine " |> ignore"
+        |> unindent
 
     member private this.generateForeignKeys funcId (foreignKeys: IForeignKey seq) sb =
-        foreignKeys |> Seq.iter (fun fk -> this.generateForeignKey funcId fk sb |> ignore)
+        foreignKeys 
+        |> Seq.iter (fun fk -> this.generateForeignKey funcId fk sb |> ignore)
         sb
 
     member private this.generateOwnedType funcId (ownership: IForeignKey) (sb:IndentedStringBuilder) =
