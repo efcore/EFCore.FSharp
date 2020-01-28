@@ -14,6 +14,7 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Storage
+open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
 type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalTypeMappingSource) =
 
@@ -352,7 +353,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
         genPropertyAnnotations
 
     member this.generateEntityTypeAnnotations (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
-
         let annotations = getAnnotations entityType
 
         let tryGetAnnotationByName (name:string) =
@@ -647,8 +647,13 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         let declaration =
             match ownerNav with
-            | None -> (sprintf ".Entity(%s" (entityType.Name |> code.Literal))
-            | Some o -> (sprintf ".OwnsOne(%s, %s" (entityType.Name |> code.Literal) (o |> code.Literal))
+            | None -> 
+                sprintf ".Entity(%s" (entityType.Name |> code.Literal)
+            | Some o -> 
+                if ownership.IsUnique then                    
+                    sprintf ".OwnsOne(%s, %s" (entityType.Name |> code.Literal) (o |> code.Literal)
+                else
+                    sprintf ".OwnsMany(%s, %s" (entityType.Name |> code.Literal) (o |> code.Literal)
 
         let funcId = "b"
 
@@ -717,8 +722,10 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                 |> indent
                 |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultSchema Option.None "HasDefaultSchema" Option.None
                 |> ignoreAnnotationTypes annotations RelationalAnnotationNames.DbFunction
-                |> ignoreAnnotationTypes annotations RelationalAnnotationNames.MaxIdentifierLength
+                |> ignoreAnnotationTypes annotations ChangeDetector.SkipDetectChangesAnnotation
+                |> ignoreAnnotationTypes annotations CoreAnnotationNames.ChangeTrackingStrategy
                 |> ignoreAnnotationTypes annotations CoreAnnotationNames.OwnedTypes
+                |> ignoreAnnotationTypes annotations RelationalAnnotationNames.CheckConstraints
                 |> generateAnnotations annotations
                 |> appendLine " |> ignore"
                 |> unindent

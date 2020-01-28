@@ -146,18 +146,25 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         match _builtInTypes.TryGetValue t with
         | true, value -> value
         | _ ->
-            if t |> isNullableType then sprintf "Nullable<%s>" (this.ReferenceFullName (t |> unwrapNullableType) useFullName)
-            elif t |> isOptionType then sprintf "%s option" (this.ReferenceFullName (t |> unwrapOptionType) useFullName)
+            if t |> isNullableType then 
+                sprintf "Nullable<%s>" (this.ReferenceFullName (t |> unwrapNullableType) useFullName)
+            elif t |> isOptionType then 
+                sprintf "%s option" (this.ReferenceFullName (t |> unwrapOptionType) useFullName)
             else
                 let builder = StringBuilder()
 
                 if t.IsArray then
-                    builder.Append(this.ReferenceFullName (t.GetElementType()) useFullName).Append("[") |> ignore
+                    builder
+                        .Append(this.ReferenceFullName (t.GetElementType()) false)
+                        .Append("[") |> ignore
+
                     (',', t.GetArrayRank()) |> String |> builder.Append |> ignore
                     builder.Append("]") |> ignore
 
                 elif t.IsNested then
-                    builder.Append(this.ReferenceFullName (t.DeclaringType) useFullName).Append(".") |> ignore
+                    builder
+                        .Append(this.ReferenceFullName (t.DeclaringType) false)
+                        .Append(".") |> ignore
 
                 let name =
                     t.DisplayName(useFullName)                    
@@ -613,6 +620,9 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             this.literalInt16 value
 
         member this.Literal(value: string): string = 
+            // This is a hack to get around '+' in the namespace name.
+            // Perhaps has something to do with TypeExtensions:113 
+            let value = value.Replace('+', '.')
             this.literalString value
 
         member this.Literal(value: TimeSpan) =
