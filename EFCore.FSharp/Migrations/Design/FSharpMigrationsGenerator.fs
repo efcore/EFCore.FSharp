@@ -159,7 +159,8 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
             |> sortNamespaces
             |> Seq.distinct
 
-        namespaces        
+        namespaces
+
     let generateMigration (migrationNamespace) (migrationName) (migrationId: string) (contextType:Type) (upOperations) (downOperations) (model) =
         let sb = IndentedStringBuilder()
 
