@@ -111,8 +111,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
         let value = annotation.Value |> code.UnknownLiteral
 
         sb
-            |> append (sprintf ".HasAnnotation(%s, %s) |> ignore" name value)
-            |> appendEmptyLine
+            |> append (sprintf ".HasAnnotation(%s, %s)" name value)
             |> ignore
 
     let generateAnnotations (annotations:IAnnotation ResizeArray) (sb:IndentedStringBuilder) =
@@ -120,7 +119,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
         annotations
         |> Seq.iter(fun a ->
             sb
-                |> appendEmptyLine
                 |> generateAnnotation a)
 
         sb
