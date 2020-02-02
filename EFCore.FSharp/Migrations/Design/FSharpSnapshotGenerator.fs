@@ -112,6 +112,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         sb
             |> append (sprintf ".HasAnnotation(%s, %s)" name value)
+            |> appendEmptyLine
             |> ignore
 
     let generateAnnotations (annotations:IAnnotation ResizeArray) (sb:IndentedStringBuilder) =
@@ -137,7 +138,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             if hints :? RelationalConverterMappingHints then
                 let relationalHints = hints :?> RelationalConverterMappingHints
                 if relationalHints.IsFixedLength.HasValue then
-                    yield (sprintf "fixedLength = %s" (relationalHints.IsFixedLength.Value |> code.Literal))
+                    yield (sprintf "fixedLength = Nullable(%s)" (relationalHints.IsFixedLength.Value |> code.Literal))
         }
 
     let genPropertyAnnotations (p:IProperty) (sb:IndentedStringBuilder) =

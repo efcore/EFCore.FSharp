@@ -568,8 +568,9 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         member this.Lambda(properties: IReadOnlyList<string>): string = 
             StringBuilder()
                 .Append("(fun x -> ")
-                .Append("(").Append(String.Join(", ", (properties |> Seq.map(fun p -> "x." + p)))).Append(" :> obj)")
-                .Append(")") |> string
+                .Append("(")
+                .Append(String.Join(", ", (properties |> Seq.map(fun p -> "x." + p))))
+                .Append(") :> obj)") |> string
 
         member this.Literal(values: obj [,]): string = 
             this.literalArray2D values
