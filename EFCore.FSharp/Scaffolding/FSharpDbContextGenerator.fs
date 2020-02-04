@@ -14,6 +14,7 @@ open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Diagnostics
 open Microsoft.EntityFrameworkCore.Metadata.Conventions
+open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
 #nowarn "0044"
 
@@ -56,7 +57,7 @@ type FSharpDbContextGenerator
         sb
             |> append "open " |> appendLine (contextName.Replace("Context", "Domain"))
             |> appendEmptyLine
-            |> append "type " |> append contextName |> appendLine " ="
+            |> append "type " |> append contextName |> appendLine "() ="
             |> indent
             |> appendLine "inherit DbContext"
             |> appendEmptyLine
@@ -572,8 +573,12 @@ type FSharpDbContextGenerator
 
         let annotations =
             model.GetAnnotations()
-            |> removeAnnotation ChangeTracking.Internal.ChangeDetector.SkipDetectChangesAnnotation
+            |> removeAnnotation CoreAnnotationNames.ProductVersion
+            |> removeAnnotation CoreAnnotationNames.ChangeTrackingStrategy
+            |> removeAnnotation CoreAnnotationNames.OwnedTypes
+            |> removeAnnotation ChangeDetector.SkipDetectChangesAnnotation
             |> removeAnnotation RelationalAnnotationNames.MaxIdentifierLength
+            |> removeAnnotation RelationalAnnotationNames.CheckConstraints
             |> removeAnnotation ScaffoldingAnnotationNames.DatabaseName
             |> removeAnnotation ScaffoldingAnnotationNames.EntityTypeErrors
             |> Seq.toList
@@ -637,9 +642,33 @@ type FSharpDbContextGenerator
 
     interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator with
         member this.WriteCode (model, contextName, connectionString, contextNamespace, modelNamespace, useDataAnnotations, suppressConnectionStringWarning) =
-            let sb = 
-                IndentedStringBuilder()
-                |> writeNamespaces contextNamespace
-                |> indent
-                |> generateClass model contextName connectionString useDataAnnotations
+
+            let sb = IndentedStringBuilder()
+
+            let finalContextNamespace = 
+                if contextNamespace |> isNull then
+                    modelNamespace
+                else 
+                    contextNamespace
+
+            sb
+            |> appendLine (sprintf "namespace %s" finalContextNamespace)
+            |> appendEmptyLine
+            |> appendLine "open System"
+            |> appendLine "open System.Collections.Generic"
+            |> appendLine "open Microsoft.EntityFrameworkCore"
+            |> appendLine "open Microsoft.EntityFrameworkCore.Metadata"
+            |> appendEmptyLine
+            |> ignore
+            
+            if finalContextNamespace <> modelNamespace then
+                sb
+                |> appendLine (sprintf "open %s" modelNamespace)
+                |> ignore
+
+            sb            
+            |> indent
+            |> generateClass model contextName connectionString useDataAnnotations
+            |> ignore
+
             sb.ToString()

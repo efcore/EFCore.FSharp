@@ -16,7 +16,7 @@ open Microsoft.EntityFrameworkCore.Metadata
 
     open TestDbDomain
 
-    type TestDbContext =
+    type TestDbContext() =
         inherit DbContext
 
         new() = { inherit DbContext() }
@@ -25,14 +25,16 @@ open Microsoft.EntityFrameworkCore.Metadata
 
         override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) =
             if not optionsBuilder.IsConfigured then
-                optionsBuilder.UseTestProvider("Initial Catalog=TestDatabase")
+                optionsBuilder.UseSqlServer("Initial Catalog=TestDatabase") |> ignore
                 ()
 
         override this.OnModelCreating(modelBuilder: ModelBuilder) =
             base.OnModelCreating(modelBuilder)
+
+            modelBuilder.RegisterOptionTypes()
 """
-    
-    //[<Fact>]
+
+    [<Fact>]
     member this.``Empty model`` () =
         base.Test(
             (fun m -> ()),
@@ -40,3 +42,4 @@ open Microsoft.EntityFrameworkCore.Metadata
             (fun code -> emptyModelDbContext |> should equal code.ContextFile.Code),
             (fun model -> Assert.Empty(model.GetEntityTypes()))
         )
+

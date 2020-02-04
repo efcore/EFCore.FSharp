@@ -11,10 +11,8 @@ open Xunit;
 open FsUnit.Xunit
 
 module FSharpModelGeneratorTests =
-    
 
-    let private CreateGenerator () =
-            
+    let private createGenerator () =
         let services = 
             ServiceCollection()
                 .AddEntityFrameworkSqlServer()
@@ -31,28 +29,34 @@ module FSharpModelGeneratorTests =
 
     [<Fact>]
     let ``Language works`` () =
-        let generator = CreateGenerator()
+        let generator = createGenerator()
 
         let result = generator.Language
 
         result |> should equal "F#"
 
-    // [<Fact>] - WIP
-    let ``WriteCode works`` () =
-        let generator = CreateGenerator()
-
+    [<Fact>]
+    let ``Write code works``() = 
+        let generator = createGenerator()
         let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
-        modelBuilder.Entity("TestEntity").Property<int>("Id").HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 0) |> ignore
 
-        let options = ModelCodeGenerationOptions()
-        options.ModelNamespace <- "TestNamespace"
-        options.ContextName <- "TestContext"
-        options.ConnectionString <- "Initial Catalog=TestDatabase"
+        modelBuilder
+            .Entity("TestEntity")
+            .Property<int>("Id")
+            .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 0) |> ignore
 
-        let result =
+        let modelBuilderOptions = 
+            ModelCodeGenerationOptions(
+                ModelNamespace = "TestNamespace",
+                ContextNamespace = "ContextNameSpace",
+                ContextDir = Path.Combine("..", (sprintf "%s%c" "TestContextDir" Path.DirectorySeparatorChar)),
+                ContextName = "TestContext",
+                ConnectionString = "Data Source=Test")
+
+        let result = 
             generator.GenerateModel(
-                modelBuilder.Model,
-                options)
+                modelBuilder.Model, 
+                modelBuilderOptions)
 
         result.ContextFile.Path |> should equal (Path.Combine("..", "TestContextDir", "TestContext.fs"))
         Assert.NotEmpty(result.ContextFile.Code)
@@ -60,3 +64,5 @@ module FSharpModelGeneratorTests =
         Assert.Equal(1, result.AdditionalFiles.Count)
         Assert.Equal("TestDomain.fs", result.AdditionalFiles.[0].Path)
         Assert.NotEmpty(result.AdditionalFiles.[0].Code)
+
+

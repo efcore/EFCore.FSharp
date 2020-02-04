@@ -399,8 +399,16 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                 |> ignore
 
             match discriminatorPropertyAnnotation with
-            | Some a ->
-                let propertyClrType = entityType.FindProperty(string a.Value).ClrType
+            | Some a when notNull a.Value  ->
+                let discriminatorProperty = entityType.FindProperty(string a.Value)
+
+                let propertyClrType = 
+                    let valueConverter = findValueConverter discriminatorProperty
+                    if notNull valueConverter then
+                        makeNullable discriminatorProperty.IsNullable valueConverter.ProviderClrType
+                    else
+                        discriminatorProperty.ClrType
+
                 sb
                     |> append "<"
                     |> append (code.Reference propertyClrType)
@@ -408,7 +416,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                     |> append (code.UnknownLiteral a.Value)
                     |> append ")"
                     |> ignore
-            | None ->
+            | _ ->
                 sb |> append "()" |> ignore
             
 
