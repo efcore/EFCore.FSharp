@@ -16,7 +16,7 @@ open Microsoft.EntityFrameworkCore.Metadata
 
     open TestDbDomain
 
-    type TestDbContext() =
+    type TestDbContext =
         inherit DbContext
 
         new() = { inherit DbContext() }

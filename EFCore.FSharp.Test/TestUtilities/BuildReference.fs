@@ -97,6 +97,6 @@ type BuildSource = {
                 | Some a -> a
                 | None ->
                     let messages = errors |> Seq.map (fun e -> e.Message + Environment.NewLine)
-                    invalidOp (String.Join(", ", messages))
+                    invalidOp (String.Join(Environment.NewLine, messages))
 
             assembly

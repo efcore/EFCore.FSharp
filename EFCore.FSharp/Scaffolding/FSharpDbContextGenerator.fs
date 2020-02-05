@@ -36,15 +36,14 @@ type FSharpDbContextGenerator
     let mutable _entityTypeBuilderInitialized = false
 
     let entityLambdaIdentifier = "entity"
-    let language = "FSharp"
 
-    let defaultNamespaces = [
-        "System"
-        "System.Collections.Generic"
-        "Microsoft.EntityFrameworkCore"
-        "Microsoft.EntityFrameworkCore.Metadata"
-        "Bricelam.EntityFrameworkCore.FSharp.Extensions"
-    ]
+    let defaultNamespaces = 
+        [
+            "System"
+            "System.Collections.Generic"
+            "Microsoft.EntityFrameworkCore"
+            "Microsoft.EntityFrameworkCore.Metadata"
+        ]
 
     let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
         sb
@@ -57,7 +56,7 @@ type FSharpDbContextGenerator
         sb
             |> append "open " |> appendLine (contextName.Replace("Context", "Domain"))
             |> appendEmptyLine
-            |> append "type " |> append contextName |> appendLine "() ="
+            |> append "type " |> append contextName |> appendLine " ="
             |> indent
             |> appendLine "inherit DbContext"
             |> appendEmptyLine
@@ -652,13 +651,7 @@ type FSharpDbContextGenerator
                     contextNamespace
 
             sb
-            |> appendLine (sprintf "namespace %s" finalContextNamespace)
-            |> appendEmptyLine
-            |> appendLine "open System"
-            |> appendLine "open System.Collections.Generic"
-            |> appendLine "open Microsoft.EntityFrameworkCore"
-            |> appendLine "open Microsoft.EntityFrameworkCore.Metadata"
-            |> appendEmptyLine
+            |> writeNamespaces (finalContextNamespace)
             |> ignore
             
             if finalContextNamespace <> modelNamespace then

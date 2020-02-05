@@ -38,7 +38,10 @@ type FSharpModelGenerator
         |> Seq.distinct
         |> Seq.sort
 
-    let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) domainFileName =
+    let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) (domainFileName: string) =
+
+        let ``module`` = 
+            domainFileName.Replace("Context", "Domain")
 
         let namespaces =
             if useDataAnnotations then
@@ -54,10 +57,14 @@ type FSharpModelGenerator
                 |> writeNamespaces namespaces
                 |> appendEmptyLine
 
+        let noEntities = 
+            model.GetEntityTypes() |> Seq.isEmpty
+
         IndentedStringBuilder()
                 |> writeNamespaces ``namespace``
-                |> append "module rec " |> append domainFileName |> appendLine " ="
-                |> appendEmptyLine
+                |> append "module rec " |> append ``module`` |> appendLine " ="
+                |> appendEmptyLine                
+                |> appendIfTrue (noEntities) "    ()"
 
     override __.Language = "F#"
 

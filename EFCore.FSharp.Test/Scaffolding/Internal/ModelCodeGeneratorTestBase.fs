@@ -103,7 +103,6 @@ type ModelCodeGeneratorTestBase() =
         let build = {
             TargetDir = null
             Sources = sources }
-            
 
         let references = 
             [
