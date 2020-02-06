@@ -12,11 +12,6 @@ open Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Conventions
 
 type SqlServerTestHelpers() =
-    //156
-
-    // 110
-    
-    
     static member CreateConventionBuilder skipValidation =
         let createServiceProvider (customServices: IServiceCollection option) (addProviderServices: IServiceCollection -> IServiceCollection) =
             let services = ServiceCollection()
