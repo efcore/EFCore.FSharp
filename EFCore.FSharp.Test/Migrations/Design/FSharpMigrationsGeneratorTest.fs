@@ -54,10 +54,10 @@ module FSharpMigrationsGeneratorTest =
 
     let compileModelSnapshot (modelSnapshotCode: string) (modelSnapshotTypeName: string) =
         let references = 
-            [
+            [|
                 "Microsoft.EntityFrameworkCore" 
                 "Microsoft.EntityFrameworkCore.Relational" 
-            ]
+            |]
 
         let sources =
             [

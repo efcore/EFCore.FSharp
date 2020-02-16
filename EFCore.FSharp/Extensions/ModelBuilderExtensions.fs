@@ -3,6 +3,7 @@ namespace Bricelam.EntityFrameworkCore.FSharp
 open System
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
+open System.Runtime.CompilerServices
 
 module Extensions =
 
@@ -26,7 +27,7 @@ module Extensions =
 
             this
 
-        member this.RegisterOptionTypes () =
+        member this.RegisterOptionTypes() =
 
             let makeOptionConverter t =
                 let underlyingType = SharedTypeExtensions.unwrapOptionType t
@@ -53,3 +54,9 @@ module Extensions =
 
     let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType(``type``, converter)            
+
+    [<Extension>]
+    type ModelBuilderExtensions = 
+        [<Extension>]
+        static member RegisterOptionTypes (modelBuilder: ModelBuilder) = 
+            modelBuilder.RegisterOptionTypes()

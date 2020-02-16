@@ -44,6 +44,58 @@ type ModelCodeGeneratorTestBase() =
         // EntityFrameworkRelationalServicesBuilder(services)
         //     .TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
 
+    let getRequiredReferences() = 
+        let runtimeNames = 
+            [
+                "mscorlib.dll"
+                "System.Private.CoreLib.dll"
+                "System.Runtime.dll"
+                "netstandard.dll"
+                "System.Runtime.Extensions.dll"
+                "System.Console.dll"
+                "System.Collections.dll"
+                "System.Resources.ResourceManager.dll"
+                "System.Collections.Concurrent.dll"
+                "System.Threading.Tasks.dll"
+                "System.Threading.dll"
+                "System.Threading.ThreadPool.dll"
+                "System.Threading.Thread.dll"
+                "System.Diagnostics.TraceSource.dll"
+                "System.Buffers.dll"
+                "System.Globalization.dll"
+                "System.IO.FileSystem.dll"
+                "System.Runtime.InteropServices.dll"
+            ]
+
+        let localNames = 
+            [
+                "FSharp.Core.dll"
+                "FSharp.Compiler.Service.dll"
+                "Microsoft.EntityFrameworkCore.dll"
+                "Microsoft.EntityFrameworkCore.Abstractions.dll"
+                "Microsoft.EntityFrameworkCore.Design.dll"
+                "Microsoft.EntityFrameworkCore.Proxies.dll"
+                "Microsoft.EntityFrameworkCore.Relational.dll"
+                "Microsoft.EntityFrameworkCore.Sqlite.dll"
+                "Microsoft.EntityFrameworkCore.SqlServer.dll"
+                "Bricelam.EntityFrameworkCore.FSharp.dll"
+            ]
+
+        let runtimeDir = 
+            System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+
+        let runtimeRefs = 
+            runtimeNames 
+            |> List.map(fun r -> runtimeDir + r)
+
+        let localRefs = 
+            let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+            let location = thisAssembly.Location.Replace(thisAssembly.GetName().Name + ".dll", "")
+            localNames
+            |> List.map(fun s -> location + s)
+
+        runtimeRefs @ localRefs |> List.toArray
+
     static member BuildNonValidatingConventionSet () =
         let services = ServiceCollection()                
         
@@ -95,7 +147,7 @@ type ModelCodeGeneratorTestBase() =
                 options)
 
         assertScaffold(scaffoldedModel);
-        (* Awaiting answer: https://stackoverflow.com/questions/60101979/fsharp-compiler-service-fsharpchecker-fails-to-compile-dynamic-assembly-when-ref        
+        
         let sources = 
             scaffoldedModel.ContextFile.Code :: (scaffoldedModel.AdditionalFiles |> Seq.map (fun f -> f.Code) |> Seq.toList)
             |> List.rev
@@ -105,16 +157,12 @@ type ModelCodeGeneratorTestBase() =
             Sources = sources }
 
         let references = 
-            [
-                "Microsoft.EntityFrameworkCore"
-                "Microsoft.EntityFrameworkCore.Relational"
-                "Microsoft.EntityFrameworkCore.SqlServer"
-            ]
+            getRequiredReferences()
 
         let assembly = build.BuildInMemory references
-        let dbType = assembly.GetType("TestNamespace.TestDbContext")
 
         let context = assembly.CreateInstance("TestNamespace.TestDbContext") :?> DbContext
+        
         let compiledModel = context.Model
-        assertModel(compiledModel)
-        *)
+        assertModel(context.Model)
+        

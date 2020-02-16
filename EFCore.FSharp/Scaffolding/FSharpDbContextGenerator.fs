@@ -43,6 +43,7 @@ type FSharpDbContextGenerator
             "System.Collections.Generic"
             "Microsoft.EntityFrameworkCore"
             "Microsoft.EntityFrameworkCore.Metadata"
+            "Bricelam.EntityFrameworkCore.FSharp.Extensions"
         ]
 
     let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =

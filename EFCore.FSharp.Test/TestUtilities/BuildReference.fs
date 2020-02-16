@@ -7,9 +7,6 @@ open Microsoft.Extensions.DependencyModel
 open Fantomas
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
-open Microsoft.CodeAnalysis.CSharp
-open FSharp.Compiler.Ast
-open System
 
 type BuildReference = {
     CopyLocal : bool
@@ -52,18 +49,8 @@ type BuildFileResult = {
 type BuildSource = {
     TargetDir : string
     Sources : string list } with
-        static member private References =
-            [
-                BuildReference.ByName "netstandard" false None
-                BuildReference.ByName "System.Collections" false None
-                BuildReference.ByName "System.ComponentModel.Annotations" false None
-                BuildReference.ByName "System.Data.Common" false None
-                BuildReference.ByName "System.Linq.Expressions" false None
-                BuildReference.ByName "System.Runtime" false None
-                BuildReference.ByName "System.Text.RegularExpressions" false None
-            ]
 
-        member this.BuildInMemory (references: string list) =
+        member this.BuildInMemory (references: string array) =
             let projectName = "TestProject"
 
             let checker = FSharpChecker.Create()
@@ -82,14 +69,8 @@ type BuildSource = {
             
             let input = parseResult.ParseTree.Value
 
-            let thisAssembly = 
-                System.Reflection.Assembly.GetExecutingAssembly().GetName().Name
-
-            let allReferences = 
-                thisAssembly :: references 
-            
             let errors, _, assemblyOpt =
-                checker.CompileToDynamicAssembly([input], projectName, allReferences, None)
+                checker.CompileToDynamicAssembly([input], projectName, (List.ofArray references), None, noframework = true)
                 |> Async.RunSynchronously
 
             let assembly = 
