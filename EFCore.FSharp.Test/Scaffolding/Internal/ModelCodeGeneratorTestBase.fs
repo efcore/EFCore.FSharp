@@ -162,7 +162,6 @@ type ModelCodeGeneratorTestBase() =
         let assembly = build.BuildInMemory references
 
         let context = assembly.CreateInstance("TestNamespace.TestDbContext") :?> DbContext
-        
-        let compiledModel = context.Model
+
         assertModel(context.Model)
         

@@ -6,8 +6,10 @@ open FsUnit.Xunit
 
 type FSharpDbContextGeneratorTest() =
     inherit ModelCodeGeneratorTestBase()
-
-    let emptyModelDbContext = """namespace TestNamespace
+    
+    [<Fact>]
+    member this.``Empty model`` () =
+        let emptyModelDbContext = """namespace TestNamespace
 
 open System
 open System.Collections.Generic
@@ -31,15 +33,13 @@ open Bricelam.EntityFrameworkCore.FSharp.Extensions
 
         override this.OnModelCreating(modelBuilder: ModelBuilder) =
             base.OnModelCreating(modelBuilder)
+
             modelBuilder.RegisterOptionTypes()
 """
 
-    [<Fact>]
-    member this.``Empty model`` () =
         base.Test(
             (fun m -> ()),
             (ModelCodeGenerationOptions()),
-            (fun code -> ()),//emptyModelDbContext |> should equal code.ContextFile.Code),
+            (fun code -> emptyModelDbContext |> should equal code.ContextFile.Code),
             (fun model -> Assert.Empty(model.GetEntityTypes()))
         )
-

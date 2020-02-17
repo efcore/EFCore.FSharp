@@ -54,9 +54,3 @@ module Extensions =
 
     let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType(``type``, converter)            
-
-    [<Extension>]
-    type ModelBuilderExtensions = 
-        [<Extension>]
-        static member RegisterOptionTypes (modelBuilder: ModelBuilder) = 
-            modelBuilder.RegisterOptionTypes()
