@@ -568,8 +568,9 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         member this.Lambda(properties: IReadOnlyList<string>): string = 
             StringBuilder()
                 .Append("(fun x -> ")
-                .Append("(").Append(String.Join(", ", (properties |> Seq.map(fun p -> "x." + p)))).Append(" :> obj)")
-                .Append(")") |> string
+                .Append("(")
+                .Append(String.Join(", ", (properties |> Seq.map(fun p -> "x." + p))))
+                .Append(") :> obj)") |> string
 
         member this.Literal(values: obj [,]): string = 
             this.literalArray2D values
@@ -620,9 +621,6 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             this.literalInt16 value
 
         member this.Literal(value: string): string = 
-            // This is a hack to get around '+' in the namespace name.
-            // Perhaps has something to do with TypeExtensions:113 
-            let value = value.Replace('+', '.')
             this.literalString value
 
         member this.Literal(value: TimeSpan) =

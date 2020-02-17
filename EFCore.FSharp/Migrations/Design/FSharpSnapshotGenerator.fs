@@ -112,6 +112,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         sb
             |> append (sprintf ".HasAnnotation(%s, %s)" name value)
+            |> appendEmptyLine
             |> ignore
 
     let generateAnnotations (annotations:IAnnotation ResizeArray) (sb:IndentedStringBuilder) =
@@ -137,7 +138,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             if hints :? RelationalConverterMappingHints then
                 let relationalHints = hints :?> RelationalConverterMappingHints
                 if relationalHints.IsFixedLength.HasValue then
-                    yield (sprintf "fixedLength = %s" (relationalHints.IsFixedLength.Value |> code.Literal))
+                    yield (sprintf "fixedLength = Nullable(%s)" (relationalHints.IsFixedLength.Value |> code.Literal))
         }
 
     let genPropertyAnnotations (p:IProperty) (sb:IndentedStringBuilder) =
@@ -398,8 +399,16 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                 |> ignore
 
             match discriminatorPropertyAnnotation with
-            | Some a ->
-                let propertyClrType = entityType.FindProperty(string a.Value).ClrType
+            | Some a when notNull a.Value  ->
+                let discriminatorProperty = entityType.FindProperty(string a.Value)
+
+                let propertyClrType = 
+                    let valueConverter = findValueConverter discriminatorProperty
+                    if notNull valueConverter then
+                        makeNullable discriminatorProperty.IsNullable valueConverter.ProviderClrType
+                    else
+                        discriminatorProperty.ClrType
+
                 sb
                     |> append "<"
                     |> append (code.Reference propertyClrType)
@@ -407,7 +416,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                     |> append (code.UnknownLiteral a.Value)
                     |> append ")"
                     |> ignore
-            | None ->
+            | _ ->
                 sb |> append "()" |> ignore
             
 

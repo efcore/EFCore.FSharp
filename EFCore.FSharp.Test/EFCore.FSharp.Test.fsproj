@@ -2,10 +2,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    
     <IsPackable>false</IsPackable>
     <AssemblyName>Bricelam.EntityFrameworkCore.FSharp.Test</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="TestUtilities\SqlServerTestHelpers.fs" />
     <Compile Include="TestUtilities\TestServiceFactory.fs" />
     <Compile Include="TestUtilities\TestRelationalTypeMappingSource.fs" />
     <Compile Include="TestUtilities\TestRelationalMigrationSqlGenerator.fs" />
