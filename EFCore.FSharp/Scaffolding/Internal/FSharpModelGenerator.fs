@@ -38,7 +38,10 @@ type FSharpModelGenerator
         |> Seq.distinct
         |> Seq.sort
 
-    let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) domainFileName =
+    let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) (domainFileName: string) =
+
+        let ``module`` = 
+            domainFileName.Replace("Context", "Domain")
 
         let namespaces =
             if useDataAnnotations then
@@ -47,47 +50,69 @@ type FSharpModelGenerator
                 defaultNamespaces  |> Seq.append (model |> getNamespacesFromModel)
 
         let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
+
             sb
                 |> append "namespace " |> appendLine ``namespace``
                 |> appendEmptyLine
                 |> writeNamespaces namespaces
                 |> appendEmptyLine
 
+        let noEntities = 
+            model.GetEntityTypes() |> Seq.isEmpty
+
         IndentedStringBuilder()
                 |> writeNamespaces ``namespace``
-                |> append "module rec " |> append domainFileName |> appendLine " ="
-                |> appendEmptyLine
+                |> append "module rec " |> append ``module`` |> appendLine " ="
+                |> appendEmptyLine                
+                |> appendIfTrue (noEntities) "    ()"
 
     override __.Language = "F#"
 
-    override __.GenerateModel(model: IModel, ``namespace``: string, contextDir: string, contextName: string, connectionString: string, options: ModelCodeGenerationOptions) =
+    override __.GenerateModel(model: IModel, options: ModelCodeGenerationOptions) =
         let resultingFiles = ScaffoldedModel()
 
-        let generatedCode = contextGenerator.WriteCode(model, ``namespace``, contextName, connectionString, options.UseDataAnnotations, options.SuppressConnectionStringWarning)
+        let generatedCode = 
+            contextGenerator.WriteCode(
+                model, 
+                options.ContextName, 
+                options.ConnectionString,
+                options.ContextNamespace,
+                options.ModelNamespace, 
+                options.UseDataAnnotations, 
+                options.SuppressConnectionStringWarning)
 
-        let dbContextFileName = contextName + fileExtension;
+        let dbContextFileName = options.ContextName + fileExtension;
+
+        let path = 
+            if notNull options.ContextDir then
+                Path.Combine(options.ContextDir, dbContextFileName)
+            else 
+                dbContextFileName
 
         let contextFile =
             ScaffoldedFile(
                 Code = generatedCode,
-                Path = Path.Combine(contextDir, dbContextFileName))
+                Path = path)
                 
         resultingFiles.ContextFile <- contextFile
 
-        let domainFileName = contextName.Replace("Context", "Domain")
+        let dbContextFileName = options.ContextName
 
         let domainFile = ScaffoldedFile()
-        domainFile.Path <- (domainFileName + fileExtension)
+        domainFile.Path <- ("TestDomain" + fileExtension)        
 
-        let domainFileBuilder = createDomainFileContent model options.UseDataAnnotations ``namespace`` domainFileName
+        let domainFileBuilder = 
+            createDomainFileContent model options.UseDataAnnotations options.ModelNamespace dbContextFileName
 
         model.GetEntityTypes()
             |> Seq.iter(fun entityType -> 
                 domainFileBuilder
-                    |> append (entityTypeGenerator.WriteCode(entityType, ``namespace``, options.UseDataAnnotations))
+                    |> append (entityTypeGenerator.WriteCode(entityType, 
+                                                                options.ModelNamespace, 
+                                                                options.UseDataAnnotations))
                     |> ignore
             )
-        domainFile.Code <- (domainFileBuilder |> string)
+        domainFile.Code <- (domainFileBuilder.ToString())
 
         resultingFiles.AdditionalFiles.Add(domainFile)
 

@@ -7,6 +7,7 @@ open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open System.Linq
 open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
+open Microsoft.EntityFrameworkCore.Metadata
 
 type Implementation = {
     Type : Type
@@ -58,7 +59,7 @@ module TestServiceFactory =
             match serviceTypeOpt with
             | None ->
                 if implementationTypes |> Seq.length = 1 then
-                    let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no single implementation type in same assembly." (serviceType.ShortDisplayName())
+                    let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no single implementation type in same assembly." (serviceType.DisplayName())
                     invalidOp msg
 
                 [ { Type = serviceType; ImplementationType = implementationTypes |> Seq.head }]
@@ -103,7 +104,7 @@ module TestServiceFactory =
 
                         match constructor with
                         | None ->
-                            let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no public constructor." (t.ImplementationType.ShortDisplayName())
+                            let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no public constructor." (t.ImplementationType.DisplayName())
                             invalidOp msg
                         | Some c ->
                                 c.GetParameters()

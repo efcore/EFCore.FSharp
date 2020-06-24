@@ -10,9 +10,6 @@ type TestRelationalMigrationSqlGenerator(dependencies) =
     override this.Generate(operation : RenameTableOperation, model : IModel, builder : MigrationCommandListBuilder) =
         ()
 
-    override this.Generate(operation : DropIndexOperation, model : IModel, builder : MigrationCommandListBuilder) =
-        ()
-
     override this.Generate(operation : RenameSequenceOperation, model : IModel, builder : MigrationCommandListBuilder) =
         ()
 

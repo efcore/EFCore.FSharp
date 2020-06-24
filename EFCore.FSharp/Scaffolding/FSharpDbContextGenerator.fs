@@ -12,16 +12,17 @@ open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Design
+open Microsoft.EntityFrameworkCore.Diagnostics
+open Microsoft.EntityFrameworkCore.Metadata.Conventions
+open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
 #nowarn "0044"
 
-open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 open System.Collections.Generic
 open Bricelam.EntityFrameworkCore.FSharp
 
 type FSharpDbContextGenerator
     (providerCodeGenerators: IProviderConfigurationCodeGenerator seq,
-        legacyProviderCodeGenerators: IScaffoldingProviderCodeGenerator seq,
         annotationCodeGenerator : IAnnotationCodeGenerator,
         code : ICSharpHelper) =
 
@@ -31,22 +32,19 @@ type FSharpDbContextGenerator
             invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
         else
             providerCodeGenerators |> Seq.tryLast
-            
-        
-    let legacyProviderCodeGenerator = legacyProviderCodeGenerators |> Seq.tryLast
-        
+         
     let mutable _entityTypeBuilderInitialized = false
 
-    let entityLambdaIdentifier = "entity";
-    let language = "FSharp";
+    let entityLambdaIdentifier = "entity"
 
-    let defaultNamespaces = [
-        "System"
-        "System.Collections.Generic"
-        "Microsoft.EntityFrameworkCore"
-        "Microsoft.EntityFrameworkCore.Metadata"
-        "Bricelam.EntityFrameworkCore.FSharp.Extensions"
-    ]
+    let defaultNamespaces = 
+        [
+            "System"
+            "System.Collections.Generic"
+            "Microsoft.EntityFrameworkCore"
+            "Microsoft.EntityFrameworkCore.Metadata"
+            "Bricelam.EntityFrameworkCore.FSharp.Extensions"
+        ]
 
     let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =
         sb
@@ -70,13 +68,13 @@ type FSharpDbContextGenerator
 
     let generateDbSet (sb:IndentedStringBuilder) (entityType : IEntityType) =
 
-        let scaffolding = scaffoldEntity entityType
-        let mutableName = "_" + scaffolding.DbSetName;
+        let dbSetName = entityDbSetName entityType
+        let mutableName = "_" + dbSetName
 
         sb
             |> appendLine "[<DefaultValue>]"
             |> append "val mutable private " |> append mutableName |> append " : DbSet<" |> append entityType.Name |> appendLine ">"
-            |> append "member this." |> appendLine scaffolding.DbSetName
+            |> append "member this." |> appendLine dbSetName
             |> indent
             |> append "with get() = this." |> appendLine mutableName
             |> append "and set v = this." |> append mutableName |> appendLine " <- v"
@@ -97,12 +95,12 @@ type FSharpDbContextGenerator
 
     let generateEntityTypeErrors (model:IModel) (sb:IndentedStringBuilder) =    
 
-        let scaffolding = scaffoldModel model
+        let entityTypeErrors = modelEntityTypeErrors model
 
-        scaffolding.EntityTypeErrors
+        entityTypeErrors
             |> Seq.iter (fun e -> sb |> appendLine (sprintf "// %s Please see the warning messages." e.Value) |> ignore)
 
-        if scaffolding.EntityTypeErrors |> Seq.isEmpty |> not then
+        if entityTypeErrors |> Seq.isEmpty |> not then
             sb |> appendEmptyLine |> ignore
 
         sb
@@ -110,8 +108,8 @@ type FSharpDbContextGenerator
     let generateOnConfiguring (connectionString:string) (sb:IndentedStringBuilder) =      
 
         let connStringLine =
-            match providerCodeGenerator, legacyProviderCodeGenerator with
-            | Some pcg, _ ->
+            match providerCodeGenerator with
+            | Some pcg ->
                 let contextOptions = pcg.GenerateContextOptions()
                 let useProviderCall =
                     if isNull contextOptions then
@@ -122,8 +120,7 @@ type FSharpDbContextGenerator
                 let fragment = code.Fragment useProviderCall
 
                 sprintf "optionsBuilder%s |> ignore" fragment
-            | None, Some lpcg -> sprintf "optionsBuilder%s |> ignore" (lpcg.GenerateUseProvider(connectionString, language))
-            | _, _ ->
+            | None ->
                 let name = "providerCodeGenerators"
                 invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
             
@@ -146,11 +143,7 @@ type FSharpDbContextGenerator
             (annotation |> Some, None)
         else
             let methodCall = annotationCodeGenerator.GenerateFluentApi(model, annotation)
-            let line =
-                if isNull methodCall then
-                    annotationCodeGenerator.GenerateFluentApi(model, annotation, language)
-                else
-                    FSharpUtilities.generate(methodCall)
+            let line = FSharpUtilities.generate(methodCall)
 
             if isNull line then
                 (None, None)
@@ -181,7 +174,7 @@ type FSharpDbContextGenerator
                 sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName(s.ClrType))
 
         let parameters =
-            if (s.Schema |> String.IsNullOrEmpty) && (s.Model.Relational().DefaultSchema <> s.Schema) then
+            if (s.Schema |> String.IsNullOrEmpty) && (s.Model.GetDefaultSchema() <> s.Schema) then
                 sprintf "%s, %s" (s.Name |> FSharpUtilities.delimitString) (s.Schema |> FSharpUtilities.delimitString)
             else
                 s.Name |> FSharpUtilities.delimitString
@@ -208,14 +201,14 @@ type FSharpDbContextGenerator
         | :? IIndex as i -> annotationCodeGenerator.IsHandledByConvention(i, annotation)
         | _ -> failwith "Unhandled pattern match in isHandledByConvention"
 
-    let generateFluentApiWithLanguage language (annotatable : IAnnotatable) annotation =
+    let generateFluentApiWithLanguage (annotatable : IAnnotatable) annotation =
         match annotatable with
-        | :? IModel as m -> annotationCodeGenerator.GenerateFluentApi(m, annotation, language)
-        | :? IEntityType as e -> annotationCodeGenerator.GenerateFluentApi(e, annotation, language)
-        | :? IKey as k -> annotationCodeGenerator.GenerateFluentApi(k, annotation, language)
-        | :? IForeignKey as fk -> annotationCodeGenerator.GenerateFluentApi(fk, annotation, language)
-        | :? IProperty as p -> annotationCodeGenerator.GenerateFluentApi(p, annotation, language)
-        | :? IIndex as i -> annotationCodeGenerator.GenerateFluentApi(i, annotation, language)
+        | :? IModel as m -> annotationCodeGenerator.GenerateFluentApi(m, annotation)
+        | :? IEntityType as e -> annotationCodeGenerator.GenerateFluentApi(e, annotation)
+        | :? IKey as k -> annotationCodeGenerator.GenerateFluentApi(k, annotation)
+        | :? IForeignKey as fk -> annotationCodeGenerator.GenerateFluentApi(fk, annotation)
+        | :? IProperty as p -> annotationCodeGenerator.GenerateFluentApi(p, annotation)
+        | :? IIndex as i -> annotationCodeGenerator.GenerateFluentApi(i, annotation)
         | _ -> failwith "Unhandled pattern match in generateFluentApiWithLanguage"
 
     let generateFluentApi (annotatable : IAnnotatable) annotation =
@@ -259,7 +252,7 @@ type FSharpDbContextGenerator
 
                 let line =
                     if isNull methodCall then
-                        generateFluentApiWithLanguage language annotatable a
+                        generateFluentApiWithLanguage annotatable a |> code.Fragment
                     else
                         code.Fragment methodCall
 
@@ -308,16 +301,17 @@ type FSharpDbContextGenerator
 
     let generateKeyGuardClause (key : IKey) (annotations : IAnnotation list) useDataAnnotations explicitName =
         if key.Properties.Count = 1 && annotations.IsEmpty then
+            (*
             let ck = key :?> Key
-            let kdc = new KeyDiscoveryConvention(null)
+            let kvc = KeyDiscoveryConvention.
             let props =
-                kdc.DiscoverKeyProperties(
+                KeyDiscoveryConvention.DiscoverKeyProperties(
                     ck.DeclaringEntityType,
-                    (ck.DeclaringEntityType.GetProperties() |> Seq.toList))
+                    (key.Properties |> Seq.map(fun p -> p :> IConventionProperty) |> Seq.toList))
             
             if key.Properties.StructuralSequenceEqual(props |> Seq.cast) then
-                true
-            elif (not explicitName) && useDataAnnotations then
+                true    *)            
+            if (not explicitName) && useDataAnnotations then
                 true
             else false
         else
@@ -334,7 +328,7 @@ type FSharpDbContextGenerator
                 |> removeAnnotation RelationalAnnotationNames.Name
                 |> Seq.toList
 
-            let explicitName = key.Relational().Name <> ConstraintNamer.GetDefaultName(key)
+            let explicitName = key.GetName() <> key.GetDefaultName()
 
             let shouldExitEarly = generateKeyGuardClause key annotations useDataAnnotations explicitName
 
@@ -344,9 +338,9 @@ type FSharpDbContextGenerator
                 
                 let lines = ResizeArray<string>()
                 lines.Add(sprintf ".HasKey(fun e -> %s :> obj)" (generateLambdaToKey key.Properties "e"))
-                
+
                 if explicitName then
-                    lines.Add(sprintf ".HasName(%s)" (code.Literal (key.Relational()).Name))
+                    lines.Add(sprintf ".HasName(%s)" (code.Literal (key.GetName())))
 
                 lines.AddRange(getLinesFromAnnotations key annotations)
 
@@ -354,12 +348,12 @@ type FSharpDbContextGenerator
 
     let generateTableName (entityType : IEntityType) sb =
         
-        let tableName = entityType.Relational().TableName
-        let schema = entityType.Relational().Schema
-        let defaultSchema = entityType.Model.Relational().DefaultSchema
+        let tableName = entityType.GetTableName()
+        let schema = entityType.GetSchema()
+        let defaultSchema = entityType.Model.GetDefaultSchema()
 
         let explicitSchema = not (isNull schema) && schema <> defaultSchema
-        let explicitTable = explicitSchema || (not (isNull tableName) && tableName <> entityType.Scaffolding().DbSetName)
+        let explicitTable = explicitSchema || (not (isNull tableName) && tableName <> entityType.GetDbSetName())
 
         if explicitTable then
         
@@ -383,14 +377,14 @@ type FSharpDbContextGenerator
         annotations.AddRange(index.GetAnnotations())
 
         if not (String.IsNullOrEmpty(string index.[RelationalAnnotationNames.Name])) then
-            lines.Add(sprintf ".HasName(%s)" (code.Literal (index.Relational()).Name))
+            lines.Add(sprintf ".HasName(%s)" (code.Literal (index.GetName())))
             annotations.RemoveAt(annotations.FindIndex(fun i -> i.Name = RelationalAnnotationNames.Name))
 
         if index.IsUnique then
             lines.Add(".IsUnique()")
 
-        if not (isNull (index.Relational()).Filter) then
-            lines.Add(sprintf ".HasFilter(%s)" (code.Literal (index.Relational()).Filter))
+        if not (isNull (index.GetFilter())) then
+            lines.Add(sprintf ".HasFilter(%s)" (code.Literal (index.GetFilter())))
             annotations.RemoveAt(annotations.FindIndex(fun i -> i.Name = RelationalAnnotationNames.Filter))
 
         let linesToAdd = getLinesFromAnnotations index annotations
@@ -407,17 +401,15 @@ type FSharpDbContextGenerator
             property.GetAnnotations()
             |> removeAnnotation RelationalAnnotationNames.ColumnName
             |> removeAnnotation RelationalAnnotationNames.ColumnType
-            |> removeAnnotation CoreAnnotationNames.MaxLengthAnnotation
+            |> removeAnnotation CoreAnnotationNames.MaxLength
             |> removeAnnotation CoreAnnotationNames.TypeMapping
-            |> removeAnnotation CoreAnnotationNames.UnicodeAnnotation
+            |> removeAnnotation CoreAnnotationNames.Unicode
             |> removeAnnotation RelationalAnnotationNames.DefaultValue
             |> removeAnnotation RelationalAnnotationNames.DefaultValueSql
             |> removeAnnotation RelationalAnnotationNames.ComputedColumnSql
             |> removeAnnotation RelationalAnnotationNames.IsFixedLength
             |> removeAnnotation ScaffoldingAnnotationNames.ColumnOrdinal
             |> Seq.toList
-
-        let rel = property.Relational()
 
         if useDataAnnotations then
             if not property.IsNullable &&
@@ -426,7 +418,7 @@ type FSharpDbContextGenerator
                 not (property.IsPrimaryKey()) then
                     lines.Add ".IsRequired()"
 
-            let columnName = rel.ColumnName
+            let columnName = property.GetColumnName()
 
             if not (isNull columnName) && columnName <> property.Name then
                 lines.Add(sprintf ".HasColumnName(%s)" (code.Literal columnName))
@@ -444,24 +436,24 @@ type FSharpDbContextGenerator
         if property.IsUnicode().HasValue then
             lines.Add(sprintf ".IsUnicode(%s)" (if property.IsUnicode().Value then "" else "false"))
 
-        if rel.IsFixedLength then
+        if property.IsFixedLength() then
             lines.Add ".IsFixedLength()"
 
-        if not (isNull rel.DefaultValue) then
-            lines.Add(sprintf ".HasDefaultValue(%s)" (code.UnknownLiteral rel.DefaultValue))
+        if not (property.GetDefaultValue() |> isNull) then
+            lines.Add(sprintf ".HasDefaultValue(%s)" (property.GetDefaultValue() |> code.UnknownLiteral))
 
-        if not (isNull rel.DefaultValueSql) then
-            lines.Add(sprintf ".HasDefaultValueSql(%s)" (code.Literal rel.DefaultValueSql))
+        if not (property.GetDefaultValueSql() |> isNull) then
+            lines.Add(sprintf ".HasDefaultValueSql(%s)" (property.GetDefaultValueSql() |> code.Literal))
 
-        if not (isNull rel.ComputedColumnSql) then
-            lines.Add(sprintf ".HasComputedColumnSql(%s)" (code.Literal rel.ComputedColumnSql))
+        if not (property.GetComputedColumnSql() |> isNull) then
+            lines.Add(sprintf ".HasComputedColumnSql(%s)" (property.GetComputedColumnSql() |> code.Literal))
 
         let valueGenerated = property.ValueGenerated
         let mutable isRowVersion = false
 
         let concreteProp = property :?> Property
         if concreteProp.GetValueGeneratedConfigurationSource().HasValue
-            && RelationalValueGeneratorConvention().GetValueGenerated(concreteProp) <> Nullable(valueGenerated) then
+            && RelationalValueGenerationConvention.GetValueGenerated(concreteProp) <> Nullable(valueGenerated) then
 
                 let methodName =
                     match valueGenerated with
@@ -515,7 +507,7 @@ type FSharpDbContextGenerator
 
         if not (String.IsNullOrEmpty(string fk.[RelationalAnnotationNames.Name])) then
             canUseDataAnnotations <- false
-            lines.Add(sprintf ".HasConstraintName(%s)" (code.Literal (fk.Relational().Name)))
+            lines.Add(sprintf ".HasConstraintName(%s)" (fk.GetConstraintName() |> code.Literal))
             annotations.RemoveAt(annotations.FindIndex(fun a -> a.Name = RelationalAnnotationNames.Name))
 
 
@@ -531,13 +523,13 @@ type FSharpDbContextGenerator
 
                 let line =
                     if isNull methodCall then
-                        generateFluentApiWithLanguage language fk a
+                        generateFluentApiWithLanguage fk a
                     else
-                        code.Fragment methodCall
+                         methodCall
 
                 if not (isNull line) then
                     canUseDataAnnotations <- false
-                    lines.Add line
+                    lines.Add (line |> code.Fragment)
                     annotationsToRemove.Add a
         )
         annotations |> Seq.except annotationsToRemove |> generateAnnotations |> lines.AddRange
@@ -581,8 +573,12 @@ type FSharpDbContextGenerator
 
         let annotations =
             model.GetAnnotations()
-            |> removeAnnotation ChangeTracking.Internal.ChangeDetector.SkipDetectChangesAnnotation
+            |> removeAnnotation CoreAnnotationNames.ProductVersion
+            |> removeAnnotation CoreAnnotationNames.ChangeTrackingStrategy
+            |> removeAnnotation CoreAnnotationNames.OwnedTypes
+            |> removeAnnotation ChangeDetector.SkipDetectChangesAnnotation
             |> removeAnnotation RelationalAnnotationNames.MaxIdentifierLength
+            |> removeAnnotation RelationalAnnotationNames.CheckConstraints
             |> removeAnnotation ScaffoldingAnnotationNames.DatabaseName
             |> removeAnnotation ScaffoldingAnnotationNames.EntityTypeErrors
             |> Seq.toList
@@ -628,8 +624,8 @@ type FSharpDbContextGenerator
                 sb |> unindent |> appendLine ") |> ignore" |> ignore
 
         )
-
-        model.Relational().Sequences |> Seq.iter(fun s -> generateSequence s sb |> ignore)
+        
+        model.GetSequences() |> Seq.iter(fun s -> generateSequence s sb |> ignore)
 
         sb
         |> appendEmptyLine
@@ -645,10 +641,28 @@ type FSharpDbContextGenerator
             |> generateOnModelCreating model useDataAnnotations
 
     interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator with
-        member this.WriteCode (model, ``namespace``, contextName, connectionString, useDataAnnotations, suppressConnectionStringWarning) =
-            let sb = 
-                IndentedStringBuilder()
-                |> writeNamespaces ``namespace``
-                |> indent
-                |> generateClass model contextName connectionString useDataAnnotations
+        member this.WriteCode (model, contextName, connectionString, contextNamespace, modelNamespace, useDataAnnotations, suppressConnectionStringWarning) =
+
+            let sb = IndentedStringBuilder()
+
+            let finalContextNamespace = 
+                if contextNamespace |> isNull then
+                    modelNamespace
+                else 
+                    contextNamespace
+
+            sb
+            |> writeNamespaces (finalContextNamespace)
+            |> ignore
+            
+            if finalContextNamespace <> modelNamespace then
+                sb
+                |> appendLine (sprintf "open %s" modelNamespace)
+                |> ignore
+
+            sb            
+            |> indent
+            |> generateClass model contextName connectionString useDataAnnotations
+            |> ignore
+
             sb.ToString()

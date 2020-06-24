@@ -8,6 +8,7 @@ open System.Diagnostics
 open Microsoft.EntityFrameworkCore
 open Microsoft.Extensions.Logging
 open Microsoft.EntityFrameworkCore.Internal
+open Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure
 
 type FakeDiagnosticsLogger<'a when 'a :> LoggerCategory<'a> and 'a : (new : unit -> 'a)>() =
     
@@ -19,32 +20,21 @@ type FakeDiagnosticsLogger<'a when 'a :> LoggerCategory<'a> and 'a : (new : unit
 
     
     interface IDiagnosticsLogger<'a> with
+        member this.Definitions: LoggingDefinitions = 
+            raise (System.NotImplementedException())
 
-        member this.DiagnosticSource = new DiagnosticListener("Fake") :> _
-        member this.GetLogBehavior (eventId, logLevel) = WarningBehavior.Log
-        member this.Logger = this :> _
-        member this.Options = LoggingOptions() :> _
-        member this.ShouldLogSensitiveData () = false
+        member this.DiagnosticSource: DiagnosticSource = 
+            new DiagnosticListener("Fake") :> _
 
-    
+        member this.Interceptors: IInterceptors = 
+            raise (System.NotImplementedException())
 
-type TestRelationalConventionSetBuilder (dependencies) =
-    inherit RelationalConventionSetBuilder(dependencies)
+        member this.Logger: ILogger = 
+            this :> _
 
-    static member Build () =
-        TestRelationalConventionSetBuilder(
-            RelationalConventionSetBuilderDependencies(
-                TestRelationalTypeMappingSource(
-                    TestServiceFactory.create<TypeMappingSourceDependencies>([]),
-                    TestServiceFactory.create<RelationalTypeMappingSourceDependencies>([])
-                ),
-                FakeDiagnosticsLogger<DbLoggerCategory.Model>(),
-                null,
-                null,
-                null))
-            .AddConventions(
-                TestServiceFactory.create<CoreConventionSetBuilder>([])
-                    .CreateConventionSet());
+        member this.Options: ILoggingOptions = 
+            LoggingOptions() :> _
 
-
+        member this.ShouldLogSensitiveData(): bool = 
+            false
 

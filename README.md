@@ -1,5 +1,7 @@
-# EFCore.FSharp
-Adds F# design-time support to EF Core
+# F# EF Core
+Very rough upgrade to dot net core 3.1 of the good work done [here](https://github.com/bricelam/EFCore.FSharp).
 
-[![AppVeyor build status ](https://ci.appveyor.com/api/projects/status/joy15u99gu69fg1l/branch/master?svg=true)](https://ci.appveyor.com/project/bricelam/efcore-fsharp)
-[![Travis CI build status](https://travis-ci.org/bricelam/EFCore.FSharp.svg?branch=master)](https://travis-ci.org/bricelam/EFCore.FSharp)
+## Getting started
+- Add a reference to the `.nuget` package in the release folder.
+- Run the usual `dotnet ef migrations...` command to add migrations.
+- Add a reference to the generated files from the migration folder in the correct order.

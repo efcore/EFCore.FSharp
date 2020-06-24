@@ -2,15 +2,16 @@ version 5.203.0
 
 source https://api.nuget.org/v3/index.json
 
-nuget Microsoft.EntityFrameworkCore.Design >= 2.2.0
-nuget Microsoft.EntityFrameworkCore.Sqlite >= 2.2.0
-nuget Microsoft.EntityFrameworkCore.SqlServer >= 2.2.0
-nuget Microsoft.EntityFrameworkCore.Specification.Tests >= 2.2.0
-nuget Microsoft.CodeAnalysis ~ 2.10.0
-nuget xunit.runner.visualstudio 2.3.1
-nuget FsUnit.xUnit 3.1.0
-nuget FSharp.Compiler.Service 25.0.1
-nuget Fantomas 2.9.1
+nuget Microsoft.EntityFrameworkCore.Design >= 3.1.1
+nuget Microsoft.EntityFrameworkCore.Sqlite >= 3.1.1
+nuget Microsoft.EntityFrameworkCore.SqlServer >= 3.1.1
+nuget Microsoft.EntityFrameworkCore.Specification.Tests >= 3.1.1
+nuget Microsoft.CodeAnalysis ~ 3.4.0
+nuget Microsoft.Bcl.AsyncInterfaces >= 1.1.0
+nuget xunit.runner.visualstudio 2.4.1
+nuget FsUnit.xUnit 3.8.0
+nuget FSharp.Compiler.Service 34.0.1
+nuget Fantomas >= 3.2.0
 
 source https://api.nuget.org/v3/index.json
 storage: none

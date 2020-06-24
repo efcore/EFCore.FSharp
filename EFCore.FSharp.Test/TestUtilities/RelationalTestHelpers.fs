@@ -2,7 +2,6 @@
 
 open Microsoft.EntityFrameworkCore.TestUtilities
 open Microsoft.EntityFrameworkCore.Infrastructure
-open Microsoft.Extensions.DependencyInjection
 open Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities.FakeProvider
 
 type RelationalTestHelpers private () =

@@ -6,13 +6,16 @@ open FsUnit.Xunit
 
 type FSharpDbContextGeneratorTest() =
     inherit ModelCodeGeneratorTestBase()
-
-    let emptyModelDbContext = """namespace TestNamespace
+    
+    [<Fact>]
+    member this.``Empty model`` () =
+        let emptyModelDbContext = """namespace TestNamespace
 
 open System
 open System.Collections.Generic
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
+open Bricelam.EntityFrameworkCore.FSharp.Extensions
 
     open TestDbDomain
 
@@ -25,15 +28,15 @@ open Microsoft.EntityFrameworkCore.Metadata
 
         override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) =
             if not optionsBuilder.IsConfigured then
-                optionsBuilder.UseTestProvider("Initial Catalog=TestDatabase")
+                optionsBuilder.UseSqlServer("Initial Catalog=TestDatabase") |> ignore
                 ()
 
         override this.OnModelCreating(modelBuilder: ModelBuilder) =
             base.OnModelCreating(modelBuilder)
+
+            modelBuilder.RegisterOptionTypes()
 """
-    
-    //[<Fact>]
-    member this.``Empty model`` () =
+
         base.Test(
             (fun m -> ()),
             (ModelCodeGenerationOptions()),

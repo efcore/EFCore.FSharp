@@ -8,20 +8,16 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.EntityFrameworkCore.Update
 open System.Diagnostics
-open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Storage
-open Microsoft.EntityFrameworkCore.Storage.Internal
-open Microsoft.Extensions.Logging
-open Microsoft.EntityFrameworkCore
 open Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
 open Microsoft.EntityFrameworkCore.Migrations
-open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
-open Microsoft.EntityFrameworkCore.Query.ExpressionTranslators
-open Microsoft.EntityFrameworkCore.Query.Sql
-open System.Data.SqlClient
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.EntityFrameworkCore.Diagnostics
+
+type TestRelationalLoggingDefinitions() =
+    inherit RelationalLoggingDefinitions()
 
 type FakeDbParameter() =
     inherit DbParameter()
@@ -87,7 +83,6 @@ type FakeDbParameterCollection() =
     override this.GetParameter (name:string) : DbParameter = NotImplementedException() |> raise
     override this.SetParameter (name : string, value: DbParameter) : unit = NotImplementedException() |> raise
     override this.SetParameter (index : int, value: DbParameter) : unit = NotImplementedException() |> raise
-
 
 type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor : FakeCommandExecutor) =
     inherit DbCommand()
@@ -451,21 +446,10 @@ and [<AllowNullLiteral>] FakeDbConnection (connectionString: string, ?commandExe
             disposeCount <- disposeCount + 1
 
         base.Dispose disposing
-    
+
 and FakeRelationalConnection (options) =
     inherit RelationalConnection(
-        new RelationalConnectionDependencies(
-                    options,
-                    DiagnosticsLogger<DbLoggerCategory.Database.Transaction>(
-                        new LoggerFactory(),
-                        LoggingOptions(),
-                        new DiagnosticListener("FakeDiagnosticListener")),
-                    DiagnosticsLogger<DbLoggerCategory.Database.Connection>(
-                        new LoggerFactory(),
-                        LoggingOptions(),
-                        new DiagnosticListener("FakeDiagnosticListener")),
-                    NamedConnectionStringResolver(options),
-                    RelationalTransactionFactory(new RelationalTransactionFactoryDependencies())))
+        options)
 
     let mutable _connection : DbConnection = base.DbConnection
     let _dbConnections = ResizeArray<FakeDbConnection>()
@@ -488,6 +472,14 @@ and FakeRelationalDatabaseCreator () =
     member this.CanConnectAsync cancellationToken = NotImplementedException() |> raise
 
     interface IRelationalDatabaseCreator with
+        member this.CanConnect(): bool = 
+            raise (System.NotImplementedException())
+        member this.CanConnectAsync(cancellationToken: CancellationToken): Task<bool> = 
+            raise (System.NotImplementedException())
+        member this.HasTables(): bool = 
+            raise (System.NotImplementedException())
+        member this.HasTablesAsync(cancellationToken: CancellationToken): Task<bool> = 
+            raise (System.NotImplementedException())
     
         member this.EnsureDeleted() = NotImplementedException() |> raise
         member this.EnsureDeletedAsync cancellationToken = NotImplementedException() |> raise
@@ -520,21 +512,23 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
                 .TryAdd<IDatabaseProvider, DatabaseProvider<FakeRelationalOptionsExtension>>()
                 .TryAdd<ISqlGenerationHelper, RelationalSqlGenerationHelper>()
                 .TryAdd<IRelationalTypeMappingSource, TestRelationalTypeMappingSource>()
-                .TryAdd<IMigrationsSqlGenerator, TestRelationalMigrationSqlGenerator>()
-                .TryAdd<IConventionSetBuilder, TestRelationalConventionSetBuilder>()
-                .TryAdd<IMemberTranslator, TestRelationalCompositeMemberTranslator>()
-                .TryAdd<ICompositeMethodCallTranslator, TestRelationalCompositeMethodCallTranslator>()
-                .TryAdd<IQuerySqlGeneratorFactory, TestQuerySqlGeneratorFactory>()
+                .TryAdd<IMigrationsSqlGenerator, TestRelationalMigrationSqlGenerator>()                
                 .TryAdd<IRelationalConnection, FakeRelationalConnection>()
                 .TryAdd<IHistoryRepository>(fun _ -> null)
                 .TryAdd<IUpdateSqlGenerator, FakeSqlGenerator>()
                 .TryAdd<IModificationCommandBatchFactory, TestModificationCommandBatchFactory>()
                 .TryAdd<IRelationalDatabaseCreator, FakeRelationalDatabaseCreator>()
+                .TryAdd<LoggingDefinitions, TestRelationalLoggingDefinitions>()
                 .TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
+
 
         builder.TryAddCoreServices() |> ignore
 
         serviceCollection
+
+    override this.Info 
+        with get() = 
+            System.NotImplementedException() |> raise
 
 
     override this.Clone () =
@@ -543,4 +537,5 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
     override this.ApplyServices services =
 
         services |> FakeRelationalOptionsExtension.AddEntityFrameworkRelationalDatabase |> ignore
-        true
+        ()
+

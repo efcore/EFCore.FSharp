@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    
     <IsPackable>false</IsPackable>
     <AssemblyName>Bricelam.EntityFrameworkCore.FSharp.Test</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="TestUtilities\SqlServerTestHelpers.fs" />
     <Compile Include="TestUtilities\TestServiceFactory.fs" />
     <Compile Include="TestUtilities\TestRelationalTypeMappingSource.fs" />
     <Compile Include="TestUtilities\TestRelationalMigrationSqlGenerator.fs" />
     <Compile Include="TestUtilities\TestRelationalConventionSetBuilder.fs" />
-    <Compile Include="TestUtilities\TestRelationalCompositeMemberTranslator.fs" />
     <Compile Include="TestUtilities\TestModificationCommandBatchFactory.fs" />
   </ItemGroup>
   <ItemGroup>

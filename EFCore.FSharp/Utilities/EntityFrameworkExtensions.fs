@@ -4,11 +4,14 @@ open System
 open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Infrastructure
+open Microsoft.EntityFrameworkCore.Storage
+open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Metadata.Internal
 
 module internal EntityFrameworkExtensions =
 
     let getConfiguredColumnType =
-        Microsoft.EntityFrameworkCore.Internal.RelationalPropertyExtensions.GetConfiguredColumnType
+        Microsoft.EntityFrameworkCore.Metadata.Internal.RelationalPropertyExtensions.GetConfiguredColumnType
 
     let getPrimaryKey (p:IProperty) =
         (p :?> Microsoft.EntityFrameworkCore.Metadata.Internal.Property).PrimaryKey
@@ -23,42 +26,42 @@ module internal EntityFrameworkExtensions =
     let getId =
         Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationExtensions.GetId
 
-    let findMapping =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.PropertyExtensions.FindMapping
+    let findMapping (p:IProperty) =
+        p.FindTypeMapping()
 
     let getDisplayName =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.DisplayName
+        Microsoft.EntityFrameworkCore.EntityTypeExtensions.DisplayName
 
     let getDeclaredProperties =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.GetDeclaredProperties
+        Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredProperties
 
     let getDeclaredKeys =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.GetDeclaredKeys
+        Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredKeys
 
     let getDeclaredIndexes =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.GetDeclaredIndexes
+        Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredIndexes
 
-    let getData (b:bool) entityType =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.GetData(entityType, b)
+    let getData (b:bool) (entityType:IEntityType) =
+        entityType.GetSeedData(b)
 
     let findDeclaredPrimaryKey =
         Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.FindDeclaredPrimaryKey
 
     let getDeclaredForeignKeys =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.GetDeclaredForeignKeys
+        Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredForeignKeys
     
     let getDeclaredReferencingForeignKeys =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.GetDeclaredReferencingForeignKeys
+        Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredReferencingForeignKeys
 
     let findOwnership (entityType : IEntityType) =    
         (entityType :?> Microsoft.EntityFrameworkCore.Metadata.Internal.EntityType)
-            |> Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.FindOwnership
+            |> Microsoft.EntityFrameworkCore.EntityTypeExtensions.FindOwnership
 
-    let scaffoldEntity (e : IEntityType) =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.ScaffoldingMetadataExtensions.Scaffolding e
+    let entityDbSetName (e : IEntityType) =
+        e.GetDbSetName()
 
-    let scaffoldModel (m : IModel) =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.ScaffoldingMetadataExtensions.Scaffolding m
+    let modelEntityTypeErrors (m : IModel) =
+        m.GetEntityTypeErrors()
 
     let toAnnotatable (a : IAnnotatable) =
         a

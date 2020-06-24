@@ -87,7 +87,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             sb
 
     let generateColumnAttribute (p:IProperty) sb =
-        let columnName = p.Relational().ColumnName
+        let columnName = p.GetColumnName()
         let columnType = getConfiguredColumnType p
 
         let delimitedColumnName = if isNull columnName |> not && columnName <> p.Name then FSharpUtilities.delimitString(columnName) |> Some else Option.None
@@ -149,7 +149,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
                 if useDataAnnotations then
                     GenerateEntityTypeDataAnnotations entityType
                 else
-                    noop
+                    id
             |> appendLine ("type " + entityType.Name + "() =")
             |> indent
             |> GenerateConstructor entityType
@@ -219,10 +219,10 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         sb
 
     let GenerateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable sb =
-
+        
         let properties =
             entityType.GetProperties()
-            |> Seq.sortBy(fun p -> p.Scaffolding().ColumnOrdinal)
+            |> Seq.sortBy(fun p -> p.GetColumnOrdinal())
 
         let navProperties =
             entityType

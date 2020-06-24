@@ -1,7 +1,6 @@
 ﻿namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
-open System.Collections.Generic
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Migrations.Operations
@@ -9,11 +8,12 @@ open Microsoft.EntityFrameworkCore.Internal
 
 open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Bricelam.EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
-open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
-open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Migrations.Design
+open Microsoft.EntityFrameworkCore.Storage
+open Microsoft.EntityFrameworkCore.Storage.ValueConversion
+open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
+open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
 
 type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigrationsGeneratorDependencies) = 
     inherit MigrationsCodeGenerator(dependencies)
@@ -33,19 +33,73 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
 
         ns |> Seq.append ns'
 
+    let findValueConverter (property: IProperty) =
+        let coreType = 
+            property.[CoreAnnotationNames.TypeMapping] :?> CoreTypeMapping
+
+        if isNull coreType then
+            dependencies.RelationalTypeMappingSource.FindMapping(property).Converter
+        else
+            coreType.Converter
+
     let getAnnotationNamespaces (items: IAnnotatable seq) = 
         let ignoredAnnotations = 
             [
-                RelationshipDiscoveryConvention.NavigationCandidatesAnnotationName
-                RelationshipDiscoveryConvention.AmbiguousNavigationsAnnotationName
-                InversePropertyAttributeConvention.InverseNavigationsAnnotationName
+                CoreAnnotationNames.NavigationCandidates
+                CoreAnnotationNames.AmbiguousNavigations
+                CoreAnnotationNames.InverseNavigations
+                ChangeDetector.SkipDetectChangesAnnotation
+                CoreAnnotationNames.OwnedTypes
+                CoreAnnotationNames.ChangeTrackingStrategy
+                CoreAnnotationNames.BeforeSaveBehavior
+                CoreAnnotationNames.AfterSaveBehavior
+                CoreAnnotationNames.TypeMapping
+                CoreAnnotationNames.ValueComparer
+                CoreAnnotationNames.KeyValueComparer
+                CoreAnnotationNames.StructuralValueComparer
+                CoreAnnotationNames.ConstructorBinding
+                CoreAnnotationNames.NavigationAccessMode
+                CoreAnnotationNames.PropertyAccessMode
+                CoreAnnotationNames.ProviderClrType
+                CoreAnnotationNames.ValueConverter
+                CoreAnnotationNames.ValueGeneratorFactory
+                CoreAnnotationNames.DefiningQuery
+                CoreAnnotationNames.QueryFilter
+                RelationalAnnotationNames.CheckConstraints
             ]
 
+        let ignoreAnnotationTypes = 
+            [
+                RelationalAnnotationNames.DbFunction 
+                RelationalAnnotationNames.SequencePrefix        
+            ]
+
+        let getProviderType (annotatable: IAnnotatable) (t: Type) = 
+            match annotatable with
+            | :? IProperty -> 
+                let p = annotatable :?> IProperty
+                if (t |> unwrapNullableType) = (p.ClrType |> unwrapNullableType) then
+                    let valueConverter = findValueConverter p
+                    
+                    if isNull valueConverter then 
+                        t
+                    else 
+                        valueConverter.ProviderClrType
+                else 
+                    t
+            | _ -> t
+
         items
-            |> Seq.collect (fun i -> i.GetAnnotations())
-            |> Seq.filter (fun a -> a.Value |> notNull)
-            |> Seq.filter (fun a -> (ignoredAnnotations |> List.contains a.Name) |> not)
-            |> Seq.collect (fun a -> a.Value.GetType() |> getNamespaces)
+            |> Seq.collect (fun i -> 
+                i.GetAnnotations()
+                |> Seq.map(fun a -> {| Annotatable = i; Annotation = a|}))            
+            |> Seq.filter (fun a -> a.Annotation.Value |> notNull)
+            |> Seq.filter (fun a -> (ignoredAnnotations |> List.contains a.Annotation.Name) |> not)
+            |> Seq.filter (fun a -> 
+                ignoreAnnotationTypes
+                |> Seq.exists (fun p -> a.Annotation.Name.StartsWith(p, StringComparison.Ordinal))
+                |> not)
+            |> Seq.collect (fun a -> getProviderType a.Annotatable (a.Annotation.Value.GetType()) |> getNamespaces)
             |> Seq.toList
 
     let getAnnotatables (ops: MigrationOperation seq) : IAnnotatable seq =
@@ -72,16 +126,17 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         let e = 
             (model.GetEntityTypes())
             |> Seq.collect (fun e -> 
-
+                
                 (toAnnotatable e)
-                ::  (e.GetDeclaredProperties() |> Seq.map toAnnotatable |> Seq.toList)
-                @  (e.GetDeclaredKeys() |> Seq.map toAnnotatable |> Seq.toList)
-                @  (e.GetDeclaredForeignKeys() |> Seq.map toAnnotatable |> Seq.toList)
-                @  (e.GetDeclaredIndexes() |> Seq.map toAnnotatable |> Seq.toList)
+                ::  (e.GetProperties() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetKeys() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetForeignKeys() |> Seq.map toAnnotatable |> Seq.toList)
+                @  (e.GetIndexes() |> Seq.map toAnnotatable |> Seq.toList)
                 )
             |> Seq.toList            
 
         (toAnnotatable model) :: e
+           
 
     let getOperationNamespaces (ops: MigrationOperation seq) =
         let columnOperations =
@@ -97,27 +152,64 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
                  |> Seq.collect(fun o -> o.Columns)
                  |> Seq.collect(getColumnNamespaces)
 
-        let annotatables = ops |> getAnnotatables |> getAnnotationNamespaces
+        let insertUpdateDeleteNamespaces =
+            let getDataNamespaces (values: obj[,]) =
+                seq {            
+                    for row in 0..values.GetLength(0) do
+                        for col in 0..values.GetLength(1) do 
+                            let value = values.[row, col]
+                            if isNull value |> not then
+                                for ns' in value.GetType().GetNamespaces() do
+                                    ns'
+                }
 
-        columnOperations |> Seq.append columnsInCreateTableOperations |> Seq.append annotatables
+            let insert = 
+                ops 
+                |> Seq.filter(fun o -> o :? InsertDataOperation)
+                |> Seq.map(fun o -> (o :?> InsertDataOperation).Values)
 
-    let getModelNamspaces (model: IModel) =
-        
+            let update = 
+                ops 
+                |> Seq.filter(fun o -> o :? UpdateDataOperation)
+                |> Seq.collect(fun o -> 
+                    let o' = (o :?> UpdateDataOperation)
+                    [| o'.KeyValues; o'.Values|])
+
+            let delete = 
+                ops 
+                |> Seq.filter(fun o -> o :? DeleteDataOperation)
+                |> Seq.map(fun o -> (o :?> DeleteDataOperation).KeyValues)
+
+            insert
+            |> Seq.append update
+            |> Seq.append delete
+            |> Seq.collect (fun o -> getDataNamespaces o)
+
+        let annotatables = 
+            ops 
+            |> getAnnotatables 
+            |> getAnnotationNamespaces
+
+        columnOperations 
+        |> Seq.append columnsInCreateTableOperations 
+        |> Seq.append insertUpdateDeleteNamespaces
+        |> Seq.append annotatables        
+
+    let getModelNamespaces (model: IModel) =        
         let namespaces =
             model.GetEntityTypes()
-                |> Seq.collect
-                    (fun e -> e.GetDeclaredProperties()
-                                |> Seq.collect (fun p ->
-                                                    let mapping = p.FindMapping()
-                                                    let ns =
-                                                        if  mapping |> isNull ||
-                                                            mapping.Converter |> isNull ||
-                                                            mapping.Converter.ProviderClrType |> isNull then
-                                                            p.ClrType
-                                                        else
-                                                            mapping.Converter.ProviderClrType
-                                                    getNamespaces ns))
-                |> Seq.toList                                
+            |> Seq.collect (fun e -> 
+                e.AsEntityType().GetDeclaredProperties()
+                |> Seq.collect (fun p ->
+                                    let converter = findValueConverter p
+                                    let ns =
+                                        if  converter |> isNull ||
+                                            converter.ProviderClrType |> isNull then
+                                            p.ClrType
+                                        else
+                                            converter.ProviderClrType
+                                    getNamespaces ns))
+            |> Seq.toList                                
 
         let annotationNamespaces = model |> getAnnotatablesByModel |> getAnnotationNamespaces
 
@@ -142,15 +234,17 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
 
     let getAllNamespaces (operations: MigrationOperation seq) =
         let defaultNamespaces =
-            seq { yield "System";
-                     yield "System.Collections.Generic";
-                     yield "Microsoft.EntityFrameworkCore";
-                     yield "Microsoft.EntityFrameworkCore.Infrastructure";
-                     yield "Microsoft.EntityFrameworkCore.Metadata";
-                     yield "Microsoft.EntityFrameworkCore.Migrations";
-                     yield "Microsoft.EntityFrameworkCore.Migrations.Operations";
-                     yield "Microsoft.EntityFrameworkCore.Migrations.Operations.Builders";
-                     yield "Microsoft.EntityFrameworkCore.Storage.ValueConversion" }
+            seq {
+                "System"
+                "System.Collections.Generic"
+                "Microsoft.EntityFrameworkCore"
+                "Microsoft.EntityFrameworkCore.Infrastructure"
+                "Microsoft.EntityFrameworkCore.Metadata"
+                "Microsoft.EntityFrameworkCore.Migrations"
+                "Microsoft.EntityFrameworkCore.Migrations.Operations"
+                "Microsoft.EntityFrameworkCore.Migrations.Operations.Builders"
+                "Microsoft.EntityFrameworkCore.Storage.ValueConversion" 
+            }
 
         let allOperationNamespaces = operations |> getOperationNamespaces
 
@@ -161,12 +255,13 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
             |> sortNamespaces
             |> Seq.distinct
 
-        namespaces        
+        namespaces
+
     let generateMigration (migrationNamespace) (migrationName) (migrationId: string) (contextType:Type) (upOperations) (downOperations) (model) =
         let sb = IndentedStringBuilder()
 
         let allOperations =  (upOperations |> Seq.append downOperations)
-        let namespaces = allOperations |> getAllNamespaces |> Seq.append [contextType.Namespace]
+        let namespaces = allOperations |> getAllNamespaces |> Seq.append [contextType.Namespace]   
 
         sb
         |> appendAutoGeneratedTag
@@ -223,7 +318,7 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
             }
             |> Seq.toList
 
-        let modelNamespaces = model |> getModelNamspaces
+        let modelNamespaces = model |> getModelNamespaces
 
         let namespaces =
             (defaultNamespaces @ modelNamespaces)
@@ -259,7 +354,7 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
     override __.FileExtension with get() = ".fs"
 
     // Defined in the order of when it's called during migration add
-    override this.GenerateMigration (_, migrationName, upOperations, downOperations) =
+    override this.GenerateMigration (migrationNamespace, migrationName, upOperations, downOperations) =
         tempUpOperations <- Seq.toList upOperations
         tempDownOperations <- Seq.toList downOperations 
         tempMigrationName <- migrationName
