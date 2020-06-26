@@ -1,0 +1,13 @@
+Expecto
+FSharp.Core
+Microsoft.NET.Test.Sdk
+YoloDev.Expecto.TestSdk
+altcover
+
+Microsoft.EntityFrameworkCore.Sqlite
+Microsoft.EntityFrameworkCore.SqlServer
+Microsoft.EntityFrameworkCore.Specification.Tests
+
+FSharp.Compiler.Service
+Microsoft.CodeAnalysis
+Fantomas
