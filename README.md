@@ -16,6 +16,19 @@ EFCore.FSharp | [![NuGet Badge](https://buildstats.info/nuget/EFCore.FSharp)](ht
 
 ---
 
+### Building
+
+
+```sh
+> build.cmd <optional buildtarget> // on windows
+$ ./build.sh  <optional buildtarget>// on unix
+```
+
+After building the solution, it will create a NuGet package in the `dist` folder.
+This can then be referenced as usual.
+
+Currently created migrations must be manually added to your solution in the correct order.
+
 ### Developing
 
 Make sure the following **requirements** are installed on your system:
@@ -40,14 +53,6 @@ or
 
 
 ---
-
-### Building
-
-
-```sh
-> build.cmd <optional buildtarget> // on windows
-$ ./build.sh  <optional buildtarget>// on unix
-```
 
 ---
 
