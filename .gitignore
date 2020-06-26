@@ -262,7 +262,6 @@ dist/
 # Test coverage files
 coverage.xml
 coverage.*.xml
-docs/coverage/
 
 # Paket tool store
 .paket/.store
