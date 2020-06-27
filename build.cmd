@@ -1,2 +1,6 @@
-dotnet restore build.proj
-dotnet fake -v build %*
+echo Restoring dotnet tools...
+dotnet tool restore
+
+dotnet paket install
+
+dotnet fake build -t %*

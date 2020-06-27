@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="AssemblyInfo.fs" />
+        <Compile Include="TestUtilities\SqlServerTestHelpers.fs" />
+        <Compile Include="TestUtilities\TestServiceFactory.fs" />
+        <Compile Include="TestUtilities\TestRelationalTypeMappingSource.fs" />
+        <Compile Include="TestUtilities\TestRelationalMigrationSqlGenerator.fs" />
+        <Compile Include="TestUtilities\TestRelationalConventionSetBuilder.fs" />
+        <Compile Include="TestUtilities\TestModificationCommandBatchFactory.fs" />
+        <Compile Include="TestUtilities\TestProviderCodeGenerator.fs" />
+        <Compile Include="TestUtilities\FakeProvider\FakeDbConnection.fs" />
+        <Compile Include="TestUtilities\BuildReference.fs" />
+        <Compile Include="TestUtilities\RelationalTestHelpers.fs" />
+        <Compile Include="Internal\FSharpUtilitiesTest.fs" />
+        <Compile Include="Migrations\Design\FSharpMigrationsGeneratorTest.fs" />
+        <Compile Include="Scaffolding\Internal\ModelCodeGeneratorTestBase.fs" />
+        <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
+        <Compile Include="Scaffolding\Internal\FSharpDbContextGeneratorTest.fs" />
+        <Compile Include="Main.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="../../src/EFCore.FSharp/EFCore.FSharp.fsproj" />
+    </ItemGroup>
+    <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>
