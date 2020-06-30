@@ -1,4 +1,4 @@
-﻿module Bricelam.EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest
+﻿module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest
 
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Expecto
@@ -9,7 +9,7 @@ open System
 open System.Collections.Generic
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
-open Bricelam.EntityFrameworkCore.FSharp.Extensions
+open EntityFrameworkCore.FSharp.Extensions
 
     open TestDbDomain
 

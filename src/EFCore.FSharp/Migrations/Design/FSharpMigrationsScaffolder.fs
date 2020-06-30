@@ -1,8 +1,8 @@
-namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
+namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Internal
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open System.Text
 open System.IO
 

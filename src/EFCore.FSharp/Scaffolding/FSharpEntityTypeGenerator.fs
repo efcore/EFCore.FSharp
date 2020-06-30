@@ -1,4 +1,4 @@
-namespace Bricelam.EntityFrameworkCore.FSharp.Scaffolding
+namespace EntityFrameworkCore.FSharp.Scaffolding
 
 open System
 open System.Collections.Generic
@@ -6,9 +6,9 @@ open System.Reflection
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
-open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Bricelam.EntityFrameworkCore.FSharp.Internal
+open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.Internal
 
 module ScaffoldingTypes =
     type RecordOrType = | ClassType | RecordType

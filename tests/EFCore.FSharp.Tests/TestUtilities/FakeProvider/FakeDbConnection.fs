@@ -1,4 +1,4 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities.FakeProvider
+﻿namespace EntityFrameworkCore.FSharp.Test.TestUtilities.FakeProvider
 
 open System
 open System.Collections.Generic
@@ -10,7 +10,7 @@ open Microsoft.EntityFrameworkCore.Update
 open System.Diagnostics
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Storage
-open Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
+open EntityFrameworkCore.FSharp.Test.TestUtilities
 open Microsoft.EntityFrameworkCore.Migrations
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.Extensions.DependencyInjection

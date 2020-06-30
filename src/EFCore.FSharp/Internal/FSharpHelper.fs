@@ -1,4 +1,4 @@
-namespace Bricelam.EntityFrameworkCore.FSharp.Internal
+namespace EntityFrameworkCore.FSharp.Internal
 
 open System
 open System.Collections.Generic
@@ -8,8 +8,8 @@ open System.Numerics
 open System.Text
 open Microsoft.EntityFrameworkCore.Internal
 open System.Globalization
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Storage
 

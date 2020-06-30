@@ -1,9 +1,9 @@
-module Bricelam.EntityFrameworkCore.FSharp.Test.Internal
+module EntityFrameworkCore.FSharp.Test.Internal
 
 open System
 open System.Collections.Generic
 open Microsoft.EntityFrameworkCore.Design
-open Bricelam.EntityFrameworkCore.FSharp.Internal
+open EntityFrameworkCore.FSharp.Internal
 open Expecto
 
 let getTypeNameTestCases = [

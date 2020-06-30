@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>Bricelam.EntityFrameworkCore.FSharp</AssemblyName>
-    <RootNamespace>Bricelam.EntityFrameworkCore.FSharp</RootNamespace>
+    <AssemblyName>EntityFrameworkCore.FSharp</AssemblyName>
+    <RootNamespace>EntityFrameworkCore.FSharp</RootNamespace>
     <Authors>Brice Lambson</Authors>
     <Description>Adds F# design-time support to EF Core</Description>
     <PackageLicenseUrl>https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE</PackageLicenseUrl>
