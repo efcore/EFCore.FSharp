@@ -90,8 +90,6 @@ let docsSiteBaseUrl = sprintf "https://%s.github.io/%s" gitOwner gitRepoName
 
 let disableCodeCoverage = environVarAsBoolOrDefault "DISABLE_COVERAGE" false
 
-let signOutput = environVarAsBoolOrDefault "signOutput" false
-
 let githubToken = Environment.environVarOrNone "GITHUB_TOKEN"
 Option.iter(TraceSecrets.register "<GITHUB_TOKEN>" )
 
@@ -393,7 +391,6 @@ let dotnetBuild ctx =
     let args =
         [
             sprintf "/p:PackageVersion=%s" latestEntry.NuGetVersion
-            sprintf "/p:SignOutput=%O" signOutput
             "--no-restore"
         ]
     DotNet.build(fun c ->

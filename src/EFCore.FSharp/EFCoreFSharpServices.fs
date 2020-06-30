@@ -1,4 +1,4 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp
+﻿namespace EntityFrameworkCore.FSharp
 
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Migrations.Design
@@ -6,10 +6,10 @@ open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 open Microsoft.Extensions.DependencyInjection
 
-open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
-open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal
-open Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
-open Bricelam.EntityFrameworkCore.FSharp.Internal
+open EntityFrameworkCore.FSharp.Scaffolding
+open EntityFrameworkCore.FSharp.Scaffolding.Internal
+open EntityFrameworkCore.FSharp.Migrations.Design
+open EntityFrameworkCore.FSharp.Internal
 
 type EFCoreFSharpServices() =
     interface IDesignTimeServices with

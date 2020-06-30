@@ -1,4 +1,4 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
+﻿namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open Microsoft.EntityFrameworkCore.Metadata
@@ -6,14 +6,14 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
-open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
-open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
+open EntityFrameworkCore.FSharp.SharedTypeExtensions
 
 type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigrationsGeneratorDependencies) = 
     inherit MigrationsCodeGenerator(dependencies)
