@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp.Internal
+namespace EntityFrameworkCore.FSharp.Internal
 
 open System
 open System.Globalization
@@ -47,6 +47,9 @@ module FSharpUtilities =
 
     let private generateLiteralByteArray (value : byte array) =
         "new byte[] {" + String.Join(", ", value) + "}"
+
+    let private generateLiteralStringArray (value: string array) =
+        "[| " + (value |> Array.fold (fun c n -> c + "\"" + n + "\"; ") "") + "|]"
 
     let private generateLiteralBool (value: bool) =
         if value then "true" else "false"
@@ -238,6 +241,7 @@ module FSharpUtilities =
     let generateLiteral(literal:obj) =
         match literal with
         | :? (byte array) as literal' -> generateLiteralByteArray(literal')
+        | :? (string array) as literal' -> generateLiteralStringArray(literal')
         | :? bool as literal' -> generateLiteralBool(literal')
         | :? int as literal' -> generateLiteralInt32(literal')
         | :? Int64 as literal' -> generateLiteralInt64(literal')
@@ -248,7 +252,7 @@ module FSharpUtilities =
         | :? DateTime as literal' -> generateLiteralDateTime(literal')
         | :? DateTimeOffset as literal' -> generateLiteralDateTimeOffset(literal')
         | :? Guid as literal' -> generateLiteralGuid(literal')
-        | :? string as literal' -> generateLiteralString(literal')
+        | :? string as literal' -> generateLiteralString(literal')        
         | _ -> generateLiteralObject(literal)
 
 
