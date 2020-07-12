@@ -1,12 +1,12 @@
-﻿module Bricelam.EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpModelGeneratorTests
+﻿module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpModelGeneratorTests
 
 open System.IO
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Metadata.Internal
-open Bricelam.EntityFrameworkCore.FSharp
-open Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
+open EntityFrameworkCore.FSharp
+open EntityFrameworkCore.FSharp.Test.TestUtilities
 open Expecto
 open Expecto.Tests
 

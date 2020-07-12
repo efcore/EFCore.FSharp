@@ -1,4 +1,4 @@
-namespace Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
+namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open System.Collections.Generic
@@ -7,9 +7,9 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
-open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Bricelam.EntityFrameworkCore.FSharp.Internal
+open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
 open Microsoft.EntityFrameworkCore.Design

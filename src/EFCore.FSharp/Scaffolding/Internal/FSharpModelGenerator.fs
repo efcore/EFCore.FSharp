@@ -1,14 +1,14 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal
+﻿namespace EntityFrameworkCore.FSharp.Scaffolding.Internal
 
 open System.IO
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
-open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
-open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes
-open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.Scaffolding
+open EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes
+open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.EntityFrameworkCore.Internal
 
 

@@ -1,4 +1,4 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
+﻿namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Microsoft.EntityFrameworkCore.Query.ExpressionTranslators
 open Microsoft.EntityFrameworkCore.Query.Sql

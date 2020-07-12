@@ -1,4 +1,4 @@
-﻿module Bricelam.EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.ModelCodeGeneratorTestBase
+﻿module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.ModelCodeGeneratorTestBase
 
 open System
 open Microsoft.EntityFrameworkCore
@@ -11,14 +11,14 @@ open Microsoft.EntityFrameworkCore.SqlServer.Design.Internal
 
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.EntityFrameworkCore.Scaffolding
-open Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
+open EntityFrameworkCore.FSharp.Test.TestUtilities
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal
 open Microsoft.EntityFrameworkCore.SqlServer.Scaffolding.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
-open Bricelam.EntityFrameworkCore.FSharp.Scaffolding
-open Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal
-open Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
+open EntityFrameworkCore.FSharp.Scaffolding
+open EntityFrameworkCore.FSharp.Scaffolding.Internal
+open EntityFrameworkCore.FSharp.Migrations.Design
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure
 open Microsoft.EntityFrameworkCore.Diagnostics
@@ -78,7 +78,7 @@ type ModelCodeGeneratorTestBase() =
                 "Microsoft.EntityFrameworkCore.Relational.dll"
                 "Microsoft.EntityFrameworkCore.Sqlite.dll"
                 "Microsoft.EntityFrameworkCore.SqlServer.dll"
-                "Bricelam.EntityFrameworkCore.FSharp.dll"
+                "EntityFrameworkCore.FSharp.dll"
             ]
 
         let runtimeDir =

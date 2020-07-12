@@ -222,27 +222,27 @@ for (i = 0, l = charts.length; i < l; i++) {
 
 var assemblies = [
   {
-    "name": "Bricelam.EntityFrameworkCore.FSharp",
+    "name": "EntityFrameworkCore.FSharp",
     "classes": [
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Conversion", "rp": "Bricelam.EntityFrameworkCore.FSharp_Conversion.htm", "cl": 0, "ucl": 6, "cal": 6, "tl": 22, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.EFCoreFSharpServices", "rp": "Bricelam.EntityFrameworkCore.FSharp_EFCoreFSharpServices.htm", "cl": 11, "ucl": 0, "cal": 11, "tl": 26, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions", "rp": "Bricelam.EntityFrameworkCore.FSharp_EntityFrameworkExtensions.htm", "cl": 5, "ucl": 15, "cal": 20, "tl": 67, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Extensions", "rp": "Bricelam.EntityFrameworkCore.FSharp_Extensions.htm", "cl": 9, "ucl": 17, "cal": 26, "tl": 56, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities", "rp": "Bricelam.EntityFrameworkCore.FSharp_IndentedStringBuilderUtilities.htm", "cl": 17, "ucl": 13, "cal": 30, "tl": 73, "ct": "LineCoverage", "mc": "-", "cb": 4, "tb": 10, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpHelper.htm", "cl": 146, "ucl": 268, "cal": 414, "tl": 660, "ct": "LineCoverage", "mc": "-", "cb": 25, "tb": 177, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpUtilities.htm", "cl": 31, "ucl": 30, "cal": 61, "tl": 261, "ct": "LineCoverage", "mc": "-", "cb": 22, "tb": 50, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "cl": 0, "ucl": 223, "cal": 223, "tl": 740, "ct": "LineCoverage", "mc": "-", "cb": 3, "tb": 50, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsGenerator", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpMigrationsGenerator.htm", "cl": 0, "ucl": 104, "cal": 104, "tl": 370, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 22, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsGeneratorDependencies", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpMigrationsGeneratorDependencies.htm", "cl": 0, "ucl": 10, "cal": 10, "tl": 37, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsScaffolder", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpMigrationsScaffolder.htm", "cl": 0, "ucl": 27, "cal": 27, "tl": 53, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 6, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "cl": 104, "ucl": 238, "cal": 342, "tl": 751, "ct": "LineCoverage", "mc": "-", "cb": 24, "tb": 88, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.OptionConverter`1", "rp": "Bricelam.EntityFrameworkCore.FSharp_OptionConverter_1.htm", "cl": 0, "ucl": 3, "cal": 3, "tl": 22, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Scaffolding.AttributeWriter", "rp": "Bricelam.EntityFrameworkCore.FSharp_AttributeWriter.htm", "cl": 4, "ucl": 2, "cal": 6, "tl": 259, "ct": "LineCoverage", "mc": "-", "cb": 1, "tb": 2, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Scaffolding.FSharpDbContextGenerator", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpDbContextGenerator.htm", "cl": 54, "ucl": 47, "cal": 101, "tl": 668, "ct": "LineCoverage", "mc": "-", "cb": 6, "tb": 22, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpEntityTypeGenerator.htm", "cl": 20, "ucl": 10, "cal": 30, "tl": 259, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 4, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Scaffolding.Internal.FSharpModelGenerator", "rp": "Bricelam.EntityFrameworkCore.FSharp_FSharpModelGenerator.htm", "cl": 56, "ucl": 1, "cal": 57, "tl": 120, "ct": "LineCoverage", "mc": "-", "cb": 2, "tb": 4, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes", "rp": "Bricelam.EntityFrameworkCore.FSharp_ScaffoldingTypes.htm", "cl": 0, "ucl": 0, "cal": 0, "tl": 0, "ct": "MethodCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions", "rp": "Bricelam.EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "cl": 4, "ucl": 16, "cal": 20, "tl": 69, "ct": "LineCoverage", "mc": "-", "cb": 2, "tb": 14, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Conversion", "rp": "EntityFrameworkCore.FSharp_Conversion.htm", "cl": 0, "ucl": 6, "cal": 6, "tl": 21, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.EFCoreFSharpServices", "rp": "EntityFrameworkCore.FSharp_EFCoreFSharpServices.htm", "cl": 11, "ucl": 0, "cal": 11, "tl": 26, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.EntityFrameworkExtensions", "rp": "EntityFrameworkCore.FSharp_EntityFrameworkExtensions.htm", "cl": 5, "ucl": 15, "cal": 20, "tl": 67, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Extensions", "rp": "EntityFrameworkCore.FSharp_Extensions.htm", "cl": 9, "ucl": 17, "cal": 26, "tl": 56, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities", "rp": "EntityFrameworkCore.FSharp_IndentedStringBuilderUtilities.htm", "cl": 17, "ucl": 13, "cal": 30, "tl": 73, "ct": "LineCoverage", "mc": "-", "cb": 4, "tb": 10, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "rp": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "cl": 146, "ucl": 268, "cal": 414, "tl": 660, "ct": "LineCoverage", "mc": "-", "cb": 25, "tb": 177, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "rp": "EntityFrameworkCore.FSharp_FSharpUtilities.htm", "cl": 31, "ucl": 30, "cal": 61, "tl": 261, "ct": "LineCoverage", "mc": "-", "cb": 22, "tb": 50, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "cl": 0, "ucl": 223, "cal": 223, "tl": 740, "ct": "LineCoverage", "mc": "-", "cb": 3, "tb": 50, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationsGenerator.htm", "cl": 0, "ucl": 104, "cal": 104, "tl": 370, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 22, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsGeneratorDependencies", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationsGeneratorDependencies.htm", "cl": 0, "ucl": 10, "cal": 10, "tl": 37, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsScaffolder", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationsScaffolder.htm", "cl": 0, "ucl": 27, "cal": 27, "tl": 53, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 6, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "cl": 104, "ucl": 238, "cal": 342, "tl": 751, "ct": "LineCoverage", "mc": "-", "cb": 24, "tb": 88, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.OptionConverter`1", "rp": "EntityFrameworkCore.FSharp_OptionConverter_1.htm", "cl": 0, "ucl": 3, "cal": 3, "tl": 21, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Scaffolding.AttributeWriter", "rp": "EntityFrameworkCore.FSharp_AttributeWriter.htm", "cl": 4, "ucl": 2, "cal": 6, "tl": 259, "ct": "LineCoverage", "mc": "-", "cb": 1, "tb": 2, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Scaffolding.FSharpDbContextGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpDbContextGenerator.htm", "cl": 54, "ucl": 47, "cal": 101, "tl": 668, "ct": "LineCoverage", "mc": "-", "cb": 6, "tb": 22, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpEntityTypeGenerator.htm", "cl": 20, "ucl": 10, "cal": 30, "tl": 259, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 4, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Scaffolding.Internal.FSharpModelGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpModelGenerator.htm", "cl": 56, "ucl": 1, "cal": 57, "tl": 120, "ct": "LineCoverage", "mc": "-", "cb": 2, "tb": 4, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes", "rp": "EntityFrameworkCore.FSharp_ScaffoldingTypes.htm", "cl": 0, "ucl": 0, "cal": 0, "tl": 0, "ct": "MethodCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "rp": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "cl": 4, "ucl": 16, "cal": 20, "tl": 69, "ct": "LineCoverage", "mc": "-", "cb": 2, "tb": 14, "lch": [], "bch": [], "hc": [] },
     ]},
 ];
 
@@ -256,84 +256,84 @@ var riskHotspotMetrics = [
 
 var riskHotspots = [
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateEntityTypeAnnotations(System.String,Microsoft.EntityFrameworkCore.Metadata.IEntityType,Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder)", "methodShortName": "generateEntityTypeAnnotations(...)", "fileIndex": 0, "line": 355,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateEntityTypeAnnotations(System.String,Microsoft.EntityFrameworkCore.Metadata.IEntityType,Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder)", "methodShortName": "generateEntityTypeAnnotations(...)", "fileIndex": 0, "line": 355,
     "metrics": [
       { "value": 16, "exceeded": false },
       { "value": 4096, "exceeded": true },
       { "value": 16.5, "exceeded": true },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateForeignKey(System.String,Microsoft.EntityFrameworkCore.Metadata.IForeignKey,Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder)", "methodShortName": "generateForeignKey(...)", "fileIndex": 0, "line": 501,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateForeignKey(System.String,Microsoft.EntityFrameworkCore.Metadata.IForeignKey,Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder)", "methodShortName": "generateForeignKey(...)", "fileIndex": 0, "line": 501,
     "metrics": [
       { "value": 15, "exceeded": false },
       { "value": 4096, "exceeded": true },
       { "value": 0, "exceeded": false },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper::unknownLiteral(System.Object)", "methodShortName": "unknownLiteral(...)", "fileIndex": 0, "line": 501,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::unknownLiteral(System.Object)", "methodShortName": "unknownLiteral(...)", "fileIndex": 0, "line": 501,
     "metrics": [
       { "value": 32, "exceeded": true },
       { "value": 1536, "exceeded": true },
       { "value": 731.26, "exceeded": true },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper::handleExpression(System.Linq.Expressions.Expression,System.Boolean,Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder)", "methodShortName": "handleExpression(...)", "fileIndex": 0, "line": 306,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::handleExpression(System.Linq.Expressions.Expression,System.Boolean,Microsoft.EntityFrameworkCore.Internal.IndentedStringBuilder)", "methodShortName": "handleExpression(...)", "fileIndex": 0, "line": 306,
     "metrics": [
       { "value": 14, "exceeded": false },
       { "value": 512, "exceeded": true },
       { "value": 0, "exceeded": false },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpUtilities.htm", "methodName": "System.String Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpUtilities::getTypeName(System.Type)", "methodShortName": "getTypeName(...)", "fileIndex": 0, "line": 216,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "reportPath": "EntityFrameworkCore.FSharp_FSharpUtilities.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpUtilities::getTypeName(System.Type)", "methodShortName": "getTypeName(...)", "fileIndex": 0, "line": 216,
     "metrics": [
       { "value": 11, "exceeded": false },
       { "value": 512, "exceeded": true },
       { "value": 11.17, "exceeded": false },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$Bricelam-EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@643-5::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 643,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@643-5::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 643,
     "metrics": [
       { "value": 28, "exceeded": false },
       { "value": 512, "exceeded": true },
       { "value": 413.81, "exceeded": true },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper::isIdentifierPartCharacter(System.Char)", "methodShortName": "isIdentifierPartCharacter(...)", "fileIndex": 0, "line": 412,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isIdentifierPartCharacter(System.Char)", "methodShortName": "isIdentifierPartCharacter(...)", "fileIndex": 0, "line": 412,
     "metrics": [
       { "value": 14, "exceeded": false },
       { "value": 288, "exceeded": true },
       { "value": 0, "exceeded": false },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper::IdentifierWithScope(System.String,System.Collections.Generic.ICollection`1<System.String>)", "methodShortName": "IdentifierWithScope(...)", "fileIndex": 0, "line": 465,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::IdentifierWithScope(System.String,System.Collections.Generic.ICollection`1<System.String>)", "methodShortName": "IdentifierWithScope(...)", "fileIndex": 0, "line": 465,
     "metrics": [
       { "value": 13, "exceeded": false },
       { "value": 256, "exceeded": true },
       { "value": 0, "exceeded": false },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Int32 <StartupCode$Bricelam-EntityFrameworkCore-FSharp>.$FSharpSnapshotGenerator/clo@129-90::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 129,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpSnapshotGenerator/clo@129-90::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 129,
     "metrics": [
       { "value": 14, "exceeded": false },
       { "value": 64, "exceeded": false },
       { "value": 103.2, "exceeded": true },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpUtilities.htm", "methodName": "System.String Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpUtilities::generateLiteral(System.Object)", "methodShortName": "generateLiteral(...)", "fileIndex": 0, "line": 239,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "reportPath": "EntityFrameworkCore.FSharp_FSharpUtilities.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpUtilities::generateLiteral(System.Object)", "methodShortName": "generateLiteral(...)", "fileIndex": 0, "line": 239,
     "metrics": [
       { "value": 13, "exceeded": false },
       { "value": 22, "exceeded": false },
       { "value": 99.53, "exceeded": true },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String Bricelam.EntityFrameworkCore.FSharp.Internal.FSharpHelper::ReferenceFullName(System.Type,System.Boolean)", "methodShortName": "ReferenceFullName(...)", "fileIndex": 0, "line": 146,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::ReferenceFullName(System.Type,System.Boolean)", "methodShortName": "ReferenceFullName(...)", "fileIndex": 0, "line": 146,
     "metrics": [
       { "value": 8, "exceeded": false },
       { "value": 32, "exceeded": false },
       { "value": 49.67, "exceeded": true },
     ]},
   {
-    "assembly": "Bricelam.EntityFrameworkCore.FSharp", "class": "Bricelam.EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator", "reportPath": "Bricelam.EntityFrameworkCore.FSharp_FSharpEntityTypeGenerator.htm", "methodName": "System.Int32 <StartupCode$Bricelam-EntityFrameworkCore-FSharp>.$FSharpEntityTypeGenerator/-ctor@35-3::GenerateNext(System.Collections.Generic.IEnumerable`1<System.Tuple`2<System.Type,System.String>>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 35,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpEntityTypeGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpEntityTypeGenerator/-ctor@35-3::GenerateNext(System.Collections.Generic.IEnumerable`1<System.Tuple`2<System.Type,System.String>>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 35,
     "metrics": [
       { "value": 23, "exceeded": false },
       { "value": 0, "exceeded": false },

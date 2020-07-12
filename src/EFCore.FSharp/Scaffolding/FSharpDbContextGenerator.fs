@@ -1,4 +1,4 @@
-namespace Bricelam.EntityFrameworkCore.FSharp.Scaffolding
+namespace EntityFrameworkCore.FSharp.Scaffolding
 
 open System
 open Microsoft.EntityFrameworkCore
@@ -7,9 +7,9 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 
-open Bricelam.EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Bricelam.EntityFrameworkCore.FSharp.Internal
+open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Diagnostics
@@ -19,7 +19,7 @@ open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 #nowarn "0044"
 
 open System.Collections.Generic
-open Bricelam.EntityFrameworkCore.FSharp
+open EntityFrameworkCore.FSharp
 
 type FSharpDbContextGenerator
     (providerCodeGenerators: IProviderConfigurationCodeGenerator seq,
@@ -43,7 +43,7 @@ type FSharpDbContextGenerator
             "System.Collections.Generic"
             "Microsoft.EntityFrameworkCore"
             "Microsoft.EntityFrameworkCore.Metadata"
-            "Bricelam.EntityFrameworkCore.FSharp.Extensions"
+            "EntityFrameworkCore.FSharp.Extensions"
         ]
 
     let writeNamespaces ``namespace`` (sb:IndentedStringBuilder) =

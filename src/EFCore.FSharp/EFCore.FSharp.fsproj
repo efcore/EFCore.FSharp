@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>Bricelam.EntityFrameworkCore.FSharp</AssemblyName>
-    <RootNamespace>Bricelam.EntityFrameworkCore.FSharp</RootNamespace>
+    <AssemblyName>EntityFrameworkCore.FSharp</AssemblyName>
+    <RootNamespace>EntityFrameworkCore.FSharp</RootNamespace>
     <Authors>Brice Lambson</Authors>
     <Description>Adds F# design-time support to EF Core</Description>
     <PackageLicenseUrl>https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE</PackageLicenseUrl>
@@ -12,8 +12,6 @@
     <RepositoryUrl>https://github.com/efcore/EFCore.FSharp.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Copyright>© 2018 Brice Lambson. All rights reserved.</Copyright>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
     <LangVersion>latest</LangVersion>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -44,14 +42,5 @@
       <PackagePath>build</PackagePath>
     </None>
   </ItemGroup>
-  <Target Name="SignOutput" AfterTargets="Build" Condition="'$(SignOutput)' == 'True'">
-    <PropertyGroup>
-      <TimestampUrl>http://time.certum.pl</TimestampUrl>
-      <WindowsSdkDir Condition=" '$(WindowsSdkDir)' == '' ">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@InstallationFolder)</WindowsSdkDir>
-      <WindowsSDKVersion Condition=" '$(WindowsSDKVersion)' == '' ">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)\</WindowsSDKVersion>
-      <SignToolCommand>"$(WindowsSdkDir)bin\$(WindowsSDKVersion)x86\signtool.exe" sign /t $(TimestampUrl) /q</SignToolCommand>
-    </PropertyGroup>
-    <Exec Command="$(SignToolCommand) &quot;$(TargetPath)&quot;" />
-  </Target>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

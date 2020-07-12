@@ -1,4 +1,4 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp.Internal
+﻿namespace EntityFrameworkCore.FSharp.Internal
 
 open System
 open System.Globalization
@@ -6,8 +6,8 @@ open System.Reflection
 open System.Text
 open Microsoft.EntityFrameworkCore.Design
 
-open Bricelam.EntityFrameworkCore.FSharp.SharedTypeExtensions
-open Bricelam.EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp.SharedTypeExtensions
+open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 
 module FSharpUtilities =
 

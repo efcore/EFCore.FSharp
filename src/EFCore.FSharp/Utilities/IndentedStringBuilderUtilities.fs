@@ -1,4 +1,4 @@
-namespace Bricelam.EntityFrameworkCore.FSharp
+namespace EntityFrameworkCore.FSharp
 
 open System
 open Microsoft.EntityFrameworkCore.Internal

@@ -1,4 +1,4 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp.Test.Migrations.Design
+﻿namespace EntityFrameworkCore.FSharp.Test.Migrations.Design
 
 open System
 open System.Collections.Generic
@@ -10,9 +10,9 @@ open Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.TestUtilities
 
-open Bricelam.EntityFrameworkCore.FSharp.Internal
-open Bricelam.EntityFrameworkCore.FSharp.Migrations.Design
-open Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
+open EntityFrameworkCore.FSharp.Internal
+open EntityFrameworkCore.FSharp.Migrations.Design
+open EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Expecto
 open Microsoft.EntityFrameworkCore

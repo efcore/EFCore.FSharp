@@ -1,8 +1,8 @@
-﻿namespace Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities
+﻿namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Microsoft.EntityFrameworkCore.TestUtilities
 open Microsoft.EntityFrameworkCore.Infrastructure
-open Bricelam.EntityFrameworkCore.FSharp.Test.TestUtilities.FakeProvider
+open EntityFrameworkCore.FSharp.Test.TestUtilities.FakeProvider
 
 type RelationalTestHelpers private () =
     inherit TestHelpers()
