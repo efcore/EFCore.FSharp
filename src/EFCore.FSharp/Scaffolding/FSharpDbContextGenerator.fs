@@ -224,12 +224,12 @@ type FSharpDbContextGenerator
     let generateLambdaToKey (properties : IReadOnlyList<IProperty>) lambdaIdentifier =
         match properties.Count with
         | 0 -> ""
-        | 1 -> sprintf "%s.%s" lambdaIdentifier (properties.[0].Name)
+        | 1 -> sprintf "fun %s -> %s.%s :> obj" lambdaIdentifier lambdaIdentifier (properties.[0].Name)
         | _ ->
             let props =
                 properties |> Seq.map (fun p -> sprintf "%s.%s" lambdaIdentifier p.Name)
             
-            sprintf "(%s)" (String.Join(", ", props))
+            sprintf "fun %s -> (%s) :> obj" lambdaIdentifier (String.Join(", ", props))
 
     let generatePropertyNameArray (properties : IReadOnlyList<IProperty>) =
 
@@ -337,7 +337,7 @@ type FSharpDbContextGenerator
             else
                 
                 let lines = ResizeArray<string>()
-                lines.Add(sprintf ".HasKey(fun e -> %s :> obj)" (generateLambdaToKey key.Properties "e"))
+                lines.Add(sprintf ".HasKey(%s)" (generateLambdaToKey key.Properties "e"))
 
                 if explicitName then
                     lines.Add(sprintf ".HasName(%s)" (code.Literal (key.GetName())))
@@ -591,21 +591,28 @@ type FSharpDbContextGenerator
             annotations
             |> Seq.map(fun a -> a |> checkAnnotation model)
 
-        let moreAnnotaionsToRemove = checkedAnnotations |> Seq.map(fun (a, _) -> a) |> Seq.filter(fun x -> x.IsSome) |> Seq.map(fun x -> x.Value)
-        let lines = checkedAnnotations |> Seq.map(fun (_, l) -> l) |> Seq.filter(fun x -> x.IsSome) |> Seq.map(fun x -> x.Value)
+        let moreAnnotaionsToRemove =
+            checkedAnnotations
+            |> Seq.map(fun (a, _) -> a)
+            |> Seq.choose id
 
         let toRemove = annotationsToRemove |> Seq.append moreAnnotaionsToRemove
 
-        
-        let lines' = lines |> Seq.append ((annotations |> Seq.except toRemove) |> generateAnnotations)
+        let lines =
+            checkedAnnotations
+            |> Seq.map (fun (_, l) -> l)
+            |> Seq.choose id
+            |> Seq.append ((annotations |> Seq.except toRemove) |> generateAnnotations)
 
-        if lines' |> Seq.isEmpty |> not then
+        if lines |> Seq.isEmpty |> not then
             sb
                 |> appendEmptyLine
                 |> indent
-                |> append (sprintf "modelBuilder%s |> ignore" (lines' |> Seq.head))
+                |> append "modelBuilder"
                 |> indent
-                |> appendLines (lines' |> Seq.tail) false
+                |> appendLines lines false
+                |> appendLine "|> ignore"
+                |> appendEmptyLine
                 |> unindent
                 |> unindent
                 |> ignore
@@ -660,8 +667,7 @@ type FSharpDbContextGenerator
                 |> appendLine (sprintf "open %s" modelNamespace)
                 |> ignore
 
-            sb            
-            |> indent
+            sb
             |> generateClass model contextName connectionString useDataAnnotations
             |> ignore
 

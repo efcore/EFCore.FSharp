@@ -1,4 +1,4 @@
-﻿module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest
+module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest
 
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Expecto
@@ -11,24 +11,24 @@ open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open EntityFrameworkCore.FSharp.Extensions
 
-    open TestDbDomain
+open TestDbDomain
 
-    type TestDbContext =
-        inherit DbContext
+type TestDbContext =
+    inherit DbContext
 
-        new() = { inherit DbContext() }
-        new(options : DbContextOptions<TestDbContext>) =
-            { inherit DbContext(options) }
+    new() = { inherit DbContext() }
+    new(options : DbContextOptions<TestDbContext>) =
+        { inherit DbContext(options) }
 
-        override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) =
-            if not optionsBuilder.IsConfigured then
-                optionsBuilder.UseSqlServer("Initial Catalog=TestDatabase") |> ignore
-                ()
+    override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) =
+        if not optionsBuilder.IsConfigured then
+            optionsBuilder.UseSqlServer("Initial Catalog=TestDatabase") |> ignore
+            ()
 
-        override this.OnModelCreating(modelBuilder: ModelBuilder) =
-            base.OnModelCreating(modelBuilder)
+    override this.OnModelCreating(modelBuilder: ModelBuilder) =
+        base.OnModelCreating(modelBuilder)
 
-            modelBuilder.RegisterOptionTypes()
+        modelBuilder.RegisterOptionTypes()
 """
 
 [<Tests>]
