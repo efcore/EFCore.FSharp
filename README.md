@@ -1,6 +1,8 @@
 # EFCore.FSharp
 
-Add F# design time support to EF Core
+Add F# design time support to EF Core.
+
+For a basic introduction to running code-first migrations, please see the [getting started](GETTING_STARTED.md) guide.
 
 ---
 
@@ -17,7 +19,6 @@ EFCore.FSharp | [![NuGet Badge](https://buildstats.info/nuget/EFCore.FSharp)](ht
 ---
 
 ### Building
-
 
 ```sh
 > build.cmd <optional buildtarget> // on windows
