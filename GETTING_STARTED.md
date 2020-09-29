@@ -119,7 +119,9 @@ For this example we will use record types, but "normal" classes will also work i
 
     type BloggingContext() =  
         inherit DbContext()
-        member __.Blogs : DbSet<Blog> = Unchecked.defaultof<DbSet<Blog>>
+        
+        [<DefaultValue>] val mutable blogs : DbSet<Blog>
+        member __.Blogs with get() = __.blogs and set v = __.blogs <- v
 
         override __.OnConfiguring(options: DbContextOptionsBuilder) : unit =
             options.UseSqlite("Data Source=blogging.db") |> ignore
