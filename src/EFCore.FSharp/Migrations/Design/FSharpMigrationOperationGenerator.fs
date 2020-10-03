@@ -26,7 +26,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> append "name = " |> appendLine (nameValue |> code.UnknownLiteral)
 
     let writeParameter name value sb =
-        
+
         let n = sanitiseName name
         let v = value |> code.UnknownLiteral
         let fmt = sprintf ", %s = %s" n v
@@ -186,7 +186,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     writeParameter "defaultValue" op.DefaultValue
                 else
                     id
-            |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
+            |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldClrType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
             |> writeOptionalParameter "oldType" op.OldColumn.ColumnType
             |> writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
             |> writeNullableParameterIfValue "oldMaxLength" op.OldColumn.MaxLength
