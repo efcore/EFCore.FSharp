@@ -16,8 +16,16 @@ module internal EntityFrameworkExtensions =
     let getPrimaryKey (p:IProperty) =
         (p :?> Microsoft.EntityFrameworkCore.Metadata.Internal.Property).PrimaryKey
 
-    let getNamespaces =
-        Microsoft.EntityFrameworkCore.Internal.TypeExtensions.GetNamespaces
+    let rec getNamespaces (type':Type) = seq {
+        type'.Namespace
+
+        if type'.IsGenericType then
+            let genericTypes =
+                type'.GenericTypeArguments
+                |> Seq.collect getNamespaces
+
+            yield! genericTypes
+    }
 
     let sortNamespaces ns =
         let namespaceComparer = Microsoft.EntityFrameworkCore.Design.Internal.NamespaceComparer()
@@ -49,11 +57,11 @@ module internal EntityFrameworkExtensions =
 
     let getDeclaredForeignKeys =
         Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredForeignKeys
-    
+
     let getDeclaredReferencingForeignKeys =
         Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredReferencingForeignKeys
 
-    let findOwnership (entityType : IEntityType) =    
+    let findOwnership (entityType : IEntityType) =
         (entityType :?> Microsoft.EntityFrameworkCore.Metadata.Internal.EntityType)
             |> Microsoft.EntityFrameworkCore.EntityTypeExtensions.FindOwnership
 

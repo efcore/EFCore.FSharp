@@ -10,6 +10,7 @@ open EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.EntityFrameworkCore.Internal
+open Microsoft.EntityFrameworkCore.Infrastructure
 
 
 type FSharpModelGenerator
@@ -17,7 +18,7 @@ type FSharpModelGenerator
      contextGenerator : ICSharpDbContextGenerator,
      entityTypeGenerator : ICSharpEntityTypeGenerator) =
     inherit ModelCodeGenerator(dependencies)
- 
+
     let fileExtension = ".fs"
 
     let defaultNamespaces = [
@@ -40,7 +41,7 @@ type FSharpModelGenerator
 
     let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) (domainFileName: string) =
 
-        let ``module`` = 
+        let ``module`` =
             domainFileName.Replace("Context", "Domain")
 
         let namespaces =
@@ -57,13 +58,13 @@ type FSharpModelGenerator
                 |> writeNamespaces namespaces
                 |> appendEmptyLine
 
-        let noEntities = 
+        let noEntities =
             model.GetEntityTypes() |> Seq.isEmpty
 
         IndentedStringBuilder()
                 |> writeNamespaces ``namespace``
                 |> append "module rec " |> append ``module`` |> appendLine " ="
-                |> appendEmptyLine                
+                |> appendEmptyLine
                 |> appendIfTrue (noEntities) "    ()"
 
     override __.Language = "F#"
@@ -71,44 +72,44 @@ type FSharpModelGenerator
     override __.GenerateModel(model: IModel, options: ModelCodeGenerationOptions) =
         let resultingFiles = ScaffoldedModel()
 
-        let generatedCode = 
+        let generatedCode =
             contextGenerator.WriteCode(
-                model, 
-                options.ContextName, 
+                model,
+                options.ContextName,
                 options.ConnectionString,
                 options.ContextNamespace,
-                options.ModelNamespace, 
-                options.UseDataAnnotations, 
+                options.ModelNamespace,
+                options.UseDataAnnotations,
                 options.SuppressConnectionStringWarning)
 
         let dbContextFileName = options.ContextName + fileExtension;
 
-        let path = 
+        let path =
             if notNull options.ContextDir then
                 Path.Combine(options.ContextDir, dbContextFileName)
-            else 
+            else
                 dbContextFileName
 
         let contextFile =
             ScaffoldedFile(
                 Code = generatedCode,
                 Path = path)
-                
+
         resultingFiles.ContextFile <- contextFile
 
         let dbContextFileName = options.ContextName
 
         let domainFile = ScaffoldedFile()
-        domainFile.Path <- ("TestDomain" + fileExtension)        
+        domainFile.Path <- ("TestDomain" + fileExtension)
 
-        let domainFileBuilder = 
+        let domainFileBuilder =
             createDomainFileContent model options.UseDataAnnotations options.ModelNamespace dbContextFileName
 
         model.GetEntityTypes()
-            |> Seq.iter(fun entityType -> 
+            |> Seq.iter(fun entityType ->
                 domainFileBuilder
-                    |> append (entityTypeGenerator.WriteCode(entityType, 
-                                                                options.ModelNamespace, 
+                    |> append (entityTypeGenerator.WriteCode(entityType,
+                                                                options.ModelNamespace,
                                                                 options.UseDataAnnotations))
                     |> ignore
             )

@@ -9,6 +9,7 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
+open Microsoft.EntityFrameworkCore.Infrastructure
 
 module ScaffoldingTypes =
     type RecordOrType = | ClassType | RecordType
@@ -44,7 +45,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             yield (typedefof<decimal>, "decimal")
         }
         |> dict
-        
+
     let rec getTypeName optionOrNullable (t:Type) =
 
         if t.IsArray then
@@ -59,7 +60,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
                 let genericTypeDefName = t.Name.Substring(0, t.Name.IndexOf('`'));
                 let genericTypeArguments = String.Join(", ", t.GenericTypeArguments |> Seq.map(fun t' -> getTypeName optionOrNullable t'))
                 genericTypeDefName + "<" + genericTypeArguments + ">";
-      
+
         else
             match primitiveTypeNames.TryGetValue t with
             | true, value -> value
@@ -104,7 +105,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             | Some t -> (sprintf "Type = %s" t) |> a.AddParameter
             | None -> ()
 
-            sb |> appendLine (a |> string)        
+            sb |> appendLine (a |> string)
 
         else
             sb
@@ -115,7 +116,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         let ml = p.GetMaxLength()
 
         if ml.HasValue then
-            let attrName = 
+            let attrName =
                if p.ClrType = typedefof<string> then "StringLengthAttribute" else "MaxLengthAttribute"
 
             let a = AttributeWriter(attrName)
@@ -155,7 +156,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             |> GenerateConstructor entityType
             |> GenerateProperties entityType optionOrNullable
             |> GenerateNavigationProperties entityType optionOrNullable
-            |> unindent   
+            |> unindent
 
     let generateRecordTypeEntry useDataAnnotations optionOrNullable (p: IProperty) sb =
 
@@ -166,15 +167,15 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
                 |> generateColumnAttribute p
                 |> generateMaxLengthAttribute p
                 |> ignore
-        
+
         let typeName = getTypeName optionOrNullable p.ClrType
         sb |> appendLine (sprintf "%s: %s" p.Name typeName) |> ignore
         ()
-        
+
     let writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
         properties
         |> Seq.iter(fun p -> generateRecordTypeEntry useDataAnnotations optionOrNullable p sb)
-        
+
         sb
 
     let generateForeignKeyAttribute (n:INavigation) sb =
@@ -219,7 +220,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         sb
 
     let GenerateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable sb =
-        
+
         let properties =
             entityType.GetProperties()
             |> Seq.sortBy(fun p -> p.GetColumnOrdinal())
@@ -240,15 +241,15 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             |> unindent
             |> appendLine "}"
             |> appendEmptyLine
-            
+
 
     let writeCode (entityType: IEntityType) (useDataAnnotation: bool) createTypesAs optionOrNullable sb =
-        
+
         let generate =
             match createTypesAs with
             | ClassType -> GenerateClass
             | RecordType -> GenerateRecord
-        
+
         sb
             |> indent
             |> generate entityType useDataAnnotation optionOrNullable
