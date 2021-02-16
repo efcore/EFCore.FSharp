@@ -15,8 +15,14 @@ open Fake.IO.FileSystemOperators
 open Fake.IO.Globbing.Operators
 open Fake.Core.TargetOperators
 open Fake.Api
+open Fake.BuildServer
 open Fantomas
 open Fantomas.FakeHelpers
+
+BuildServer.install [
+    AppVeyor.Installer
+    Travis.Installer
+]
 
 let environVarAsBoolOrDefault varName defaultValue =
     let truthyConsts = [
@@ -58,7 +64,7 @@ let srcAndTest =
 let distDir = __SOURCE_DIRECTORY__  @@ "dist"
 let distGlob = distDir @@ "*.nupkg"
 
-let coverageThresholdPercent = 20 //80
+let coverageThresholdPercent = 80
 let coverageReportDir =  __SOURCE_DIRECTORY__  @@ "docs" @@ "coverage"
 
 
@@ -267,7 +273,7 @@ module DocsTool =
         ]
         |> watchparser.PrintCommandLineArgumentsFlat
 
-    let watch projectpath =
+    let watch () =
         dotnet.watch (fun args ->
            { args with WorkingDirectory = docsToolDir }
         ) "run" (sprintf "-- watch %s" (watchCLI()))
@@ -402,7 +408,7 @@ let dotnetBuild ctx =
 
         }) sln
 
-let fsharpAnalyzers ctx =
+let fsharpAnalyzers _ =
     let argParser = ArgumentParser.Create<FSharpAnalyzers.Arguments>(programName = "fsharp-analyzers")
     !! srcGlob
     |> Seq.iter(fun proj ->
@@ -620,18 +626,6 @@ let buildDocs _ =
     DocsTool.build ()
 
 let watchDocs _ =
-    let watchBuild () =
-        !! srcGlob
-        |> Seq.map(fun proj -> fun () ->
-            dotnet.watch
-                (fun opt ->
-                    opt |> DotNet.Options.withWorkingDirectory (IO.Path.GetDirectoryName proj))
-                "build"
-                ""
-            |> ignore
-        )
-        |> Seq.iter (invokeAsync >> Async.Catch >> Async.Ignore >> Async.Start)
-    watchBuild ()
     DocsTool.watch ()
 
 let releaseDocs ctx =
@@ -693,17 +687,15 @@ Target.create "ReleaseDocs" releaseDocs
 "UpdateChangelog" ?=> "GenerateAssemblyInfo"
 "UpdateChangelog" ==> "PublishToNuGet"
 
-"DotnetBuild" ==> "BuildDocs"
 "BuildDocs" ==> "ReleaseDocs"
 "BuildDocs" ?=> "PublishToNuget"
 "DotnetPack" ?=> "BuildDocs"
 "GenerateCoverageReport" ?=> "ReleaseDocs"
 
-"DotnetBuild" ==> "WatchDocs"
 
 "DotnetRestore"
     ==> "DotnetBuild"
-    //==> "FSharpAnalyzers"
+    ==> "FSharpAnalyzers"
     ==> "DotnetTest"
     =?> ("GenerateCoverageReport", not disableCodeCoverage)
     ==> "DotnetPack"
