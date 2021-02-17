@@ -13,6 +13,7 @@ open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.Infrastructure
+open EntityFrameworkCore.FSharp.SharedTypeExtensions
 
 type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
     let _builtInTypes =
@@ -168,9 +169,12 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
                         .Append(".") |> ignore
 
                 let name =
-                    t.DisplayName(useFullName)
+                    displayName t useFullName
 
                 builder.Append(name) |> string
+
+    member private this.DisplayName (t: Type) useFullName =
+        EntityFrameworkCore.FSharp.SharedTypeExtensions.displayName t useFullName
 
     member private this.ensureDecimalPlaces (number:string) =
         if number.IndexOf('.') >= 0 then number else number + ".0"
@@ -549,7 +553,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
                     else
                         let args = (
                                 (expression.ToString()),
-                                (literalType.DisplayName(false))
+                                (displayName literalType false)
                             )
 
                         args |> DesignStrings.LiteralExpressionNotSupported |> NotSupportedException |> raise
@@ -566,11 +570,14 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             else
                 this.IdentifierWithScope name scope
 
-        member this.Lambda(properties: IReadOnlyList<string>): string =
+        member this.Lambda(properties: IReadOnlyList<string>, lambdaIdentifier: string): string =
+
+            let lambdaIdentifier' = if String.IsNullOrEmpty lambdaIdentifier then "x" else lambdaIdentifier
+
             StringBuilder()
-                .Append("(fun x -> ")
+                .Append(sprintf "(fun %s -> " lambdaIdentifier')
                 .Append("(")
-                .Append(String.Join(", ", (properties |> Seq.map(fun p -> "x." + p))))
+                .Append(String.Join(", ", (properties |> Seq.map(fun p -> lambdaIdentifier' + "." + p))))
                 .Append(") :> obj)") |> string
 
         member this.Literal(values: obj [,]): string =

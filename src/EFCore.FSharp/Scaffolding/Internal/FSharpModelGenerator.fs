@@ -80,7 +80,8 @@ type FSharpModelGenerator
                 options.ContextNamespace,
                 options.ModelNamespace,
                 options.UseDataAnnotations,
-                options.SuppressConnectionStringWarning)
+                options.SuppressConnectionStringWarning,
+                options.SuppressOnConfiguring)
 
         let dbContextFileName = options.ContextName + fileExtension;
 

@@ -209,7 +209,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
 
         let referencedTypeName = n.GetTargetType().Name
         let navigationType =
-            if n.IsCollection() then
+            if n.IsCollection then
                 sprintf "ICollection<%s>" referencedTypeName
             else
                 referencedTypeName
@@ -228,7 +228,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         let navProperties =
             entityType
                     |> EntityTypeExtensions.GetNavigations
-                    |> Seq.sortBy(fun n -> ((if n.IsDependentToPrincipal() then 0 else 1), (if n.IsCollection() then 1 else 0)))
+                    |> Seq.sortBy(fun n -> ((if n.IsDependentToPrincipal() then 0 else 1), (if n.IsCollection then 1 else 0)))
 
         let navsIsEmpty = navProperties |> Seq.isEmpty
 

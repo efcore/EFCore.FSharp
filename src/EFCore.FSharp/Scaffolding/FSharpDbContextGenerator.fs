@@ -23,16 +23,9 @@ open System.Collections.Generic
 open EntityFrameworkCore.FSharp
 
 type FSharpDbContextGenerator
-    (providerCodeGenerators: IProviderConfigurationCodeGenerator seq,
+    (providerCodeGenerator: IProviderConfigurationCodeGenerator,
         annotationCodeGenerator : IAnnotationCodeGenerator,
         code : ICSharpHelper) =
-
-    let providerCodeGenerator =
-        if Seq.isEmpty providerCodeGenerators then
-            let name = "providerCodeGenerators"
-            invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
-        else
-            providerCodeGenerators |> Seq.tryLast
 
     let mutable _entityTypeBuilderInitialized = false
 
@@ -106,35 +99,38 @@ type FSharpDbContextGenerator
 
         sb
 
-    let generateOnConfiguring (connectionString:string) (sb:IndentedStringBuilder) =
+    let generateOnConfiguring (connectionString:string) suppressOnConfiguring suppressConnectionStringWarning (sb:IndentedStringBuilder) =
 
-        let connStringLine =
-            match providerCodeGenerator with
-            | Some pcg ->
-                let contextOptions = pcg.GenerateContextOptions()
-                let useProviderCall =
-                    if isNull contextOptions then
-                        pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions())
-                    else
-                        pcg.GenerateUseProvider(connectionString, pcg.GenerateProviderOptions()).Chain(contextOptions)
+        let writeWarning suppressWarning connString (isb:IndentedStringBuilder) =
+            if suppressWarning then
+                isb
+            else
+                isb
+                |> unindent
+                |> unindent
+                |> unindent
+                |> unindent
+                |> appendLine "#warning: To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263."
+                |> indent
+                |> indent
+                |> indent
+                |> indent
 
-                let fragment = code.Fragment useProviderCall
 
-                sprintf "optionsBuilder%s |> ignore" fragment
-            | None ->
-                let name = "providerCodeGenerators"
-                invalidArg name (AbstractionsStrings.CollectionArgumentIsEmpty name)
-
-        sb
-            |> appendLine "override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) ="
-            |> indent
-            |> appendLine "if not optionsBuilder.IsConfigured then"
-            |> indent
-            |> appendLine connStringLine
-            |> appendLine "()"
-            |> appendEmptyLine
-            |> unindent
-            |> unindent
+        if suppressOnConfiguring then
+            sb
+        else
+            sb
+                |> appendLine "override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) ="
+                |> indent
+                |> appendLine "if not optionsBuilder.IsConfigured then"
+                |> indent
+                |> writeWarning suppressConnectionStringWarning connectionString
+                |> appendLine ("optionsBuilder" + (connectionString |> providerCodeGenerator.GenerateUseProvider |> code.Fragment))
+                |> appendLine "()"
+                |> appendEmptyLine
+                |> unindent
+                |> unindent
 
     let removeAnnotation (annotationToRemove : string) (annotations : IAnnotation seq) =
         annotations |> Seq.filter (fun a -> a.Name <> annotationToRemove)
@@ -640,16 +636,16 @@ type FSharpDbContextGenerator
         |> appendLine "modelBuilder.RegisterOptionTypes()"
         |> unindent
 
-    let generateClass model contextName connectionString useDataAnnotations sb =
+    let generateClass model contextName connectionString useDataAnnotations suppressConnectionStringWarning suppressOnConfiguring sb =
         sb
             |> generateType contextName
             |> generateDbSets model
             |> generateEntityTypeErrors model
-            |> generateOnConfiguring connectionString
+            |> generateOnConfiguring connectionString suppressOnConfiguring suppressConnectionStringWarning
             |> generateOnModelCreating model useDataAnnotations
 
     interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator with
-        member this.WriteCode (model, contextName, connectionString, contextNamespace, modelNamespace, useDataAnnotations, suppressConnectionStringWarning) =
+        member this.WriteCode (model, contextName, connectionString, contextNamespace, modelNamespace, useDataAnnotations, suppressConnectionStringWarning, suppressOnConfiguring) =
 
             let sb = IndentedStringBuilder()
 
@@ -669,7 +665,7 @@ type FSharpDbContextGenerator
                 |> ignore
 
             sb
-            |> generateClass model contextName connectionString useDataAnnotations
+            |> generateClass model contextName connectionString useDataAnnotations suppressConnectionStringWarning suppressOnConfiguring
             |> ignore
 
             sb.ToString()
