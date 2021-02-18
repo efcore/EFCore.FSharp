@@ -71,6 +71,7 @@ type ModelCodeGeneratorTestBase() =
                 "System.Net.WebClient.dll"
                 "System.ObjectModel.dll"
                 "System.ComponentModel.dll"
+                "System.Data.Common.dll"
             ]
 
         let localNames =

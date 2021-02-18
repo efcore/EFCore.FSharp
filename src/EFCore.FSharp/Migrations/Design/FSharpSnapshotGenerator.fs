@@ -136,8 +136,31 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                     yield (sprintf "fixedLength = Nullable(%s)" (relationalHints.IsFixedLength.Value |> code.Literal))
         }
 
+    let generateFluentApiForPrecisionAndScale (annotations: IAnnotation ResizeArray) (p: IProperty) (sb: IndentedStringBuilder) =
+        if p.GetPrecision().HasValue then
+            sb
+            |> appendEmptyLine
+            |> append $".HasPrecision({code.UnknownLiteral(p.GetPrecision().Value)}"
+            |> ignore
+
+            if p.GetScale().HasValue then
+                sb
+                |> append $", {code.UnknownLiteral(p.GetScale().Value)}"
+                |> ignore
+
+            sb
+            |> append ")"
+            |> appendEmptyLine
+            |> ignore
+
+            annotations
+            |> Seq.find (fun a -> a.Name = CoreAnnotationNames.Precision)
+            |> annotations.Remove
+            |> ignore
+        sb
+
     let genPropertyAnnotations (p:IProperty) (sb:IndentedStringBuilder) =
-        let annotations =  getAnnotations p
+        let annotations = getAnnotations p
         let valueConverter = p |> findValueConverter
 
         if valueConverter |> notNull && valueConverter.MappingHints |> notNull then
@@ -166,7 +189,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             else
                 a.Value
 
-
         let columnType (p: IProperty) =
             if p.GetColumnType() |> isNull then
                 mappingSource.GetMapping(p).StoreType |> code.Literal
@@ -175,22 +197,21 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         sb
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ColumnName None "HasColumnName" None
+            |> generateFluentApiForPrecisionAndScale annotations p
+            |> appendEmptyLine
+            |> append "."
+            |> append "HasColumnType"
+            |> append "("
+            |> append (columnType p)
+            |> append ")"
             |> ignore
-
-        sb
-        |> appendEmptyLine
-        |> append "."
-        |> append "HasColumnType"
-        |> append "("
-        |> append (columnType p)
-        |> append ")"
-        |> ignore
 
         sb
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultValueSql None "HasDefaultValueSql" None
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ComputedColumnSql None "HasComputedColumnSql" None
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.IsFixedLength None "IsFixedLength" None
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Comment None "HasComment" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Collation None "UseCollation" None
             |> generateFluentApiForAnnotation annotations CoreAnnotationNames.MaxLength None "HasMaxLength" None
             |> generateFluentApiForAnnotation annotations CoreAnnotationNames.Unicode None "IsUnicode" None
 

@@ -23,9 +23,7 @@ type TestDbContext =
         { inherit DbContext(options) }
 
     override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) =
-        if not optionsBuilder.IsConfigured then""" +
-                          Environment.NewLine +
-                          "#warning: " + DesignStrings.SensitiveInformationWarning + """
+        if not optionsBuilder.IsConfigured then
             optionsBuilder.UseSqlServer("Initial Catalog=TestDatabase") |> ignore
             ()
 
