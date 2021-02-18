@@ -1,5 +1,7 @@
 module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest
 
+open System
+open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Expecto
 
@@ -21,7 +23,9 @@ type TestDbContext =
         { inherit DbContext(options) }
 
     override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) =
-        if not optionsBuilder.IsConfigured then
+        if not optionsBuilder.IsConfigured then""" +
+                          Environment.NewLine +
+                          "#warning: " + DesignStrings.SensitiveInformationWarning + """
             optionsBuilder.UseSqlServer("Initial Catalog=TestDatabase") |> ignore
             ()
 

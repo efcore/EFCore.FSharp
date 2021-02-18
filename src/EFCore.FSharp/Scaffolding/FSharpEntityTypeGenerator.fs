@@ -4,12 +4,14 @@ open System
 open System.Collections.Generic
 open System.Reflection
 open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Design
+open Microsoft.EntityFrameworkCore.Design.Internal
+open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
-open Microsoft.EntityFrameworkCore.Infrastructure
 
 module ScaffoldingTypes =
     type RecordOrType = | ClassType | RecordType
@@ -88,7 +90,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             sb
 
     let generateColumnAttribute (p:IProperty) sb =
-        let columnName = p.GetColumnName()
+        let columnName = p.GetColumnBaseName()
         let columnType = getConfiguredColumnType p
 
         let delimitedColumnName = if isNull columnName |> not && columnName <> p.Name then FSharpUtilities.delimitString(columnName) |> Some else Option.None
@@ -169,7 +171,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
                 |> ignore
 
         let typeName = getTypeName optionOrNullable p.ClrType
-        sb |> appendLine (sprintf "%s: %s" p.Name typeName) |> ignore
+        sb |> appendLine (sprintf "mutable %s: %s" p.Name typeName) |> ignore
         ()
 
     let writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
@@ -180,7 +182,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
 
     let generateForeignKeyAttribute (n:INavigation) sb =
 
-        if n.IsDependentToPrincipal() && n.ForeignKey.PrincipalKey.IsPrimaryKey() then
+        if n.IsOnDependent && n.ForeignKey.PrincipalKey.IsPrimaryKey() then
             let a = "ForeignKeyAttribute" |> AttributeWriter
             let props = n.ForeignKey.Properties |> Seq.map (fun n' -> n'.Name)
             String.Join(",", props) |> FSharpUtilities.delimitString |> a.AddParameter
@@ -190,7 +192,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
 
     let generateInversePropertyAttribute (n:INavigation) sb =
         if n.ForeignKey.PrincipalKey.IsPrimaryKey() then
-            let inverse = n.FindInverse()
+            let inverse = n.Inverse
             if isNull inverse then
                 sb
             else
@@ -207,7 +209,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
                 |> generateInversePropertyAttribute n
                 |> ignore
 
-        let referencedTypeName = n.GetTargetType().Name
+        let referencedTypeName = n.TargetEntityType.Name
         let navigationType =
             if n.IsCollection then
                 sprintf "ICollection<%s>" referencedTypeName
@@ -219,16 +221,15 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations skipFinalNewLine optionOrNullable sb)
         sb
 
-    let GenerateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable sb =
+    let generateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable sb =
 
         let properties =
-            entityType.GetProperties()
-            |> Seq.sortBy(fun p -> p.GetColumnOrdinal())
+            System.Linq.Enumerable.OrderBy(entityType.GetProperties(), fun p -> p, NamespaceComparer())
 
         let navProperties =
             entityType
                     |> EntityTypeExtensions.GetNavigations
-                    |> Seq.sortBy(fun n -> ((if n.IsDependentToPrincipal() then 0 else 1), (if n.IsCollection then 1 else 0)))
+                    |> Seq.sortBy(fun n -> ((if n.IsOnDependent then 0 else 1), (if n.IsCollection then 1 else 0)))
 
         let navsIsEmpty = navProperties |> Seq.isEmpty
 
@@ -248,7 +249,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         let generate =
             match createTypesAs with
             | ClassType -> GenerateClass
-            | RecordType -> GenerateRecord
+            | RecordType -> generateRecord
 
         sb
             |> indent
