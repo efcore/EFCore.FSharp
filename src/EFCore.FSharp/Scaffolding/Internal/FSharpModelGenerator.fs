@@ -1,16 +1,13 @@
 ﻿namespace EntityFrameworkCore.FSharp.Scaffolding.Internal
 
 open System.IO
+open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
-open EntityFrameworkCore.FSharp.Scaffolding
-open EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes
-open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open Microsoft.EntityFrameworkCore.Internal
-open Microsoft.EntityFrameworkCore.Infrastructure
+open EntityFrameworkCore.FSharp.SharedTypeExtensions
 
 
 type FSharpModelGenerator

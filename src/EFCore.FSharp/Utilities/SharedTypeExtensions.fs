@@ -3,28 +3,29 @@ namespace EntityFrameworkCore.FSharp
 open System
 open System.Reflection
 open System.Text
+
 open Microsoft.EntityFrameworkCore.Infrastructure
 
 module internal rec SharedTypeExtensions =
 
-    let _builtInTypes =
-        [
-            (typeof<bool>, "bool")
-            (typeof<byte>, "byte")
-            (typeof<sbyte>, "sbyte")
-            (typeof<char>, "char")
-            (typeof<int16>, "Int16")
-            (typeof<int>, "int")
-            (typeof<int64>, "Int64")
-            (typeof<uint16>, "UInt16")
-            (typeof<uint32>, "UInt32")
-            (typeof<uint64>, "UInt64")
-            (typeof<decimal>, "decimal")
-            (typeof<float>, "float")
-            (typeof<double>, "double")
-            (typeof<string>, "string")
-            (typeof<obj>, "obj")
-        ] |> dict
+    let builtInTypeNames =
+        [   ( typeof<bool>, "bool" )
+            ( typeof<byte>, "byte" )
+            ( typeof<char>, "char" )
+            ( typeof<decimal>, "decimal" )
+            ( typeof<double>, "double" )
+            ( typeof<float>, "float" )
+            ( typeof<int>, "int" )
+            ( typeof<int64>, "long" )
+            ( typeof<Object>, "object" )
+            ( typeof<sbyte>, "sbyte" )
+            ( typeof<int16>, "short" )
+            ( typeof<string>, "string" )
+            ( typeof<uint32>, "uint" )
+            ( typeof<uint64>, "ulong" )
+            ( typeof<uint16>, "ushort" )
+           ]
+        |> readOnlyDict
 
     let processType (t:Type) useFullName (sb:StringBuilder) =
         if t.IsGenericType then
@@ -33,7 +34,7 @@ module internal rec SharedTypeExtensions =
         elif t.IsArray then
             processArrayType t useFullName sb
         else
-            match _builtInTypes.TryGetValue t with
+            match builtInTypeNames.TryGetValue t with
             | (true, builtInName) -> sb.Append(builtInName)
             | _ ->
                 let name = if useFullName then t.FullName else t.Name
@@ -82,9 +83,19 @@ module internal rec SharedTypeExtensions =
             innerType <- innerType.GetElementType()
         sb
 
+    let rec getNamespaces (t: Type) =
+        seq {
+            if builtInTypeNames.ContainsKey(t) |> not then
+                yield t.Namespace
+
+                if t.IsGenericType then
+                    for typeArgument in t.GenericTypeArguments do
+                        for ns in (getNamespaces typeArgument) do
+                            yield ns
+        }
 
     let isValidEntityType (t:Type) =
-        t.IsClass
+        t.GetTypeInfo().IsClass
 
     let isNullableType (t:Type) =
         let typeInfo = t.GetTypeInfo()
@@ -156,4 +167,3 @@ module internal rec SharedTypeExtensions =
         let sb = StringBuilder()
         processType t useFullName sb |> ignore
         sb.ToString()
-
