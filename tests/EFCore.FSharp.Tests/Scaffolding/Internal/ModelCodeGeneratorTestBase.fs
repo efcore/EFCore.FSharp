@@ -65,6 +65,13 @@ type ModelCodeGeneratorTestBase() =
                 "System.Globalization.dll"
                 "System.IO.FileSystem.dll"
                 "System.Runtime.InteropServices.dll"
+                "System.Runtime.Numerics.dll"
+                "System.Net.Requests.dll"
+                "System.Linq.Expressions.dll"
+                "System.Net.WebClient.dll"
+                "System.ObjectModel.dll"
+                "System.ComponentModel.dll"
+                "System.Data.Common.dll"
             ]
 
         let localNames =
@@ -140,6 +147,7 @@ type ModelCodeGeneratorTestBase() =
 
         options.ContextName <- "TestDbContext"
         options.ConnectionString <- "Initial Catalog=TestDatabase"
+        options.SuppressConnectionStringWarning <- true
 
         let scaffoldedModel =
             generator.GenerateModel(

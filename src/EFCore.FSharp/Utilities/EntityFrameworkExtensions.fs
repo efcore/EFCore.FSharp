@@ -1,31 +1,20 @@
 namespace EntityFrameworkCore.FSharp
 
 open System
-open Microsoft.EntityFrameworkCore.Internal
+
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Infrastructure
-open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata.Internal
+open Microsoft.EntityFrameworkCore.Design
 
 module internal EntityFrameworkExtensions =
 
     let getConfiguredColumnType =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.RelationalPropertyExtensions.GetConfiguredColumnType
+        RelationalPropertyExtensions.GetConfiguredColumnType
 
-    let getPrimaryKey (p:IProperty) =
-        (p :?> Microsoft.EntityFrameworkCore.Metadata.Internal.Property).PrimaryKey
-
-    let rec getNamespaces (type':Type) = seq {
-        type'.Namespace
-
-        if type'.IsGenericType then
-            let genericTypes =
-                type'.GenericTypeArguments
-                |> Seq.collect getNamespaces
-
-            yield! genericTypes
-    }
+    let getPrimaryKey (p: IProperty) =
+        (p :?> Property).PrimaryKey
 
     let sortNamespaces ns =
         let namespaceComparer = Microsoft.EntityFrameworkCore.Design.Internal.NamespaceComparer()
@@ -53,7 +42,7 @@ module internal EntityFrameworkExtensions =
         entityType.GetSeedData(b)
 
     let findDeclaredPrimaryKey =
-        Microsoft.EntityFrameworkCore.Metadata.Internal.EntityTypeExtensions.FindDeclaredPrimaryKey
+        EntityTypeExtensions.FindDeclaredPrimaryKey
 
     let getDeclaredForeignKeys =
         Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredForeignKeys
@@ -62,7 +51,7 @@ module internal EntityFrameworkExtensions =
         Microsoft.EntityFrameworkCore.EntityTypeExtensions.GetDeclaredReferencingForeignKeys
 
     let findOwnership (entityType : IEntityType) =
-        (entityType :?> Microsoft.EntityFrameworkCore.Metadata.Internal.EntityType)
+        (entityType :?> EntityType)
             |> Microsoft.EntityFrameworkCore.EntityTypeExtensions.FindOwnership
 
     let entityDbSetName (e : IEntityType) =

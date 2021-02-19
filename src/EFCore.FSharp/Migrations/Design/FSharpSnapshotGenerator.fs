@@ -2,23 +2,22 @@ namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open System.Collections.Generic
-open Microsoft.EntityFrameworkCore
-open Microsoft.EntityFrameworkCore.Metadata
-open Microsoft.EntityFrameworkCore.Internal
 
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+
+open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Storage
-open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
 type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalTypeMappingSource) =
 
-    let getAnnotations (o:IAnnotatable) =
+    let getAnnotations (o: IAnnotatable) =
         ResizeArray (o.GetAnnotations())
 
     let appendLineIfTrue truth value b =
@@ -30,7 +29,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
     let appendIfTrue truth value b =
         if truth then
             b |> append value
-        else 
+        else
             b
 
     let findValueConverter (p:IProperty) =
@@ -85,17 +84,13 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                 |> ignore
 
             annotation.Value |> annotations.Remove |> ignore
-            
+
         sb
 
     let sort (entityTypes:IEntityType list) =
-        let entityTypeGraph = new Multigraph<IEntityType, int>()
-        entityTypeGraph.AddVertices(entityTypes)
-
         entityTypes
             |> Seq.filter(fun e -> e.BaseType |> isNull |> not)
-            |> Seq.iter(fun e -> entityTypeGraph.AddEdge(e.BaseType, e, 0))
-        entityTypeGraph.TopologicalSort() |> Seq.toList
+            |> Seq.toList
 
     let ignoreAnnotationTypes (annotations:IAnnotation ResizeArray) (annotation:string) (sb:IndentedStringBuilder) =
 
@@ -127,7 +122,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
     let getMappingHints (hints : ConverterMappingHints) =
         seq {
             if hints.Size.HasValue then
-                yield (sprintf "size = Nullable(%s)" (hints.Size.Value |> code.Literal))               
+                yield (sprintf "size = Nullable(%s)" (hints.Size.Value |> code.Literal))
             if hints.Precision.HasValue then
                 yield (sprintf "precision = Nullable(%s)" (hints.Precision.Value |> code.Literal))
             if hints.Scale.HasValue then
@@ -141,8 +136,31 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                     yield (sprintf "fixedLength = Nullable(%s)" (relationalHints.IsFixedLength.Value |> code.Literal))
         }
 
+    let generateFluentApiForPrecisionAndScale (annotations: IAnnotation ResizeArray) (p: IProperty) (sb: IndentedStringBuilder) =
+        if p.GetPrecision().HasValue then
+            sb
+            |> appendEmptyLine
+            |> append $".HasPrecision({code.UnknownLiteral(p.GetPrecision().Value)}"
+            |> ignore
+
+            if p.GetScale().HasValue then
+                sb
+                |> append $", {code.UnknownLiteral(p.GetScale().Value)}"
+                |> ignore
+
+            sb
+            |> append ")"
+            |> appendEmptyLine
+            |> ignore
+
+            annotations
+            |> Seq.find (fun a -> a.Name = CoreAnnotationNames.Precision)
+            |> annotations.Remove
+            |> ignore
+        sb
+
     let genPropertyAnnotations (p:IProperty) (sb:IndentedStringBuilder) =
-        let annotations =  getAnnotations p
+        let annotations = getAnnotations p
         let valueConverter = p |> findValueConverter
 
         if valueConverter |> notNull && valueConverter.MappingHints |> notNull then
@@ -156,13 +174,13 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                 |> appendEmptyLine
                 |> append (sprintf ".HasConversion(ValueConverter<%s,%s>(%s, %s), ConverterMappingHints(%s))" storeType storeType createStoreType createStoreType mappingHints)
                 |> ignore
-        
-        let consumed = 
-            annotations 
-            |> Seq.filter(fun a -> a.Name = CoreAnnotationNames.ValueConverter || a.Name = CoreAnnotationNames.ProviderClrType) 
+
+        let consumed =
+            annotations
+            |> Seq.filter(fun a -> a.Name = CoreAnnotationNames.ValueConverter || a.Name = CoreAnnotationNames.ProviderClrType)
             |> Seq.toList
 
-        consumed 
+        consumed
         |> Seq.iter (annotations.Remove >> ignore)
 
         let getValueFunc (valueConverter: ValueConverter) (a:IAnnotation) =
@@ -171,49 +189,44 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             else
                 a.Value
 
-        
         let columnType (p: IProperty) =
             if p.GetColumnType() |> isNull then
                 mappingSource.GetMapping(p).StoreType |> code.Literal
-            else 
+            else
                 p.GetColumnType() |> code.Literal
 
         sb
-            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ColumnName None "HasColumnName" None            
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ColumnName None "HasColumnName" None
+            |> generateFluentApiForPrecisionAndScale annotations p
+            |> appendEmptyLine
+            |> append "."
+            |> append "HasColumnType"
+            |> append "("
+            |> append (columnType p)
+            |> append ")"
             |> ignore
-
-        sb
-        |> appendEmptyLine
-        |> append "."
-        |> append "HasColumnType"
-        |> append "("
-        |> append (columnType p)
-        |> append ")"
-        |> ignore
 
         sb
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultValueSql None "HasDefaultValueSql" None
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.ComputedColumnSql None "HasComputedColumnSql" None
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.IsFixedLength None "IsFixedLength" None
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Comment None "HasComment" None
+            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Collation None "UseCollation" None
             |> generateFluentApiForAnnotation annotations CoreAnnotationNames.MaxLength None "HasMaxLength" None
             |> generateFluentApiForAnnotation annotations CoreAnnotationNames.Unicode None "IsUnicode" None
 
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultValue (getValueFunc valueConverter |> Some) "HasDefaultValue" None
-            
+
             |> ignoreAnnotationTypes annotations RelationalAnnotationNames.ColumnType
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.ValueGeneratorFactory
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.PropertyAccessMode
-            |> ignoreAnnotationTypes annotations CoreAnnotationNames.ChangeTrackingStrategy
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.BeforeSaveBehavior
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.AfterSaveBehavior
-            |> ignoreAnnotationTypes annotations CoreAnnotationNames.TypeMapping
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.ValueComparer
-            |> ignoreAnnotationTypes annotations CoreAnnotationNames.KeyValueComparer
-            |> ignoreAnnotationTypes annotations CoreAnnotationNames.StructuralValueComparer
+            |> ignoreAnnotationTypes annotations CoreAnnotationNames.ValueComparer
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.ValueConverter
             |> ignoreAnnotationTypes annotations CoreAnnotationNames.ProviderClrType
-            
+
             |> generateAnnotations annotations
             |> append " |> ignore"
 
@@ -229,7 +242,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
     let generateProperty (funcId:string) (p:IProperty) (sb:IndentedStringBuilder) =
 
         let isPropertyRequired =
-            let isNullable = 
+            let isNullable =
                 p.IsPrimaryKey() |> not ||
                 p.ClrType |> isOptionType ||
                 p.ClrType |> isNullableType
@@ -285,7 +298,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             |> Seq.filter(fun k -> k <> pk && (k.GetReferencingForeignKeys() |> Seq.isEmpty) && (getAnnotations k) |> Seq.isEmpty |> not)
             |> Seq.iter (fun k -> generateKey funcId k false sb |> ignore)
 
-        sb        
+        sb
 
     let generateIndex (funcId: string) (idx:IIndex) (sb:IndentedStringBuilder) =
 
@@ -312,7 +325,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
         sb
 
     let processDataItem (props : IProperty list) (sb:IndentedStringBuilder) (data : IDictionary<string, obj>) =
-        
+
         let writeProperty isFirst (p : IProperty) =
             match data.TryGetValue p.Name with
             | true, value ->
@@ -327,7 +340,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                     ()
             | _ -> ()
 
-        
+
         sb |> appendLine "({" |> indent |> ignore
 
         props |> Seq.head |> writeProperty true
@@ -337,7 +350,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
         ()
 
     let processDataItems (data : IDictionary<string, obj> seq) (propsToOutput : IProperty list) (sb:IndentedStringBuilder) =
-        
+
         (data |> Seq.head) |> processDataItem propsToOutput sb
 
         data
@@ -348,7 +361,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             )
         sb
 
-    member this.generatePropertyAnnotations = 
+    member this.generatePropertyAnnotations =
         genPropertyAnnotations
 
     member this.generateEntityTypeAnnotations (funcId: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
@@ -386,9 +399,9 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             |> appendEmptyLine
             |> ignore
 
-        let discriminatorPropertyAnnotation = 
+        let discriminatorPropertyAnnotation =
             tryGetAnnotationByName CoreAnnotationNames.DiscriminatorProperty
-        let discriminatorValueAnnotation = 
+        let discriminatorValueAnnotation =
             tryGetAnnotationByName CoreAnnotationNames.DiscriminatorValue
 
         if discriminatorPropertyAnnotation.IsSome || discriminatorValueAnnotation.IsSome then
@@ -402,7 +415,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             | Some a when notNull a.Value  ->
                 let discriminatorProperty = entityType.FindProperty(string a.Value)
 
-                let propertyClrType = 
+                let propertyClrType =
                     let valueConverter = findValueConverter discriminatorProperty
                     if notNull valueConverter then
                         makeNullable discriminatorProperty.IsNullable valueConverter.ProviderClrType
@@ -418,12 +431,12 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                     |> ignore
             | _ ->
                 sb |> append "()" |> ignore
-            
+
 
             match discriminatorValueAnnotation with
             | Some a ->
-                let discriminatorProperty = 
-                    entityType.GetRootType().GetDiscriminatorProperty() 
+                let discriminatorProperty =
+                    entityType.GetRootType().GetDiscriminatorProperty()
 
                 let value =
                     if discriminatorProperty |> notNull then
@@ -437,18 +450,18 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
                 sb
                     |> append (sprintf ".HasValue(%s) |> ignore" (value |> code.UnknownLiteral))
-                    |> appendEmptyLine 
+                    |> appendEmptyLine
                     |> ignore
-            | None -> 
-                sb 
-                |> append " |> ignore" 
-                |> appendEmptyLine 
+            | None ->
+                sb
+                |> append " |> ignore"
+                |> appendEmptyLine
                 |> ignore
 
         let commentAnnotation = tryGetAnnotationByName RelationalAnnotationNames.Comment
 
         match commentAnnotation with
-        | Some c -> 
+        | Some c ->
             sb
             |> appendEmptyLine
             |> append funcId
@@ -467,9 +480,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                 CoreAnnotationNames.InverseNavigations
                 CoreAnnotationNames.NavigationAccessMode
                 CoreAnnotationNames.PropertyAccessMode
-                CoreAnnotationNames.ChangeTrackingStrategy
                 CoreAnnotationNames.ConstructorBinding
-                CoreAnnotationNames.DefiningQuery
                 CoreAnnotationNames.QueryFilter
                 RelationalAnnotationNames.CheckConstraints |]
 
@@ -490,19 +501,19 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         sb
             |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.Name Option.None "HasConstraintName" Option.None
-            |> generateAnnotations annotations       
+            |> generateAnnotations annotations
 
     member private this.generateForeignKey funcId (fk: IForeignKey) sb =
 
-        let literalPropNames (properties: seq<IProperty>) = 
+        let literalPropNames (properties: seq<IProperty>) =
             properties
             |> Seq.map (fun p -> p.Name |> code.Literal)
 
         if not fk.IsOwnership then
-            let dependent = 
-                if isNull fk.DependentToPrincipal then 
-                    code.UnknownLiteral null 
-                 else 
+            let dependent =
+                if isNull fk.DependentToPrincipal then
+                    code.UnknownLiteral null
+                 else
                     fk.DependentToPrincipal.Name |> code.Literal
 
             sb
@@ -612,7 +623,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
         |> unindent
 
     member private this.generateForeignKeys funcId (foreignKeys: IForeignKey seq) sb =
-        foreignKeys 
+        foreignKeys
         |> Seq.iter (fun fk -> this.generateForeignKey funcId fk sb |> ignore)
         sb
 
@@ -654,10 +665,10 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         let declaration =
             match ownerNav with
-            | None -> 
+            | None ->
                 sprintf ".Entity(%s" (entityType.Name |> code.Literal)
-            | Some o -> 
-                if ownership.IsUnique then                    
+            | Some o ->
+                if ownership.IsUnique then
                     sprintf ".OwnsOne(%s, %s" (entityType.Name |> code.Literal) (o |> code.Literal)
                 else
                     sprintf ".OwnsMany(%s, %s" (entityType.Name |> code.Literal) (o |> code.Literal)
@@ -713,7 +724,11 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
 
         let relationships =
             entitiesToWrite
-            |> Seq.filter(fun e -> (e |> getDeclaredForeignKeys |> Seq.isEmpty |> not) || (e |> getDeclaredReferencingForeignKeys |> Seq.exists(fun fk -> fk.IsOwnership)))
+            |> Seq.filter(fun e ->
+                (e
+                 |> getDeclaredForeignKeys
+                 |> Seq.isEmpty
+                 |> not) || (e |> getDeclaredReferencingForeignKeys |> Seq.exists(fun fk -> fk.IsOwnership)))
 
         relationships |> Seq.iter(fun e -> this.generateEntityTypeRelationships builderName e sb)
 
@@ -727,10 +742,9 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
             sb
                 |> append builderName
                 |> indent
-                |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultSchema Option.None "HasDefaultSchema" Option.None
-                |> ignoreAnnotationTypes annotations RelationalAnnotationNames.DbFunction
-                |> ignoreAnnotationTypes annotations ChangeDetector.SkipDetectChangesAnnotation
-                |> ignoreAnnotationTypes annotations CoreAnnotationNames.ChangeTrackingStrategy
+                |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultSchema
+                       Option.None "HasDefaultSchema" Option.None
+                |> ignoreAnnotationTypes annotations RelationalAnnotationNames.DbFunctions
                 |> ignoreAnnotationTypes annotations CoreAnnotationNames.OwnedTypes
                 |> ignoreAnnotationTypes annotations RelationalAnnotationNames.CheckConstraints
                 |> generateAnnotations annotations
@@ -738,10 +752,9 @@ type FSharpSnapshotGenerator (code : ICSharpHelper, mappingSource : IRelationalT
                 |> unindent
                 |> ignore
 
-        let sortedEntities = 
-            model.GetEntityTypes() 
-            |> Seq.filter(fun et -> not (et.IsIgnoredByMigrations())) 
-            |> Seq.toList 
+        let sortedEntities =
+            model.GetEntityTypes()
+            |> Seq.toList
             |> sort
 
         sb |> this.generateEntityTypes builderName sortedEntities |> ignore

@@ -2,6 +2,7 @@ namespace EntityFrameworkCore.FSharp
 
 open System
 open Microsoft.EntityFrameworkCore.Infrastructure
+open Microsoft.EntityFrameworkCore.Internal
 
 module internal IndentedStringBuilderUtilities =
 

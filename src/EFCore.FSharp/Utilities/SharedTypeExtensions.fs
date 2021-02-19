@@ -3,11 +3,10 @@ namespace EntityFrameworkCore.FSharp
 open System
 open System.Reflection
 open System.Text
-open Microsoft.EntityFrameworkCore.Infrastructure
 
 module internal rec SharedTypeExtensions =
 
-    let _builtInTypes =
+    let builtInTypeNames =
         [
             (typeof<bool>, "bool")
             (typeof<byte>, "byte")
@@ -24,7 +23,8 @@ module internal rec SharedTypeExtensions =
             (typeof<double>, "double")
             (typeof<string>, "string")
             (typeof<obj>, "obj")
-        ] |> dict
+        ]
+        |> readOnlyDict
 
     let processType (t:Type) useFullName (sb:StringBuilder) =
         if t.IsGenericType then
@@ -33,7 +33,7 @@ module internal rec SharedTypeExtensions =
         elif t.IsArray then
             processArrayType t useFullName sb
         else
-            match _builtInTypes.TryGetValue t with
+            match builtInTypeNames.TryGetValue t with
             | (true, builtInName) -> sb.Append(builtInName)
             | _ ->
                 let name = if useFullName then t.FullName else t.Name
@@ -82,9 +82,19 @@ module internal rec SharedTypeExtensions =
             innerType <- innerType.GetElementType()
         sb
 
+    let rec getNamespaces (t: Type) =
+        seq {
+            if builtInTypeNames.ContainsKey(t) |> not then
+                yield t.Namespace
+
+                if t.IsGenericType then
+                    for typeArgument in t.GenericTypeArguments do
+                        for ns in (getNamespaces typeArgument) do
+                            yield ns
+        }
 
     let isValidEntityType (t:Type) =
-        t.IsClass
+        t.GetTypeInfo().IsClass
 
     let isNullableType (t:Type) =
         let typeInfo = t.GetTypeInfo()
@@ -156,4 +166,3 @@ module internal rec SharedTypeExtensions =
         let sb = StringBuilder()
         processType t useFullName sb |> ignore
         sb.ToString()
-

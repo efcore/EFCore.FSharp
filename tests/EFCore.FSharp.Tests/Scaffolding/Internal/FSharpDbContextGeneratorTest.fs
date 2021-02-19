@@ -1,5 +1,7 @@
 module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest
 
+open System
+open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Expecto
 

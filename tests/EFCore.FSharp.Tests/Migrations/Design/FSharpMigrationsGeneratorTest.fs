@@ -3,7 +3,13 @@
 open System
 open System.Collections.Generic
 
-open Microsoft.EntityFrameworkCore.Internal
+open System.Linq.Expressions
+open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.SqlServer.Design.Internal
+open Microsoft.EntityFrameworkCore.Storage.ValueConversion
+open Microsoft.EntityFrameworkCore.Migrations.Design
+open Microsoft.EntityFrameworkCore.Infrastructure
+open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal
@@ -15,16 +21,6 @@ open EntityFrameworkCore.FSharp.Migrations.Design
 open EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Expecto
-open Microsoft.EntityFrameworkCore
-open Microsoft.EntityFrameworkCore.Storage.ValueConversion
-open Microsoft.EntityFrameworkCore.Migrations.Design
-open Microsoft.EntityFrameworkCore.Infrastructure
-open Microsoft.Extensions.DependencyInjection
-open Microsoft.EntityFrameworkCore.Design
-open Microsoft.EntityFrameworkCore.Migrations.Operations
-open System.Text.RegularExpressions
-open Microsoft.EntityFrameworkCore.ChangeTracking
-open Microsoft.EntityFrameworkCore.Migrations
 
 type TestFSharpSnapshotGenerator (dependencies, mappingSource : IRelationalTypeMappingSource) =
     inherit FSharpSnapshotGenerator(dependencies, mappingSource)
@@ -81,16 +77,21 @@ module FSharpMigrationsGeneratorTest =
     let nl = Environment.NewLine
 
     let createMigrationsCodeGenerator() =
+
         let serverTypeMappingSource =
             SqlServerTypeMappingSource(
                 TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
                 TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>())
 
+        let sqlServerAnnotationCodeGenerator =
+            SqlServerAnnotationCodeGenerator(
+                AnnotationCodeGeneratorDependencies(serverTypeMappingSource));
+
         let codeHelper = FSharpHelper(serverTypeMappingSource)
 
         let generator =
             FSharpMigrationsGenerator(
-                MigrationsCodeGeneratorDependencies(serverTypeMappingSource),
+                MigrationsCodeGeneratorDependencies(serverTypeMappingSource, sqlServerAnnotationCodeGenerator),
                 FSharpMigrationsGeneratorDependencies(
                     codeHelper,
                     FSharpMigrationOperationGenerator(codeHelper),
@@ -106,7 +107,7 @@ module FSharpMigrationsGeneratorTest =
                 TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>())
 
         let codeHelper =
-            new FSharpHelper(typeMappingSource)
+            FSharpHelper(typeMappingSource)
 
         let generator = TestFSharpSnapshotGenerator(codeHelper, typeMappingSource);
 
@@ -165,11 +166,12 @@ module FSharpMigrationsGeneratorTest =
                 let notForEntityType =
                     [
                         CoreAnnotationNames.MaxLength
+                        CoreAnnotationNames.Precision
+                        CoreAnnotationNames.Scale
                         CoreAnnotationNames.Unicode
                         CoreAnnotationNames.ProductVersion
                         CoreAnnotationNames.ValueGeneratorFactory
                         CoreAnnotationNames.OwnedTypes
-                        CoreAnnotationNames.TypeMapping
                         CoreAnnotationNames.ValueConverter
                         CoreAnnotationNames.ValueComparer
                         CoreAnnotationNames.KeyValueComparer
@@ -181,17 +183,23 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.DuplicateServiceProperties
                         RelationalAnnotationNames.ColumnName
                         RelationalAnnotationNames.ColumnType
+                        RelationalAnnotationNames.TableColumnMappings
+                        RelationalAnnotationNames.ViewColumnMappings
+                        RelationalAnnotationNames.SqlQueryColumnMappings
+                        RelationalAnnotationNames.FunctionColumnMappings
+                        RelationalAnnotationNames.RelationalOverrides
                         RelationalAnnotationNames.DefaultValueSql
                         RelationalAnnotationNames.ComputedColumnSql
                         RelationalAnnotationNames.DefaultValue
                         RelationalAnnotationNames.Name
-                        RelationalAnnotationNames.SequencePrefix
+                        RelationalAnnotationNames.Sequences
                         RelationalAnnotationNames.CheckConstraints
                         RelationalAnnotationNames.DefaultSchema
                         RelationalAnnotationNames.Filter
-                        RelationalAnnotationNames.DbFunction
+                        RelationalAnnotationNames.DbFunctions
                         RelationalAnnotationNames.MaxIdentifierLength
                         RelationalAnnotationNames.IsFixedLength
+                        RelationalAnnotationNames.Collation
                     ] |> HashSet
 
                 let toTable = nl + @"modelBuilder.ToTable(""WithAnnotations"") |> ignore" + nl
@@ -236,6 +244,26 @@ module FSharpMigrationsGeneratorTest =
                                 + @"(""My Comment"") |> ignore"
                                 + nl)
                         )
+                        (
+                            CoreAnnotationNames.DefiningQuery,
+                            (Expression.Lambda(Expression.Constant(null)) :> obj, "")
+                        )
+                        (
+                            RelationalAnnotationNames.ViewName, ("MyView" :> obj,
+                                nl
+                                + "modelBuilder."
+                                + "ToView"
+                                + @"(""MyView"") |> ignore"
+                                + nl)
+                        )
+                        (
+                            RelationalAnnotationNames.FunctionName,
+                            (null, "")
+                        )
+                        (
+                            RelationalAnnotationNames.SqlQuery,
+                            (null, "")
+                        )
                     ] |> dict
 
                 missingAnnotationCheck
@@ -252,6 +280,7 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.ProductVersion
                         CoreAnnotationNames.OwnedTypes
                         CoreAnnotationNames.ConstructorBinding
+                        CoreAnnotationNames.ServiceOnlyConstructorBinding
                         CoreAnnotationNames.NavigationAccessMode
                         CoreAnnotationNames.EagerLoaded
                         CoreAnnotationNames.QueryFilter
@@ -263,13 +292,19 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.AmbiguousNavigations
                         CoreAnnotationNames.DuplicateServiceProperties
                         RelationalAnnotationNames.TableName
+                        RelationalAnnotationNames.ViewName
                         RelationalAnnotationNames.Schema
+                        RelationalAnnotationNames.ViewSchema
                         RelationalAnnotationNames.DefaultSchema
+                        RelationalAnnotationNames.DefaultMappings
+                        RelationalAnnotationNames.TableMappings
+                        RelationalAnnotationNames.ViewMappings
+                        RelationalAnnotationNames.SqlQueryMappings
                         RelationalAnnotationNames.Name
-                        RelationalAnnotationNames.SequencePrefix
+                        RelationalAnnotationNames.Sequences
                         RelationalAnnotationNames.CheckConstraints
                         RelationalAnnotationNames.Filter
-                        RelationalAnnotationNames.DbFunction
+                        RelationalAnnotationNames.DbFunctions
                         RelationalAnnotationNames.MaxIdentifierLength
                     ] |> HashSet
 
@@ -279,9 +314,10 @@ module FSharpMigrationsGeneratorTest =
                 let forProperty =
                     [
                         ( CoreAnnotationNames.MaxLength, (256 :> obj, columnMapping + nl + ".HasMaxLength(256) |> ignore"))
+                        ( CoreAnnotationNames.Precision, (4 :> obj, $@"{nl}.HasPrecision(4){nl}{columnMapping} |> ignore") )
                         ( CoreAnnotationNames.Unicode, (false :> obj, columnMapping + nl + ".IsUnicode(false) |> ignore"))
                         (
-                            CoreAnnotationNames.ValueConverter, (new ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null) :> obj,
+                            CoreAnnotationNames.ValueConverter, (ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null) :> obj,
                                 nl+ @".HasColumnType(""default_long_mapping"") |> ignore")
                         )
                         (
@@ -309,16 +345,16 @@ module FSharpMigrationsGeneratorTest =
                             ("1" :> obj, columnMapping + nl + @".HasDefaultValue(""1"") |> ignore")
                         )
                         (
-                            CoreAnnotationNames.TypeMapping,
-                            (new LongTypeMapping("bigint") :> obj, nl + @".HasColumnType(""bigint"") |> ignore")
-                        )
-                        (
                             RelationalAnnotationNames.IsFixedLength,
                             (true :> obj, columnMapping + nl + @".IsFixedLength(true) |> ignore")
                         )
                         (
                             RelationalAnnotationNames.Comment,
                             ("My Comment" :> obj, columnMapping + nl + @".HasComment(""My Comment"") |> ignore")
+                        )
+                        (
+                            RelationalAnnotationNames.Collation,
+                            ("Some Collation" :> obj, $@"{columnMapping}{nl}.UseCollation(""Some Collation"") |> ignore")
                         )
                     ] |> dict
 
