@@ -5,13 +5,13 @@ open System.Collections.Generic
 
 open System.Linq.Expressions
 open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.SqlServer.Design.Internal
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Metadata
-open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.TestUtilities
@@ -41,7 +41,7 @@ type WithAnnotations() =
 type Derived() =
     inherit WithAnnotations()
 
-type RawEnum =
+type private RawEnum =
     | A = 0
     | B = 1
 
@@ -50,17 +50,71 @@ type MyContext() =
 
 module FSharpMigrationsGeneratorTest =
 
-    let compileModelSnapshot (modelSnapshotCode: string) (modelSnapshotTypeName: string) =
-        let references =
-            [|
-                "Microsoft.EntityFrameworkCore"
-                "Microsoft.EntityFrameworkCore.Relational"
-            |]
-
-        let sources =
+    let getRequiredReferences() =
+        let runtimeNames =
             [
-                modelSnapshotCode
+                "mscorlib.dll"
+                "System.Private.CoreLib.dll"
+                "System.Runtime.dll"
+                "netstandard.dll"
+                "System.Runtime.Extensions.dll"
+                "System.Console.dll"
+                "System.Collections.dll"
+                "System.Resources.ResourceManager.dll"
+                "System.Collections.Concurrent.dll"
+                "System.Threading.Tasks.dll"
+                "System.Threading.dll"
+                "System.Threading.ThreadPool.dll"
+                "System.Threading.Thread.dll"
+                "System.Diagnostics.TraceSource.dll"
+                "System.Buffers.dll"
+                "System.Globalization.dll"
+                "System.IO.FileSystem.dll"
+                "System.Runtime.InteropServices.dll"
+                "System.Runtime.Numerics.dll"
+                "System.Net.Requests.dll"
+                "System.Linq.Expressions.dll"
+                "System.Net.WebClient.dll"
+                "System.ObjectModel.dll"
+                "System.ComponentModel.dll"
+                "System.Data.Common.dll"
             ]
+
+        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+
+        let localNames =
+            [
+                "FSharp.Core.dll"
+                "FSharp.Compiler.Service.dll"
+                "Microsoft.EntityFrameworkCore.dll"
+                "Microsoft.EntityFrameworkCore.Abstractions.dll"
+                "Microsoft.EntityFrameworkCore.Design.dll"
+                "Microsoft.EntityFrameworkCore.Proxies.dll"
+                "Microsoft.EntityFrameworkCore.Relational.dll"
+                "Microsoft.EntityFrameworkCore.Sqlite.dll"
+                "Microsoft.EntityFrameworkCore.SqlServer.dll"
+                "EntityFrameworkCore.FSharp.dll"
+                $"{thisAssembly.GetName().Name}.dll"
+            ]
+
+        let runtimeDir =
+            System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+
+        let runtimeRefs =
+            runtimeNames
+            |> List.map(fun r -> runtimeDir + r)
+
+        let localRefs =
+            let location = thisAssembly.Location.Replace(thisAssembly.GetName().Name + ".dll", "")
+            localNames
+            |> List.map(fun s -> location + s)
+
+        runtimeRefs @ localRefs |> List.toArray
+
+    let compileModelSnapshot (modelSnapshotCode: string) (modelSnapshotTypeName: string) =
+        let references = getRequiredReferences()
+
+        let sources = [ modelSnapshotCode ]
 
         let build = { Sources = sources; TargetDir = null }
         let assembly = build.BuildInMemory references
@@ -104,29 +158,40 @@ module FSharpMigrationsGeneratorTest =
 
         (serverTypeMappingSource, codeHelper, generator)
 
-    let missingAnnotationCheck (createMetadataItem: ModelBuilder -> IMutableAnnotatable) (invalidAnnotations:HashSet<string>) (validAnnotations:IDictionary<string, (obj * string)>) (generationDefault : string) (test: TestFSharpSnapshotGenerator -> IMutableAnnotatable -> IndentedStringBuilder -> unit) =
+    let missingAnnotationCheck (createMetadataItem: ModelBuilder -> IMutableAnnotatable)
+                               (invalidAnnotations:HashSet<string>)
+                               (validAnnotations:IDictionary<string, (obj * string)>)
+                               (generationDefault : string)
+                               (test: TestFSharpSnapshotGenerator -> IMutableAnnotatable -> IndentedStringBuilder -> unit) =
 
-        let typeMappingSource =
+        let sqlServerTypeMappingSource =
             SqlServerTypeMappingSource(
                 TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
                 TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>())
 
         let codeHelper =
-            FSharpHelper(typeMappingSource)
+            FSharpHelper(sqlServerTypeMappingSource)
 
         let annotationCodeGenerator =
-            AnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(typeMappingSource))
+            AnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(sqlServerTypeMappingSource))
 
-        let generator = TestFSharpSnapshotGenerator(codeHelper, typeMappingSource, annotationCodeGenerator);
+        let generator = TestFSharpSnapshotGenerator(codeHelper, sqlServerTypeMappingSource, annotationCodeGenerator)
 
-        let caNames =
-            (typeof<CoreAnnotationNames>).GetFields()
-            |> Seq.filter(fun f -> f.FieldType = typeof<string>)
+        let coreAnnotations =
+            typeof<CoreAnnotationNames>.GetFields()
+            |> Seq.filter (fun f -> f.FieldType = typeof<string>)
             |> Seq.toList
+
+        coreAnnotations
+        |> List.iter (fun field ->
+            let annotationName = field.GetValue(null) |> string
+            Expect.isTrue
+                (CoreAnnotationNames.AllNames.Contains(annotationName))
+                $"CoreAnnotations.AllNames doesn't contain {annotationName}")
 
         let rlNames = (typeof<RelationalAnnotationNames>).GetFields() |> Seq.toList
 
-        let allAnnotations = (caNames @ rlNames) |> Seq.filter (fun f -> f.Name <> "Prefix")
+        let allAnnotations = (coreAnnotations @ rlNames) |> Seq.filter (fun f -> f.Name <> "Prefix")
 
         allAnnotations
         |> Seq.iter(fun f ->
@@ -136,11 +201,13 @@ module FSharpMigrationsGeneratorTest =
                 let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
                 let metadataItem = createMetadataItem modelBuilder
 
-                metadataItem.[annotationName] <-
+                let annotation =
                     if validAnnotations.ContainsKey(annotationName) then
                         fst validAnnotations.[annotationName]
                     else
                         null
+
+                metadataItem.SetAnnotation(annotationName, annotation)
 
                 modelBuilder.FinalizeModel() |> ignore
 
@@ -248,8 +315,9 @@ module FSharpMigrationsGeneratorTest =
                             RelationalAnnotationNames.Comment, ("My Comment" :> obj,
                                 toTable
                                 + nl
-                                + "modelBuilder.HasComment"
-                                + @"(""My Comment"") |> ignore"
+                                + "modelBuilder"
+                                + nl
+                                + @"    .HasComment(""My Comment"") |> ignore"
                                 + nl)
                         )
                         (
@@ -334,7 +402,7 @@ module FSharpMigrationsGeneratorTest =
                         )
                         (
                             RelationalAnnotationNames.ColumnName,
-                            ("MyColumn" :> obj, nl + @".HasColumnName(""MyColumn"")" + columnMapping + " |> ignore")
+                            ("MyColumn" :> obj, columnMapping + nl + @".HasColumnName(""MyColumn"") |> ignore")
                         )
                         (
                             RelationalAnnotationNames.ColumnType,
@@ -374,34 +442,54 @@ module FSharpMigrationsGeneratorTest =
                     (fun g m b -> g.generatePropertyAnnotations (m :> obj :?> _) b |> ignore)
             }
 
-            // test "Snapshot with enum discriminator uses converted values" {
-            //     let (serverTypeMappingSource, _, generator) = createMigrationsCodeGenerator()
+            test "Snapshot with enum discriminator uses converted values" {
+                let serverTypeMappingSource =
+                    SqlServerTypeMappingSource(
+                        TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
+                        TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>())
 
-            //     let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                let sqlServerAnnotationCodeGenerator =
+                    SqlServerAnnotationCodeGenerator(
+                        AnnotationCodeGeneratorDependencies(serverTypeMappingSource));
 
-            //     modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
+                let annotationCodeGenerator =
+                    AnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(serverTypeMappingSource))
 
-            //     modelBuilder.Entity<WithAnnotations>(fun eb ->
-            //         eb.HasDiscriminator<RawEnum>("EnumDiscriminator")
-            //             .HasValue(RawEnum.A)
-            //             .HasValue<Derived>(RawEnum.B) |> ignore
+                let codeHelper = FSharpHelper(serverTypeMappingSource)
 
-            //         eb.Property<RawEnum>("EnumDiscriminator").HasConversion<int>() |> ignore)
-            //         |> ignore
+                let generator =
+                    FSharpMigrationsGenerator(
+                        MigrationsCodeGeneratorDependencies(serverTypeMappingSource, sqlServerAnnotationCodeGenerator),
+                        FSharpMigrationsGeneratorDependencies(
+                            codeHelper,
+                            FSharpMigrationOperationGenerator(codeHelper),
+                            FSharpSnapshotGenerator(codeHelper, serverTypeMappingSource, annotationCodeGenerator)))
 
-            //     modelBuilder.FinalizeModel() |> ignore
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
 
-            //     let modelSnapshotCode =
-            //         generator.GenerateSnapshot(
-            //             "MyNamespace",
-            //             typeof<MyContext>,
-            //             "MySnapshot",
-            //             modelBuilder.Model)
+                modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
 
-            //     let snapshotModel = (compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot").Model
+                modelBuilder.Entity<WithAnnotations>(fun eb ->
+                    eb.HasDiscriminator<RawEnum>("EnumDiscriminator")
+                        .HasValue(RawEnum.A)
+                        .HasValue<Derived>(RawEnum.B) |> ignore
 
-            //     Expect.equal (snapshotModel.FindEntityType(typeof<WithAnnotations>).GetDiscriminatorValue()) ((int RawEnum.A) :> obj) "Should be equal"
-            //     Expect.equal (snapshotModel.FindEntityType(typeof<Derived>).GetDiscriminatorValue()) ((int RawEnum.B) :> obj) "Should be equal"
-            // }
+                    eb.Property<RawEnum>("EnumDiscriminator").HasConversion<int>() |> ignore)
+                    |> ignore
+
+                modelBuilder.FinalizeModel() |> ignore
+
+                let modelSnapshotCode =
+                    generator.GenerateSnapshot(
+                        "MyNamespace",
+                        typeof<MyContext>,
+                        "MySnapshot",
+                        modelBuilder.Model)
+
+                let snapshotModel = (compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot").Model
+
+                Expect.equal (snapshotModel.FindEntityType(typeof<WithAnnotations>).GetDiscriminatorValue()) ((int RawEnum.A) :> obj) "Should be equal"
+                Expect.equal (snapshotModel.FindEntityType(typeof<Derived>).GetDiscriminatorValue()) ((int RawEnum.B) :> obj) "Should be equal"
+            }
 
         ]

@@ -34,62 +34,20 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             b
 
     let findValueConverter (p:IProperty) =
-        let mapping = findMapping p
+        let pValueConverter = p.GetValueConverter()
+        if p.GetValueConverter() |> isNull then
+            let typeMapping = p.FindTypeMapping()
 
-        if isNull mapping then p.GetValueConverter() else mapping.Converter
-
-    let generateFluentApiForAnnotation (annotations: Dictionary<string, IAnnotation>) (annotationName:string) (annotationValueFunc: (IAnnotation -> obj) option) (fluentApiMethodName:string) (genericTypesFunc: (IAnnotation -> IReadOnlyList<Type>)option) (sb:IndentedStringBuilder) =
-
-        let annotationValueFunc' =
-            match annotationValueFunc with
-            | Some a -> a
-            | None -> (fun a -> if isNull a then null else a.Value)
-
-        let annotation =
-            match annotations.TryGetValue annotationName with
-            | true, a -> Some a
-            | false, _ -> None
-        let annotationValue = annotation |> Option.map annotationValueFunc'
-
-        let genericTypesFunc' =
-            match genericTypesFunc with
-            | Some a -> a
-            | None -> (fun _ -> List<Type>() :> _)
-
-        let genericTypes = annotation |> Option.map genericTypesFunc'
-        let hasGenericTypes =
-            match genericTypes with
-            | Some gt -> ((gt |> Seq.isEmpty |> not) && (gt |> Seq.forall(isNull >> not)))
-            | None -> false
-
-        if (annotationValue.IsSome && (annotationValue.Value |> isNull |> not)) || hasGenericTypes then
-            sb
-            |> appendEmptyLine
-            |> append "."
-            |> append fluentApiMethodName
-            |> ignore
-
-            if hasGenericTypes then
-                sb
-                    |> append "<"
-                    |> append (String.Join(",", (genericTypes.Value |> Seq.map(code.Reference))))
-                    |> append ">"
-                    |> ignore
-
-            sb
-                |> append "("
-                |> ignore
-
-            if annotationValue.IsSome && annotationValue.Value |> notNull then
-                sb |> append (annotationValue.Value |> code.UnknownLiteral) |> ignore
-
-            sb
-                |> append ")"
-                |> ignore
-
-            annotation.Value.Name |> annotations.Remove |> ignore
-
-        sb
+            if typeMapping |> isNull then
+                let mapping = mappingSource.FindMapping(p)
+                if mapping |> isNull then
+                    None
+                elif mapping.Converter |> isNull then
+                    None
+                else mapping.Converter |> Some
+            elif typeMapping.Converter |> isNull then None
+            else typeMapping.Converter |> Some
+        else pValueConverter |> Some
 
     let sort (entityTypes:IEntityType seq) =
         entityTypes
@@ -148,9 +106,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
     let genPropertyAnnotations (p:IProperty) (sb:IndentedStringBuilder) =
         let annotations =
             annotationCodeGenerator.FilterIgnoredAnnotations(p.GetAnnotations())
-            |> Seq.map (fun a -> a.Name, a)
-            |> readOnlyDict
-            |> Dictionary
+            |> annotationsToDictionary
 
         let columnType (p: IProperty) =
             if p.GetColumnType() |> isNull then
@@ -212,15 +168,17 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> append (columnType p)
             |> append ")"
             |> removeAnnotation RelationalAnnotationNames.ColumnType
-            |> generateFluentApiForAnnotation annotations RelationalAnnotationNames.DefaultValueSql None "HasDefaultValueSql" None
             |> generateFluentApiForDefaultValue p
+            |> removeAnnotation RelationalAnnotationNames.DefaultValue
             |> ignore
 
-        for mcf in annotationCodeGenerator.GenerateFluentApiCalls(p, annotations) do
+        annotationCodeGenerator.GenerateFluentApiCalls(p, annotations)
+        |> Seq.map code.Fragment
+        |> Seq.iter (fun m ->
             sb
                 |> appendEmptyLine
-                |> append (code.Fragment(mcf))
-                |> ignore
+                |> append m
+                |> ignore)
 
         sb
             |> generateAnnotations annotations.Values
@@ -247,7 +205,9 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
         let converter = findValueConverter p
         let clrType =
-            if isNull converter then p.ClrType else converter.ProviderClrType
+            match converter with
+            | Some c -> c.ProviderClrType
+            | None -> p.ClrType
 
         sb
             |> appendEmptyLine
@@ -273,15 +233,15 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
         let generateKeyAnnotations sb =
             let annotations =
                 annotationCodeGenerator.FilterIgnoredAnnotations(key.GetAnnotations())
-                |> Seq.map (fun a -> a.Name, a)
-                |> readOnlyDict
-                |> Dictionary
+                |> annotationsToDictionary
 
-            for mcf in annotationCodeGenerator.GenerateFluentApiCalls(key, annotations) do
+            annotationCodeGenerator.GenerateFluentApiCalls(key, annotations)
+            |> Seq.map code.Fragment
+            |> Seq.iter (fun m ->
                 sb
                     |> appendEmptyLine
-                    |> append (code.Fragment(mcf))
-                    |> ignore
+                    |> append m
+                    |> ignore)
 
             generateAnnotations annotations.Values sb
 
@@ -313,15 +273,15 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
         let generateIndexAnnotations sb =
             let annotations =
                 annotationCodeGenerator.FilterIgnoredAnnotations(idx.GetAnnotations())
-                |> Seq.map (fun a -> a.Name, a)
-                |> readOnlyDict
-                |> Dictionary
+                |> annotationsToDictionary
 
-            for mcf in annotationCodeGenerator.GenerateFluentApiCalls(idx, annotations) do
+            annotationCodeGenerator.GenerateFluentApiCalls(idx, annotations)
+            |> Seq.map code.Fragment
+            |> Seq.iter (fun m ->
                 sb
                     |> appendEmptyLine
-                    |> append (code.Fragment(mcf))
-                    |> ignore
+                    |> append m
+                    |> ignore)
 
             generateAnnotations annotations.Values sb
 
@@ -470,22 +430,39 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
     member this.generatePropertyAnnotations =
         genPropertyAnnotations
 
+    member this.generateCheckConstraints (builderName: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
+        let generateCheckConstraint (c: ICheckConstraint) sb =
+            sb
+                |> append builderName
+                |> append ".HasCheckConstraint("
+                |> append (code.Literal(c.Name))
+                |> append ", "
+                |> append (code.Literal(c.Sql))
+                |> append ") |> ignore"
+
+        entityType.GetCheckConstraints()
+        |> Seq.iter (fun c ->
+            sb
+                |> appendEmptyLine
+                |> generateCheckConstraint c
+                |> ignore)
+
+        sb
+
     member this.generateEntityTypeAnnotations (builderName: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
         let annotationList = entityType.GetAnnotations() |> ResizeArray
 
         let annotations =
             annotationCodeGenerator
                 .FilterIgnoredAnnotations(entityType.GetAnnotations())
-                |> ResizeArray
+                |> annotationsToDictionary
 
         let tryGetAnnotationByName (name:string) =
-            let a = annotations |> Seq.tryFind (fun a -> a.Name = name)
-
-            match a with
-            | Some a' -> annotations.Remove(a') |> ignore
-            | None -> ()
-
-            a
+            match annotations.TryGetValue name with
+            | true, a ->
+                annotations.Remove(name) |> ignore
+                Some a
+            | _ -> None
 
         let tableName =
             match tryGetAnnotationByName RelationalAnnotationNames.TableName with
@@ -559,97 +536,103 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
         let discriminatorPropertyAnnotation =
             annotationList |> Seq.tryFind (fun a -> a.Name = CoreAnnotationNames.DiscriminatorProperty)
+
+        let discriminatorMappingCompleteAnnotation =
+            annotationList |> Seq.tryFind (fun a -> a.Name = CoreAnnotationNames.DiscriminatorMappingComplete)
+
         let discriminatorValueAnnotation =
             annotationList |> Seq.tryFind (fun a -> a.Name = CoreAnnotationNames.DiscriminatorValue)
 
-        if discriminatorPropertyAnnotation.IsSome || discriminatorValueAnnotation.IsSome then
+        let annotationAndValueNotNull (anno: IAnnotation option) =
+            match anno with
+            | Some a when a.Value |> isNull |> not -> true
+            | _ -> false
+
+        if annotationAndValueNotNull discriminatorPropertyAnnotation
+            || annotationAndValueNotNull discriminatorMappingCompleteAnnotation
+            || annotationAndValueNotNull discriminatorValueAnnotation then
+
             sb
                 |> appendEmptyLine
                 |> append builderName
                 |> append ".HasDiscriminator"
                 |> ignore
 
-            match discriminatorPropertyAnnotation with
-            | Some a when notNull a.Value  ->
-                let discriminatorProperty = entityType.FindProperty(string a.Value)
+            if annotationAndValueNotNull discriminatorPropertyAnnotation then
+                let discriminatorPropertyAnnotation = discriminatorPropertyAnnotation.Value
+                let discriminatorProperty =
+                    entityType.FindProperty(discriminatorPropertyAnnotation.Value |> string)
 
                 let propertyClrType =
-                    let valueConverter = findValueConverter discriminatorProperty
-                    if notNull valueConverter then
-                        makeNullable discriminatorProperty.IsNullable valueConverter.ProviderClrType
-                    else
-                        discriminatorProperty.ClrType
+                    match discriminatorProperty |> findValueConverter with
+                    | Some c -> c.ProviderClrType |> makeNullable discriminatorProperty.IsNullable
+                    | None -> discriminatorProperty.ClrType
 
                 sb
                     |> append "<"
-                    |> append (code.Reference propertyClrType)
+                    |> append (code.Reference(propertyClrType))
                     |> append ">("
-                    |> append (code.UnknownLiteral a.Value)
+                    |> append (code.Literal(discriminatorPropertyAnnotation.Value |> string))
                     |> append ")"
                     |> ignore
-            | _ ->
-                sb |> append "()" |> ignore
+            else
+                sb
+                    |> append "()"
+                    |> ignore
 
+            if annotationAndValueNotNull discriminatorMappingCompleteAnnotation then
+                let value = discriminatorMappingCompleteAnnotation.Value
+                sb
+                    |> append ".IsComplete("
+                    |> append (code.UnknownLiteral(value))
+                    |> append ")"
+                    |> ignore
 
-            match discriminatorValueAnnotation with
-            | Some a ->
-                let discriminatorProperty =
-                    entityType.GetRootType().GetDiscriminatorProperty()
+            if annotationAndValueNotNull discriminatorValueAnnotation then
+                let discriminatorValueAnnotation = discriminatorValueAnnotation.Value
+                let discriminatorProperty = entityType.GetDiscriminatorProperty()
+
+                let defaultValue = discriminatorValueAnnotation.Value
 
                 let value =
-                    if discriminatorProperty |> notNull then
-                        let valueConverter = discriminatorProperty |> findValueConverter
-                        if valueConverter |> notNull then
-                            valueConverter.ConvertToProvider.Invoke(a.Value)
-                        else
-                            a.Value
-                    else
-                        a.Value
+                    if discriminatorProperty |> isNull |> not then
+                        match discriminatorProperty |> findValueConverter with
+                        | Some c -> c.ConvertToProvider.Invoke(defaultValue)
+                        | None -> defaultValue
+                    else defaultValue
 
                 sb
-                    |> append (sprintf ".HasValue(%s) |> ignore" (value |> code.UnknownLiteral))
-                    |> appendEmptyLine
+                    |> append ".HasValue("
+                    |> append (code.UnknownLiteral(value))
+                    |> append ")"
                     |> ignore
-            | None ->
-                sb
-                |> append " |> ignore"
-                |> appendEmptyLine
+
+            sb
+                |> appendLine " |> ignore"
                 |> ignore
 
-        let commentAnnotation = tryGetAnnotationByName RelationalAnnotationNames.Comment
+        let fluentApiCalls =
+            annotationCodeGenerator.GenerateFluentApiCalls(entityType, annotations)
 
-        match commentAnnotation with
-        | Some c ->
+        if fluentApiCalls.Count > 0 || annotations.Count > 0 then
             sb
-            |> appendEmptyLine
-            |> append builderName
-            |> append "."
-            |> append "HasComment"
-            |> append "("
-            |> append (c.Value |> code.UnknownLiteral)
-            |> appendLine ") |> ignore"
-            |> ignore
-        | None -> ()
+                |> appendEmptyLine
+                |> append builderName
+                |> indent
+                |> ignore
 
-        let annotationsToRemove =
-            [|
-                CoreAnnotationNames.NavigationCandidates
-                CoreAnnotationNames.AmbiguousNavigations
-                CoreAnnotationNames.InverseNavigations
-                CoreAnnotationNames.NavigationAccessMode
-                CoreAnnotationNames.PropertyAccessMode
-                CoreAnnotationNames.ConstructorBinding
-                CoreAnnotationNames.QueryFilter
-                RelationalAnnotationNames.CheckConstraints |]
-
-        annotationsToRemove |> Seq.iter (tryGetAnnotationByName >> ignore)
-
-        annotations
-            |> Seq.iter(fun a ->
+            fluentApiCalls
+            |> Seq.map code.Fragment
+            |> Seq.iter (fun m ->
                 sb
                     |> appendEmptyLine
-                    |> append builderName
-                    |> generateAnnotation a)
+                    |> append m
+                    |> ignore)
+
+            generateAnnotations annotations.Values sb
+            |> appendLine " |> ignore"
+            |> unindent
+            |> ignore
 
         sb
 
@@ -657,15 +640,15 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
         let annotations =
             annotationCodeGenerator.FilterIgnoredAnnotations(fk.GetAnnotations())
-            |> Seq.map (fun a -> a.Name, a)
-            |> readOnlyDict
-            |> Dictionary
+            |> annotationsToDictionary
 
-        for mcf in annotationCodeGenerator.GenerateFluentApiCalls(fk, annotations) do
+        annotationCodeGenerator.GenerateFluentApiCalls(fk, annotations)
+        |> Seq.map code.Fragment
+        |> Seq.iter (fun m ->
             sb
                 |> appendEmptyLine
-                |> append (code.Fragment(mcf))
-                |> ignore
+                |> append m
+                |> ignore)
 
         generateAnnotations annotations.Values sb
 
@@ -839,7 +822,15 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                 else
                     sprintf ".OwnsMany(%s, %s" (entityType.Name |> code.Literal) (o |> code.Literal)
 
-        let funcId = "b"
+        let funcId =
+            if builderName.StartsWith("b", StringComparison.Ordinal) then
+                let mutable counter = 1
+                match builderName.Length > 1, Int32.TryParse(builderName.[1..]) with
+                | true, (true, _) -> counter <- counter + 1
+                | _ -> ()
+
+                "b" + if counter = 0 then "" else counter.ToString()
+            else "b"
 
         sb
             |> appendEmptyLine
@@ -855,6 +846,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                 | None -> generateKeys funcId (entityType |> getDeclaredKeys) (entityType |> findDeclaredPrimaryKey)
             |> generateIndexes funcId (entityType |> getDeclaredIndexes)
             |> this.generateEntityTypeAnnotations funcId entityType
+            |> this.generateCheckConstraints funcId entityType
             |>
                 match ownerNav with
                 | None -> id
@@ -904,9 +896,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
         member this.Generate(builderName, model, sb) =
             let annotations =
                 annotationCodeGenerator.FilterIgnoredAnnotations(model.GetAnnotations())
-                |> Seq.map (fun a -> a.Name, a)
-                |> readOnlyDict
-                |> Dictionary
+                |> annotationsToDictionary
 
             let productVersion = model.GetProductVersion()
 
@@ -916,11 +906,13 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                     |> indent
                     |> ignore
 
-                for mcf in annotationCodeGenerator.GenerateFluentApiCalls(model, annotations) do
+                annotationCodeGenerator.GenerateFluentApiCalls(model, annotations)
+                |> Seq.map code.Fragment
+                |> Seq.iter (fun m ->
                     sb
                         |> appendEmptyLine
-                        |> append (code.Fragment(mcf))
-                        |> ignore
+                        |> append m
+                        |> ignore)
 
                 let remainingAnnotations =
                     seq {

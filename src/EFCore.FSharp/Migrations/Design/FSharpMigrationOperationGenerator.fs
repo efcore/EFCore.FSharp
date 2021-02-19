@@ -81,13 +81,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
     let generateAddColumnOperation (op:AddColumnOperation) (sb:IndentedStringBuilder) =
 
-        let isPropertyRequired =
-            let isNullable =
-                op.ClrType |> isOptionType ||
-                op.ClrType |> isNullableType
-
-            isNullable <> op.IsNullable
-
         sb
             |> append ".AddColumn<"
             |> append (op.ClrType |> unwrapOptionType |> code.Reference)
