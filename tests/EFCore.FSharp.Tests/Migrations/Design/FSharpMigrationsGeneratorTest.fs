@@ -22,8 +22,10 @@ open EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Expecto
 
-type TestFSharpSnapshotGenerator (dependencies, mappingSource : IRelationalTypeMappingSource) =
-    inherit FSharpSnapshotGenerator(dependencies, mappingSource)
+type TestFSharpSnapshotGenerator (dependencies,
+                                  mappingSource: IRelationalTypeMappingSource,
+                                  annotationCodeGenerator: IAnnotationCodeGenerator) =
+    inherit FSharpSnapshotGenerator(dependencies, mappingSource, annotationCodeGenerator)
 
     member this.TestGenerateEntityTypeAnnotations builderName entityType stringBuilder =
         this.generateEntityTypeAnnotations builderName entityType stringBuilder
@@ -87,6 +89,9 @@ module FSharpMigrationsGeneratorTest =
             SqlServerAnnotationCodeGenerator(
                 AnnotationCodeGeneratorDependencies(serverTypeMappingSource));
 
+        let annotationCodeGenerator =
+            AnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(serverTypeMappingSource))
+
         let codeHelper = FSharpHelper(serverTypeMappingSource)
 
         let generator =
@@ -95,7 +100,7 @@ module FSharpMigrationsGeneratorTest =
                 FSharpMigrationsGeneratorDependencies(
                     codeHelper,
                     FSharpMigrationOperationGenerator(codeHelper),
-                    FSharpSnapshotGenerator(codeHelper, serverTypeMappingSource)))
+                    FSharpSnapshotGenerator(codeHelper, serverTypeMappingSource, annotationCodeGenerator)))
 
         (serverTypeMappingSource, codeHelper, generator)
 
@@ -109,7 +114,10 @@ module FSharpMigrationsGeneratorTest =
         let codeHelper =
             FSharpHelper(typeMappingSource)
 
-        let generator = TestFSharpSnapshotGenerator(codeHelper, typeMappingSource);
+        let annotationCodeGenerator =
+            AnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(typeMappingSource))
+
+        let generator = TestFSharpSnapshotGenerator(codeHelper, typeMappingSource, annotationCodeGenerator);
 
         let caNames =
             (typeof<CoreAnnotationNames>).GetFields()
@@ -274,7 +282,7 @@ module FSharpMigrationsGeneratorTest =
                         (fun g m b -> g.generateEntityTypeAnnotations "modelBuilder" (m :> obj :?> _) b |> ignore)
             }
 
-            test "Test new annotations handled for property types" {
+            test "Test new annotations handled for properties" {
                 let notForProperty =
                     [
                         CoreAnnotationNames.ProductVersion
@@ -309,13 +317,13 @@ module FSharpMigrationsGeneratorTest =
                     ] |> HashSet
 
                 let columnMapping =
-                    nl + @".HasColumnType(""default_int_mapping"")"
+                    @$"{nl}.HasColumnType(""default_int_mapping"")"
 
                 let forProperty =
                     [
-                        ( CoreAnnotationNames.MaxLength, (256 :> obj, columnMapping + nl + ".HasMaxLength(256) |> ignore"))
-                        ( CoreAnnotationNames.Precision, (4 :> obj, $@"{nl}.HasPrecision(4){nl}{columnMapping} |> ignore") )
-                        ( CoreAnnotationNames.Unicode, (false :> obj, columnMapping + nl + ".IsUnicode(false) |> ignore"))
+                        ( CoreAnnotationNames.MaxLength, (256 :> obj, $"{nl}.HasMaxLength(256){columnMapping} |> ignore"))
+                        ( CoreAnnotationNames.Precision, (4 :> obj, $"{nl}.HasPrecision(4){columnMapping} |> ignore") )
+                        ( CoreAnnotationNames.Unicode, (false :> obj, $"{nl}.IsUnicode(false){columnMapping} |> ignore"))
                         (
                             CoreAnnotationNames.ValueConverter, (ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null) :> obj,
                                 nl+ @".HasColumnType(""default_long_mapping"") |> ignore")

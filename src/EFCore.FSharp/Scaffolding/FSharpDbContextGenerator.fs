@@ -4,7 +4,6 @@ open System
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
-open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
@@ -12,9 +11,7 @@ open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Design
-open Microsoft.EntityFrameworkCore.Diagnostics
 open Microsoft.EntityFrameworkCore.Metadata.Conventions
-open Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
 #nowarn "0044"
 
@@ -314,24 +311,30 @@ type FSharpDbContextGenerator
             appendMultiLineFluentApi entityType lines sb
 
     let generateIndex (index : IIndex) sb =
+        let annotations =
+            annotationCodeGenerator.FilterIgnoredAnnotations(index.GetAnnotations())
+            |> Seq.map (fun a -> a.Name, a)
+            |> readOnlyDict
+            |> Dictionary
+
+        annotationCodeGenerator.RemoveAnnotationsHandledByConventions(index, annotations)
+
         let lines = ResizeArray<string>()
-        lines.Add(sprintf ".HasIndex(%s)" (generateLambdaToKey index.Properties "e"))
+        lines.Add(
+            sprintf ".HasIndex(%s, %s)"
+                (generateLambdaToKey index.Properties "e")
+                (code.Literal(index.GetDatabaseName())))
 
-        let annotations = ResizeArray<IAnnotation>()
-        annotations.AddRange(index.GetAnnotations())
-
-        if not (String.IsNullOrEmpty(string index.[RelationalAnnotationNames.Name])) then
-            lines.Add(sprintf ".HasName(%s)" (code.Literal (index.GetName())))
-            annotations.RemoveAt(annotations.FindIndex(fun i -> i.Name = RelationalAnnotationNames.Name))
+        annotations.Remove(RelationalAnnotationNames.Name) |> ignore
 
         if index.IsUnique then
             lines.Add(".IsUnique()")
 
-        if not (isNull (index.GetFilter())) then
-            lines.Add(sprintf ".HasFilter(%s)" (code.Literal (index.GetFilter())))
-            annotations.RemoveAt(annotations.FindIndex(fun i -> i.Name = RelationalAnnotationNames.Filter))
-
-        linesFromAnnotations annotations index |> lines.AddRange
+        annotationCodeGenerator
+            .GenerateFluentApiCalls(index, annotations)
+            |> Seq.map (fun m -> code.Fragment(m))
+            |> Seq.append (generateAnnotations annotations.Values)
+            |> lines.AddRange
 
         appendMultiLineFluentApi index.DeclaringEntityType lines sb
 
@@ -341,93 +344,106 @@ type FSharpDbContextGenerator
         lines.Add(sprintf ".Property(fun e -> e.%s)" property.Name)
 
         let annotations =
-            property.GetAnnotations()
-            |> removeAnnotation RelationalAnnotationNames.ColumnName
-            |> removeAnnotation RelationalAnnotationNames.ColumnType
-            |> removeAnnotation CoreAnnotationNames.MaxLength
-            |> removeAnnotation CoreAnnotationNames.Unicode
-            |> removeAnnotation RelationalAnnotationNames.DefaultValue
-            |> removeAnnotation RelationalAnnotationNames.DefaultValueSql
-            |> removeAnnotation RelationalAnnotationNames.ComputedColumnSql
-            |> removeAnnotation RelationalAnnotationNames.IsFixedLength
-            |> removeAnnotation ScaffoldingAnnotationNames.ColumnOrdinal
-            |> Seq.toList
+            annotationCodeGenerator.FilterIgnoredAnnotations(property.GetAnnotations())
+            |> Seq.map (fun a -> a.Name, a)
+            |> readOnlyDict
+            |> Dictionary
+
+        annotationCodeGenerator.RemoveAnnotationsHandledByConventions(property, annotations)
+        annotations.Remove(ScaffoldingAnnotationNames.ColumnOrdinal) |> ignore
 
         if useDataAnnotations then
-            if not property.IsNullable &&
-                (SharedTypeExtensions.isNullableType property.ClrType ||
-                 SharedTypeExtensions.isOptionType property.ClrType) &&
-                not (property.IsPrimaryKey()) then
-                    lines.Add ".IsRequired()"
+            annotations.Remove(RelationalAnnotationNames.ColumnName) |> ignore
+            annotations.Remove(RelationalAnnotationNames.ColumnType) |> ignore
 
-            let columnName = property.GetColumnName()
+            annotationCodeGenerator.GenerateDataAnnotationAttributes(property, annotations) |> ignore
+        else
+            if property.IsNullable |> not
+               && property.ClrType |> SharedTypeExtensions.isNullableType
+               && property.IsPrimaryKey() |> not then
+                lines.Add(".IsRequired()")
 
-            if not (isNull columnName) && columnName <> property.Name then
-                lines.Add(sprintf ".HasColumnName(%s)" (code.Literal columnName))
+        match property.GetConfiguredColumnType() |> isNull |> not with
+        | true ->
+            lines.Add($".HasColumnType({code.Literal(property.GetConfiguredColumnType())})")
+            annotations.Remove(RelationalAnnotationNames.ColumnType) |> ignore
+        | false -> ()
 
-            let columnType = property.GetConfiguredColumnType()
+        match property.GetMaxLength() |> Option.ofNullable with
+        | Some l ->
+            lines.Add($".HasMaxLength({code.Literal(l)})")
+        | None -> ()
 
-            if not (isNull columnName) then
-                lines.Add(sprintf ".HasColumnType(%s)" (code.Literal columnType))
+        match property.GetPrecision() |> Option.ofNullable, property.GetScale() |> Option.ofNullable with
+        | Some p, Some s when s <> 0 ->
+            lines.Add($".HasPrecision({code.Literal(p)}, {code.Literal(s)})")
+        | Some p, _ ->
+            lines.Add($".HasPrecision({code.Literal(p)})")
+        | _, _ -> ()
 
-            let maxLength = property.GetMaxLength()
+        match property.IsUnicode() |> Option.ofNullable with
+        | Some b ->
+            let arg = if b then "" else "false"
+            lines.Add($".IsUnicode({arg})")
+        | None -> ()
 
-            if maxLength.HasValue then
-                lines.Add(sprintf ".HasMaxLength(%s)" (code.Literal maxLength.Value))
+        match property.GetDefaultValue() |> Option.ofObj with
+        | Some d ->
+            annotations.Remove(RelationalAnnotationNames.DefaultValue) |> ignore
+            match d with
+            | :? DBNull -> lines.Add(".HasValue()")
+            | _ -> lines.Add($".HasValue({code.UnknownLiteral(d)})")
+        | _ -> ()
 
-        if property.IsUnicode().HasValue then
-            lines.Add(sprintf ".IsUnicode(%s)" (if property.IsUnicode().Value then "" else "false"))
-
-        if property.IsFixedLength().GetValueOrDefault() then
-            lines.Add ".IsFixedLength()"
-
-        if not (property.GetDefaultValue() |> isNull) then
-            lines.Add(sprintf ".HasDefaultValue(%s)" (property.GetDefaultValue() |> code.UnknownLiteral))
-
-        if not (property.GetDefaultValueSql() |> isNull) then
-            lines.Add(sprintf ".HasDefaultValueSql(%s)" (property.GetDefaultValueSql() |> code.Literal))
-
-        if not (property.GetComputedColumnSql() |> isNull) then
-            lines.Add(sprintf ".HasComputedColumnSql(%s)" (property.GetComputedColumnSql() |> code.Literal))
-
+        let isRowVersion = false
         let valueGenerated = property.ValueGenerated
-        let mutable isRowVersion = false
 
-        let concreteProp = property :?> Property
-        if concreteProp.GetValueGeneratedConfigurationSource().HasValue
-            && RelationalValueGenerationConvention.GetValueGenerated(concreteProp) <> Nullable(valueGenerated) then
-
+        match property with
+        | :? IConventionProperty as cp ->
+            match cp.GetValueGeneratedConfigurationSource() |> Option.ofNullable with
+            | Some valueGeneratedConfigurationSource when
+                valueGeneratedConfigurationSource <> ConfigurationSource.Convention
+                && ValueGenerationConvention.GetValueGenerated(property) <> (valueGenerated |> Nullable) ->
                 let methodName =
                     match valueGenerated with
                     | ValueGenerated.OnAdd -> "ValueGeneratedOnAdd"
-                    | ValueGenerated.OnAddOrUpdate ->
-                        isRowVersion <- property.IsConcurrencyToken
-                        if isRowVersion then "IsRowVersion" else "ValueGeneratedOnAddOrUpdate"
+                    | ValueGenerated.OnAddOrUpdate when property.IsConcurrencyToken -> "IsRowVersion"
+                    | ValueGenerated.OnAddOrUpdate -> "ValueGeneratedOnAddOrUpdate"
+                    | ValueGenerated.OnUpdate -> "ValueGeneratedOnUpdate"
                     | ValueGenerated.Never -> "ValueGeneratedNever"
-                    | _ -> ""
+                    | _ -> invalidOp $"Unhandled enum value ValueGenerated.{valueGenerated}"
+                lines.Add($".{methodName}()")
+            | _ -> ()
+        | _ -> ()
 
-                lines.Add(sprintf ".%s()" methodName)
+        if property.IsConcurrencyToken && isRowVersion |> not then
+            lines.Add(".IsConcurrencyToken()")
 
-        if property.IsConcurrencyToken && not isRowVersion then
-            lines.Add ".IsConcurrencyToken()"
+        annotationCodeGenerator.GenerateFluentApiCalls(property, annotations)
+        |> Seq.map code.Fragment
+        |> Seq.append (generateAnnotations annotations.Values)
+        |> lines.AddRange
 
-        linesFromAnnotations annotations property |> lines.AddRange
+        if lines.Count = 0 then
+            ()
+        elif lines.Count = 2 then
+            let l1 = lines.[0] //Why?
+            let l2 = lines.[1]
+            lines.Clear()
+            seq { l1; l2 } |> lines.AddRange
 
-        match lines.Count with
-        | 2 ->
-            let concatLines =
-                seq {
-                    yield (lines.[0] + lines.[1])
-                }
-
-            appendMultiLineFluentApi property.DeclaringEntityType concatLines sb
-        | _ -> appendMultiLineFluentApi property.DeclaringEntityType lines sb
-
+        appendMultiLineFluentApi property.DeclaringEntityType lines sb
 
     let generateRelationship (fk : IForeignKey) useDataAnnotations sb =
 
         let mutable canUseDataAnnotations = false
-        let annotations = fk.GetAnnotations() |> ResizeArray
+        let annotations =
+            annotationCodeGenerator.FilterIgnoredAnnotations(fk.GetAnnotations())
+            |> Seq.map (fun a -> a.Name, a)
+            |> readOnlyDict
+            |> Dictionary
+
+        annotationCodeGenerator.RemoveAnnotationsHandledByConventions(fk, annotations)
 
         let lines = ResizeArray<string>()
 
@@ -448,10 +464,12 @@ type FSharpDbContextGenerator
 
         if not (String.IsNullOrEmpty(string fk.[RelationalAnnotationNames.Name])) then
             canUseDataAnnotations <- false
-            lines.Add(sprintf ".HasConstraintName(%s)" (fk.GetConstraintName() |> code.Literal))
-            annotations.RemoveAt(annotations.FindIndex(fun a -> a.Name = RelationalAnnotationNames.Name))
 
-        linesFromAnnotations annotations fk |> lines.AddRange
+        annotationCodeGenerator
+            .GenerateFluentApiCalls(fk, annotations)
+            |> Seq.map code.Fragment
+            |> Seq.append (generateAnnotations annotations.Values)
+            |> lines.AddRange
 
         if not useDataAnnotations || not canUseDataAnnotations then
             appendMultiLineFluentApi fk.DeclaringEntityType lines sb
@@ -463,21 +481,45 @@ type FSharpDbContextGenerator
         sb |> generateKey (entityType.FindPrimaryKey()) useDataAnnotations
 
         let annotations =
-            entityType.GetAnnotations()
-            |> removeAnnotation CoreAnnotationNames.ConstructorBinding
-            |> removeAnnotation RelationalAnnotationNames.TableName
-            |> removeAnnotation RelationalAnnotationNames.Schema
-            |> removeAnnotation ScaffoldingAnnotationNames.DbSetName
-            |> Seq.toList
+            annotationCodeGenerator.FilterIgnoredAnnotations(entityType.GetAnnotations())
+            |> Seq.map (fun a -> a.Name, a)
+            |> readOnlyDict
+            |> Dictionary
 
-        if not useDataAnnotations then
-            sb |> generateTableName entityType |> ignore
+        seq {
+            RelationalAnnotationNames.TableName
+            RelationalAnnotationNames.Schema
+            RelationalAnnotationNames.ViewName
+            RelationalAnnotationNames.ViewSchema
+            ScaffoldingAnnotationNames.DbSetName
+            RelationalAnnotationNames.ViewDefinitionSql
+        } |> Seq.iter (annotations.Remove >> ignore)
 
-        sb |> appendMultiLineFluentApi entityType (linesFromAnnotations annotations entityType)
+        if useDataAnnotations then
+            annotationCodeGenerator.GenerateDataAnnotationAttributes(entityType, annotations)
+            |> ignore
 
-        entityType.GetIndexes() |> Seq.iter(fun i -> generateIndex i sb)
-        entityType.GetProperties() |> Seq.iter(fun p -> generateProperty p useDataAnnotations sb)
-        entityType.GetForeignKeys() |> Seq.iter(fun fk -> generateRelationship fk useDataAnnotations sb)
+        if not useDataAnnotations || entityType.GetViewName() |> isNull |> not then
+            sb |> generateTableName entityType
+
+        sb |> appendMultiLineFluentApi entityType (linesFromAnnotations annotations.Values entityType)
+
+        entityType.GetIndexes()
+        |> Seq.iter(fun i ->
+            let indexAnnotations =
+                annotationCodeGenerator.FilterIgnoredAnnotations(i.GetAnnotations())
+                |> Seq.map (fun a -> a.Name, a)
+                |> readOnlyDict
+                |> Dictionary
+
+            annotationCodeGenerator.RemoveAnnotationsHandledByConventions(i, indexAnnotations)
+            if useDataAnnotations |> not || indexAnnotations.Count > 0 then
+                generateIndex i sb)
+
+        entityType.GetProperties() |> Seq.iter(fun p ->
+            generateProperty p useDataAnnotations sb)
+        entityType.GetForeignKeys() |> Seq.iter(fun fk ->
+            generateRelationship fk useDataAnnotations sb)
 
         sb
 
@@ -539,7 +581,7 @@ type FSharpDbContextGenerator
 
         )
 
-        model.GetSequences() |> Seq.iter(fun s -> generateSequence s sb |> ignore)
+        model.GetSequences() |> Seq.iter(fun s -> generateSequence s sb)
 
         sb
         |> appendEmptyLine
