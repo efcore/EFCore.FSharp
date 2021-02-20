@@ -6,6 +6,7 @@ open System.Data
 open System.Data.Common
 open System.Threading
 open System.Threading.Tasks
+open Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure
 open Microsoft.EntityFrameworkCore.Update
 open System.Diagnostics
 open Microsoft.EntityFrameworkCore.Infrastructure
@@ -56,7 +57,7 @@ type FakeDbParameterCollection() =
         parameters.Add value
         parameters.Count - 1
 
-    
+
 
     override this.GetEnumerator() = parameters.GetEnumerator() :> _
 
@@ -111,7 +112,7 @@ type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor : FakeCommand
         with get () = conn :> DbConnection
         and set value = conn <- value :?> FakeDbConnection
 
-    override this.DbTransaction 
+    override this.DbTransaction
         with get () = tran :> DbTransaction
         and set value = tran <- value :?> FakeDbTransaction
 
@@ -170,12 +171,12 @@ type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor : FakeCommand
         and  set value = NotImplementedException() |> raise
 
     member this.DisposeCount = disposeCount
-    override this.Dispose disposing = 
+    override this.Dispose disposing =
         if disposing then
             disposeCount <- disposeCount + 1
 
         base.Dispose disposing
-    
+
 
 and FakeDbDataReader (?columnNames:string[], ?results: ResizeArray<obj[]>) =
     inherit DbDataReader()
@@ -233,7 +234,7 @@ and FakeDbDataReader (?columnNames:string[], ?results: ResizeArray<obj[]>) =
     override this.GetValue ordinal = _currentRow.[ordinal]
 
     override this.GetInt32 ordinal = _currentRow.[ordinal] :?> _
-    
+
     override this.Depth = NotImplementedException() |> raise
 
     override this.HasRows = NotImplementedException() |> raise
@@ -283,7 +284,7 @@ and FakeDbDataReader (?columnNames:string[], ?results: ResizeArray<obj[]>) =
 
     override this.NextResult() = NotImplementedException() |> raise
 
-    
+
 
 
 and FakeCommandExecutor
@@ -371,23 +372,23 @@ and [<AllowNullLiteral>] FakeDbTransaction(connection:FakeDbConnection, ?isolati
         rollbackCount <- rollbackCount + 1
 
     override this.Dispose disposing =
-        if disposing then        
+        if disposing then
             disposeCount <- disposeCount + 1
             (this.DbConnection :?> FakeDbConnection).ActiveTransaction <- null;
-        
+
         base.Dispose(disposing)
 
 and [<AllowNullLiteral>] FakeDbConnection (connectionString: string, ?commandExecutor : FakeCommandExecutor, ?state : ConnectionState) as this =
     inherit DbConnection()
 
     let mutable connectionState : ConnectionState = match state with | Some s -> s | None -> ConnectionState.Closed
-    let commandExecutor = match commandExecutor with | Some ce -> ce | None -> FakeCommandExecutor()       
+    let commandExecutor = match commandExecutor with | Some ce -> ce | None -> FakeCommandExecutor()
 
     let dbCommands = ResizeArray<FakeDbCommand>()
     let dbTransactions = ResizeArray<FakeDbTransaction>()
 
     let mutable activeTransaction = new FakeDbTransaction(this)
-    
+
     let mutable openCount = 0
     let mutable openCountAsync = 0
     let mutable closeCount = 0
@@ -472,19 +473,19 @@ and FakeRelationalDatabaseCreator () =
     member this.CanConnectAsync cancellationToken = NotImplementedException() |> raise
 
     interface IRelationalDatabaseCreator with
-        member this.CanConnect(): bool = 
+        member this.CanConnect(): bool =
             raise (System.NotImplementedException())
-        member this.CanConnectAsync(cancellationToken: CancellationToken): Task<bool> = 
+        member this.CanConnectAsync(cancellationToken: CancellationToken): Task<bool> =
             raise (System.NotImplementedException())
-        member this.HasTables(): bool = 
+        member this.HasTables(): bool =
             raise (System.NotImplementedException())
-        member this.HasTablesAsync(cancellationToken: CancellationToken): Task<bool> = 
+        member this.HasTablesAsync(cancellationToken: CancellationToken): Task<bool> =
             raise (System.NotImplementedException())
-    
+
         member this.EnsureDeleted() = NotImplementedException() |> raise
         member this.EnsureDeletedAsync cancellationToken = NotImplementedException() |> raise
         member this.EnsureCreated() = NotImplementedException() |> raise
-        member this.EnsureCreatedAsync cancellationToken = NotImplementedException() |> raise        
+        member this.EnsureCreatedAsync cancellationToken = NotImplementedException() |> raise
         member this.Exists() = NotImplementedException() |> raise
         member this.ExistsAsync cancellationToken = NotImplementedException() |> raise
         member this.Create() = NotImplementedException() |> raise
@@ -502,32 +503,32 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
     new (copyOptions: FakeRelationalOptionsExtension) = { inherit RelationalOptionsExtension(copyOptions) }
 
     static member AddEntityFrameworkRelationalDatabase serviceCollection =
-        
+
         let serviceMap (map : ServiceCollectionMap) =
             map.TryAdd(typeof<ProviderCodeGenerator>, typeof<TestProviderCodeGenerator>, ServiceLifetime.Singleton) |> ignore
 
-        
         let builder =
             EntityFrameworkRelationalServicesBuilder(serviceCollection)
+                .TryAdd<LoggingDefinitions, TestRelationalLoggingDefinitions>()
                 .TryAdd<IDatabaseProvider, DatabaseProvider<FakeRelationalOptionsExtension>>()
                 .TryAdd<ISqlGenerationHelper, RelationalSqlGenerationHelper>()
                 .TryAdd<IRelationalTypeMappingSource, TestRelationalTypeMappingSource>()
-                .TryAdd<IMigrationsSqlGenerator, TestRelationalMigrationSqlGenerator>()                
+                .TryAdd<IMigrationsSqlGenerator, TestRelationalMigrationSqlGenerator>()
+                .TryAdd<IProviderConventionSetBuilder, TestRelationalConventionSetBuilder>()
                 .TryAdd<IRelationalConnection, FakeRelationalConnection>()
                 .TryAdd<IHistoryRepository>(fun _ -> null)
                 .TryAdd<IUpdateSqlGenerator, FakeSqlGenerator>()
                 .TryAdd<IModificationCommandBatchFactory, TestModificationCommandBatchFactory>()
                 .TryAdd<IRelationalDatabaseCreator, FakeRelationalDatabaseCreator>()
-                .TryAdd<LoggingDefinitions, TestRelationalLoggingDefinitions>()
-                .TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
+                //.TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
 
 
         builder.TryAddCoreServices() |> ignore
 
         serviceCollection
 
-    override this.Info 
-        with get() = 
+    override this.Info
+        with get() =
             System.NotImplementedException() |> raise
 
 

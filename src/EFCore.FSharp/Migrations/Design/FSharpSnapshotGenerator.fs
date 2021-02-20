@@ -7,6 +7,7 @@ open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 
+open EntityFrameworkCore.FSharp.Utilities
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Infrastructure
@@ -50,9 +51,13 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
         else pValueConverter |> Some
 
     let sort (entityTypes:IEntityType seq) =
+        let entityTypeGraph = Multigraph()
+        entityTypeGraph.AddVertices(entityTypes)
         entityTypes
-            |> Seq.filter(fun e -> e.BaseType |> isNull |> not)
-            |> Seq.toList
+        |> Seq.filter(fun e -> e.BaseType |> isNull |> not)
+        |> Seq.iter (fun e -> entityTypeGraph.AddEdge(e.BaseType, e, 0))
+
+        entityTypeGraph.TopologicalSort() |> Seq.toList
 
     let generateAnnotation (annotation:IAnnotation) (sb:IndentedStringBuilder) =
         let name = annotation.Name |> code.Literal
@@ -220,11 +225,15 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> indent
             |> appendLineIfTrue p.IsConcurrencyToken ".IsConcurrencyToken()"
             |> appendLineIfTrue isPropertyRequired ".IsRequired()"
-            |> appendLineIfTrue (p.ValueGenerated <> ValueGenerated.Never) (if p.ValueGenerated = ValueGenerated.OnAdd then ".ValueGeneratedOnAdd()" else if p.ValueGenerated = ValueGenerated.OnUpdate then ".ValueGeneratedOnUpdate()" else ".ValueGeneratedOnAddOrUpdate()" )
+            |> appendLineIfTrue (p.ValueGenerated <> ValueGenerated.Never)
+                   (if p.ValueGenerated = ValueGenerated.OnAdd then ".ValueGeneratedOnAdd()"
+                    else if p.ValueGenerated = ValueGenerated.OnUpdate then ".ValueGeneratedOnUpdate()"
+                    else ".ValueGeneratedOnAddOrUpdate()" )
             |> genPropertyAnnotations p
             |> unindent
 
     let generateProperties (funcId: string) (properties: IProperty seq) (sb:IndentedStringBuilder) =
+        let propertyCount = properties |> Seq.length
         properties |> Seq.iter (fun p -> generateProperty funcId p sb |> ignore)
         sb
 
@@ -424,6 +433,16 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> appendIsCyclic
             |> append " |> ignore"
             |> ignore
+
+    let removeAmbiguousAnnotations (annotations: Dictionary<string, IAnnotation>) annotationNameMatcher =
+        annotations
+        |> Seq.filter (fun kvp ->
+            match annotationNameMatcher kvp.Key with
+            | true ->
+                annotations.Remove(kvp.Key) |> ignore
+                true
+            | false -> false)
+        |> Seq.map (fun kvp -> kvp.Value)
 
 
 
@@ -832,6 +851,8 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                 "b" + if counter = 0 then "" else counter.ToString()
             else "b"
 
+        let properties = entityType.GetDeclaredProperties()
+
         sb
             |> appendEmptyLine
             |> append builderName
@@ -906,6 +927,27 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                     |> indent
                     |> ignore
 
+                let useOldBehavior =
+                    match AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue23456") with
+                    | true, enabled -> enabled
+                    | false, _ -> false
+
+                let annotationsToMatch = [
+                    ":ValueGenerationStrategy"
+                    ":IdentityIncrement"
+                    ":IdentitySeed"
+                    ":HiLoSequenceName"
+                    ":HiLoSequenceSchema"
+                ]
+
+                let ambiguousAnnotations =
+                    if useOldBehavior then Seq.empty
+                    else
+                        removeAmbiguousAnnotations
+                            annotations
+                            (fun n -> annotationsToMatch
+                                      |> Seq.exists (fun x -> n.EndsWith(x, StringComparison.Ordinal)))
+
                 annotationCodeGenerator.GenerateFluentApiCalls(model, annotations)
                 |> Seq.map code.Fragment
                 |> Seq.iter (fun m ->
@@ -917,12 +959,12 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                 let remainingAnnotations =
                     seq {
                         yield! annotations.Values
-                        if productVersion |> isNull then
+                        if productVersion |> isNull |> not then
                             yield Annotation(CoreAnnotationNames.ProductVersion, productVersion) :> _
                     }
 
                 sb
-                    |> generateAnnotations remainingAnnotations
+                    |> generateAnnotations (remainingAnnotations |> Seq.append ambiguousAnnotations)
                     |> append " |> ignore"
                     |> ignore
 

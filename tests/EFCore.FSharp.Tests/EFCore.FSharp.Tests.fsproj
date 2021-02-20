@@ -12,6 +12,7 @@
         <Compile Include="TestUtilities\TestRelationalTypeMappingSource.fs" />
         <Compile Include="TestUtilities\TestRelationalMigrationSqlGenerator.fs" />
         <Compile Include="TestUtilities\TestRelationalConventionSetBuilder.fs" />
+        <Compile Include="TestUtilities\FakeDiagnosticsLogger.fs" />
         <Compile Include="TestUtilities\TestModificationCommandBatchFactory.fs" />
         <Compile Include="TestUtilities\TestProviderCodeGenerator.fs" />
         <Compile Include="TestUtilities\FakeProvider\FakeDbConnection.fs" />

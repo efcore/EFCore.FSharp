@@ -443,39 +443,41 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Snapshot with enum discriminator uses converted values" {
-                let serverTypeMappingSource =
+
+                let sqlServerTypeMappingSource =
                     SqlServerTypeMappingSource(
                         TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
                         TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>())
 
+                let codeHelper =
+                    FSharpHelper(sqlServerTypeMappingSource);
+
                 let sqlServerAnnotationCodeGenerator =
                     SqlServerAnnotationCodeGenerator(
-                        AnnotationCodeGeneratorDependencies(serverTypeMappingSource));
-
-                let annotationCodeGenerator =
-                    AnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(serverTypeMappingSource))
-
-                let codeHelper = FSharpHelper(serverTypeMappingSource)
+                        AnnotationCodeGeneratorDependencies(sqlServerTypeMappingSource))
 
                 let generator =
                     FSharpMigrationsGenerator(
-                        MigrationsCodeGeneratorDependencies(serverTypeMappingSource, sqlServerAnnotationCodeGenerator),
+                        MigrationsCodeGeneratorDependencies(
+                            sqlServerTypeMappingSource,
+                            sqlServerAnnotationCodeGenerator),
                         FSharpMigrationsGeneratorDependencies(
                             codeHelper,
                             FSharpMigrationOperationGenerator(codeHelper),
-                            FSharpSnapshotGenerator(codeHelper, serverTypeMappingSource, annotationCodeGenerator)))
+                            FSharpSnapshotGenerator(
+                                codeHelper, sqlServerTypeMappingSource, sqlServerAnnotationCodeGenerator)));
 
                 let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
 
                 modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
 
-                modelBuilder.Entity<WithAnnotations>(fun eb ->
-                    eb.HasDiscriminator<RawEnum>("EnumDiscriminator")
-                        .HasValue(RawEnum.A)
-                        .HasValue<Derived>(RawEnum.B) |> ignore
-
-                    eb.Property<RawEnum>("EnumDiscriminator").HasConversion<int>() |> ignore)
-                    |> ignore
+                modelBuilder.Entity<WithAnnotations>(
+                    fun eb ->
+                        eb.HasDiscriminator<RawEnum>("EnumDiscriminator")
+                            .HasValue(RawEnum.A)
+                            .HasValue<Derived>(RawEnum.B) |> ignore
+                        eb.Property<RawEnum>("EnumDiscriminator").HasConversion<int>() |> ignore
+                        ) |> ignore
 
                 modelBuilder.FinalizeModel() |> ignore
 
