@@ -222,9 +222,8 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         sb
 
     let generateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable sb =
-
         let properties =
-            System.Linq.Enumerable.OrderBy(entityType.GetProperties(), fun p -> p, NamespaceComparer())
+            entityType.GetProperties()
 
         let navProperties =
             entityType
