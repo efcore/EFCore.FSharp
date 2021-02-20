@@ -233,7 +233,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> unindent
 
     let generateProperties (funcId: string) (properties: IProperty seq) (sb:IndentedStringBuilder) =
-        let propertyCount = properties |> Seq.length
         properties |> Seq.iter (fun p -> generateProperty funcId p sb |> ignore)
         sb
 
