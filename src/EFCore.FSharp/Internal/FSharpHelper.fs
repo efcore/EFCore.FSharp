@@ -354,6 +354,36 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             sb |> append valueToWrite |> ignore
 
             true
+
+        | ExpressionType.MemberAccess ->
+            let memberExpression = expression :?> MemberExpression
+            let appendAndReturn() =
+                sb
+                    |> append "."
+                    |> append memberExpression.Member.Name
+                    |> ignore
+                true
+
+            if memberExpression.Expression |> isNull then
+                sb
+                    |> append (this.ReferenceFullName memberExpression.Member.DeclaringType  true)
+                    |> ignore
+                appendAndReturn()
+            elif this.handleExpression memberExpression.Expression false sb |> not then
+                false
+            else appendAndReturn()
+        | ExpressionType.Add ->
+            let binaryExpression = expression :?> BinaryExpression
+
+            if this.handleExpression binaryExpression.Left false sb |> not then
+                false
+            else
+                sb
+                    |> append " + "
+                    |> ignore
+                if this.handleExpression binaryExpression.Right false sb |> not then
+                    false
+                else true
         | _ -> false
 
 
@@ -502,6 +532,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         else
             this.buildFragment f.ChainedCall b
 
+
     member private this.unknownLiteral (value: obj) =
         if isNull value then
             "null"
@@ -544,7 +575,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
                         else t
                     invalidOp (type' |> DesignStrings.UnknownLiteral)
                 else
-                    let builder = new IndentedStringBuilder()
+                    let builder = IndentedStringBuilder()
                     let expression = mapping.GenerateCodeLiteral(value)
                     let handled = this.handleExpression expression false builder
 

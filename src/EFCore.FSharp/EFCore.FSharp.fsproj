@@ -26,6 +26,7 @@
     <Compile Include="Utilities\SharedTypeExtensions.fs" />
     <Compile Include="Utilities\EntityFrameworkExtensions.fs" />
     <Compile Include="Utilities\IndentedStringBuilderUtilities.fs" />
+    <Compile Include="Utilities\Multigraph.fs" />
     <Compile Include="Internal\FSharpHelper.fs" />
     <Compile Include="Internal\FSharpUtilities.fs" />
     <Compile Include="ValueConverters\Converters.fs" />

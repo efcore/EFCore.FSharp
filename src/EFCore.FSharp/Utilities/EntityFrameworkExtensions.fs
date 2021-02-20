@@ -1,12 +1,11 @@
 namespace EntityFrameworkCore.FSharp
 
-open System
+open System.Collections.Generic
 
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata.Internal
-open Microsoft.EntityFrameworkCore.Design
 
 module internal EntityFrameworkExtensions =
 
@@ -62,3 +61,9 @@ module internal EntityFrameworkExtensions =
 
     let toAnnotatable (a : IAnnotatable) =
         a
+
+    let annotationsToDictionary (annotations: IAnnotation seq) =
+        annotations
+        |> Seq.map (fun a -> a.Name, a)
+        |> readOnlyDict
+        |> Dictionary
