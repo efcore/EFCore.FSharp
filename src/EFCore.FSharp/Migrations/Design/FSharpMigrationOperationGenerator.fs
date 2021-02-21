@@ -179,7 +179,11 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     writeParameter "defaultValue" op.DefaultValue
                 else
                     id
-            |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldClrType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
+            |>
+                if (op.OldColumn.ClrType |> isNull |> not) then
+                    (fun sb -> sb |> append (sprintf ", oldClrType = typedefof<%s>" (op.OldColumn.ClrType |> code.Reference)))
+                else
+                    id
             |> writeOptionalParameter "oldType" op.OldColumn.ColumnType
             |> writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
             |> writeNullableParameterIfValue "oldMaxLength" op.OldColumn.MaxLength
@@ -576,16 +580,22 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 let length0 = op.Values.GetLength(0)
                 let length1 = op.Values.GetLength(1)
 
-                if length0 = 1 && length1 = 1 then
-                    yield sprintf "value = %s" (op.Values.[0,0] |> code.UnknownLiteral)
-                elif length0 = 1 then
-                    yield sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
-                elif length1 = 1 then
-                    let arr = op.Values |> toOnedimensionalArray true
-                    let lines = code.Literal(arr, true)
-                    yield sprintf "values = %s" lines
-                else
-                    yield sprintf "values = %s" (op.Values |> code.Literal)
+                let valuesArray =
+                    if length0 = 1 && length1 = 1 then
+                        sprintf "value = %s :> obj" (op.Values.[0,0] |> code.UnknownLiteral)
+                    elif length0 = 1 then
+                        sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
+                    elif length1 = 1 then
+                        let arr = op.Values |> toOnedimensionalArray true
+                        let lines = code.Literal(arr, true)
+                        sprintf "values = %s" lines
+                    else
+                        sprintf "values = %s" (op.Values |> code.Literal)
+                // almost certainly a tidier way of doing this...
+                yield (valuesArray
+                           .Replace(";", " :> obj;")
+                           .Replace(" |]", ":> obj |]")
+                           .Replace("null :> obj", "null"))
             }
 
         sb

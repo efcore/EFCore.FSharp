@@ -338,7 +338,7 @@ type FSharpDbContextGenerator
 
         let lines = ResizeArray<string>()
         lines.Add(
-            sprintf ".HasIndex(%s, %s)"
+            sprintf ".HasIndex((%s), %s)" // Parentheses required for F# implicit conversion to Expression<Func<T, obj>>
                 (generateLambdaToKey index.Properties "e")
                 (code.Literal(index.GetDatabaseName())))
 
