@@ -888,9 +888,81 @@ type MySnapshot() =
                         actual <- Convert.ChangeType(actual', expected.GetType())
                     | _ -> ()
 
-                    Expect.equal actual expected ""
+                    if actual |> isNull |> not && expected |> isNull |> not then
+                        Expect.equal
+                            actual
+                            expected
+                            $"""Comparison failed for {if actual.GetType() = typeof<Nullable<_>> then $"Nullable<{(Nullable.GetUnderlyingType(actual.GetType()))}>" else property.ClrType.Name}"""
                 )
+            }
 
-                ()
+            test "Namespaces imported for insert data" {
+                let (_, _, generator) = createMigrationsCodeGenerator()
+
+                let _ =
+                    generator.GenerateMigration(
+                        "MyNamespace",
+                        "MyMigration",
+                        [
+                            let values = Array2D.create 2 2 (1 :> obj)
+                            values.[0, 1] <- null
+                            values.[1, 0] <- 2 :> _
+                            values.[1, 0] <- RegexOptions.Multiline :> _
+                            InsertDataOperation (
+                                Table = "MyTable",
+                                Columns = [| "Id"; "MyColumn" |],
+                                Values = values
+                            )
+                        ],
+                        []
+                    )
+
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
+                modelBuilder.Model.FinalizeModel() |> ignore
+
+                let migration =
+                    generator.GenerateMetadata(
+                        "MyNamespace",
+                        typeof<MyContext>,
+                        "MyMigration",
+                        "20150511161616_MyMigration",
+                        modelBuilder.Model
+                    )
+
+                Expect.stringContains migration "open System.Text.RegularExpressions" ""
+            }
+
+            test "Namespaces imported for update data values" {
+                let (_, _, generator) = createMigrationsCodeGenerator()
+
+                let _ =
+                    generator.GenerateMigration(
+                        "MyNamespace",
+                        "MyMigration",
+                        [
+                            UpdateDataOperation(
+                                Table = "MyTable",
+                                KeyColumns = [| "Id" |],
+                                KeyValues = (Array2D.create 1 1 (1 :> _)),
+                                Columns = [| "MyColumn" |],
+                                Values = Array2D.create 1 1 (RegexOptions.Multiline :> _)
+                            )
+                        ],
+                        []
+                    )
+
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
+                modelBuilder.Model.FinalizeModel() |> ignore
+
+                let migration =
+                    generator.GenerateMetadata(
+                        "MyNamespace",
+                        typeof<MyContext>,
+                        "MyMigration",
+                        "20150511161616_MyMigration",
+                        modelBuilder.Model
+                    )
+
+                Expect.stringContains migration "open System.Text.RegularExpressions" ""
             }
         ]

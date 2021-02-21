@@ -155,23 +155,28 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             else
                 let builder = StringBuilder()
 
+                let returnName() =
+                    let name =
+                        displayName t useFullName
+
+                    builder.Append(name) |> string
+
                 if t.IsArray then
                     builder
                         .Append(this.ReferenceFullName (t.GetElementType()) false)
                         .Append("[") |> ignore
 
-                    (',', t.GetArrayRank()) |> String |> builder.Append |> ignore
-                    builder.Append("]") |> ignore
+                    match t.GetArrayRank() with
+                    | 1 -> builder.Append("]") |> ignore
+                    | n -> (',', n) |> String |> builder.Append |> ignore
 
+                    builder |> string
                 elif t.IsNested then
                     builder
                         .Append(this.ReferenceFullName (t.DeclaringType) false)
                         .Append(".") |> ignore
-
-                let name =
-                    displayName t useFullName
-
-                builder.Append(name) |> string
+                    returnName()
+                else returnName()
 
     member private this.DisplayName (t: Type) useFullName =
         EntityFrameworkCore.FSharp.SharedTypeExtensions.displayName t useFullName
@@ -207,11 +212,32 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         "\'" + (if value = '\'' then "\\'" else value.ToString()) + "\'"
 
     member private this.literalDateTime(value: DateTime) =
-        sprintf "DateTime(%d, %d, %d, %d, %d, %d,%d, DateTimeKind.%A)"
-            value.Year value.Month value.Day value.Hour value.Minute value.Second value.Millisecond value.Kind
+        sprintf "DateTime(%d, %d, %d, %d, %d, %d, %d, DateTimeKind.%A)%s"
+            value.Year
+            value.Month
+            value.Day
+            value.Hour
+            value.Minute
+            value.Second
+            value.Millisecond
+            value.Kind
+            (if value.Ticks % 10_000L = 0L then ""
+             else String.Format(
+                     CultureInfo.InvariantCulture,
+                     ".AddTicks({0}L)",
+                     value.Ticks % 10_000L))
 
     member private this.literalTimeSpan(value: TimeSpan) =
-        sprintf "TimeSpan(%d, %d, %d, %d, %d)" value.Days value.Hours value.Minutes value.Seconds value.Milliseconds
+        if value.Ticks % 10_000L = 0L then
+            sprintf "TimeSpan(%d, %d, %d, %d, %d)"
+                value.Days
+                value.Hours
+                value.Minutes
+                value.Seconds
+                value.Milliseconds
+        else String.Format(CultureInfo.InvariantCulture,
+                           "TimeSpan({0}L)",
+                           value.Ticks)
 
     member private this.literalDateTimeOffset(value: DateTimeOffset) =
         sprintf "DateTimeOffset(%s, %s)" (value.DateTime |> this.literalDateTime) (value.Offset |> this.literalTimeSpan)
@@ -272,8 +298,8 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
     member private this.literalArray2D(values: obj[,]) =
 
-        let rowCount = Array2D.length1 values
-        let valuesCount = Array2D.length2 values
+        let rowCount = Array2D.length1 values - 1
+        let valuesCount = Array2D.length2 values - 1
 
         let rowContents =
             [0..rowCount]
