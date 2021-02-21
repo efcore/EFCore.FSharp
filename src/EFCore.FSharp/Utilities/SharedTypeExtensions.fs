@@ -71,9 +71,8 @@ module internal rec SharedTypeExtensions =
         while (innerType.IsArray) do
             innerType <- innerType.GetElementType()
 
-        processType t useFullName sb |> ignore
+        processType innerType useFullName sb |> ignore
 
-        innerType <- t
         while (innerType.IsArray) do
             sb
                 .Append('[')

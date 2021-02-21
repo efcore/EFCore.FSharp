@@ -180,10 +180,11 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         if number.IndexOf('.') >= 0 then number else number + ".0"
 
     member private this.literalString(value: string) =
-        if value.Contains(Environment.NewLine) || value.Contains('\r') then
-            "@\"" + value.Replace("\"", "\"\"") + "\""
-        else
-            "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""
+        "\""
+        + value.Replace(@"\", @"\\")
+              .Replace("\"", "\\\"")
+              .Replace("\n", @"\n")
+              .Replace("\r", @"\r") + "\""
 
     member private this.literalBoolean(value: bool) =
         if value then "true" else "false"

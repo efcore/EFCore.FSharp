@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 
 open System.Linq.Expressions
+open System.Text
 open System.Text.RegularExpressions
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.ChangeTracking
@@ -20,11 +21,13 @@ open Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.TestUtilities
 
+open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.Internal
 open EntityFrameworkCore.FSharp.Migrations.Design
 open EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Expecto
+open Microsoft.EntityFrameworkCore.ValueGeneration
 
 type TestFSharpSnapshotGenerator (dependencies,
                                   mappingSource: IRelationalTypeMappingSource,
@@ -82,6 +85,7 @@ module FSharpMigrationsGeneratorTest =
                 "System.ObjectModel.dll"
                 "System.ComponentModel.dll"
                 "System.Data.Common.dll"
+                "System.Text.RegularExpressions.dll"
             ]
 
         let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
@@ -236,6 +240,65 @@ module FSharpMigrationsGeneratorTest =
             )
 
         ()
+
+    type EntityWithConstructorBinding(id: int) =
+        member this.Id with get() = id
+
+    let myDbFunction(): int = failwith "Not implemented"
+
+    [<Flags>]
+    type Enum1 =
+        | Default = 0
+        | One = 1
+        | Two = 2
+
+    [<CLIMutable>]
+    type EntityWithEveryPrimitive = {
+        Boolean: bool
+        Byte: byte
+        ByteArray: byte[]
+        Char: char
+        DateTime: DateTime
+        DateTimeOffset: DateTimeOffset
+        Decimal: decimal
+        Double: double
+        Enum: Enum1
+        StringEnum: Enum1
+        Guid: Guid
+        Int16: int16
+        Int32: int
+        Int64: int64
+        NullableBoolean: Nullable<bool>
+        NullableByte: Nullable<byte>
+        NullableChar: Nullable<char>
+        NullableDateTime: Nullable<DateTime>
+        NullableDateTimeOffset: Nullable<DateTimeOffset>
+        NullableDecimal: Nullable<decimal>
+        NullableDouble: Nullable<double>
+        NullableEnum: Nullable<Enum1>
+        NullableStringEnum: Nullable<Enum1>
+        NullableGuid: Nullable<Guid>
+        NullableInt16: Nullable<int16>
+        NullableInt32: Nullable<int>
+        NullableInt64: Nullable<int64>
+        NullableSByte: Nullable<sbyte>
+        NullableSingle: Nullable<float>
+        NullableTimeSpan: Nullable<TimeSpan>
+        NullableUInt16: Nullable<uint16>
+        NullableUInt32: Nullable<uint>
+        NullableUInt64: Nullable<uint64>
+        SByte: sbyte
+        Single: float
+        String: string
+        TimeSpan: TimeSpan
+        UInt16: uint16
+        UInt32: uint
+        UInt64: uint64
+        mutable privateSetter: int
+    } with
+        member this.PrivateSetter
+            with get() = this.privateSetter
+            and private set v = this.privateSetter <- v
 
     [<Tests>]
     let FSharpMigrationsGeneratorTest =
@@ -651,5 +714,183 @@ type MyMigration() =
                 Expect.equal migration.UpOperations.Count 4 "Expected 4 up operations"
                 Expect.equal (migration.DownOperations.Count) 0 "Expected 0 down operations"
                 Expect.hasCountOf (migration.TargetModel.GetEntityTypes()) 1u (fun _ -> true) "Expected one entity"
+            }
+
+            test "Snapshots compile" {
+                let (_, _, generator) = createMigrationsCodeGenerator()
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
+                modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
+                modelBuilder.Entity<EntityWithConstructorBinding>(fun x ->
+                    x.Property(fun e -> e.Id) |> ignore
+                    x.Property<Guid>("PropertyWithValueGenerator").HasValueGenerator<GuidValueGenerator>() |> ignore
+                ) |> ignore
+
+                modelBuilder.HasDbFunction(myDbFunction) |> ignore
+
+                let model = modelBuilder.Model
+                model.["Some:EnumValue"] <- RegexOptions.Multiline
+
+                let entityType = model.AddEntityType("Cheese")
+                let property1 = entityType.AddProperty("Pickle", typeof<StringBuilder>)
+
+                property1.SetValueConverter(
+                    ValueConverter<StringBuilder, string>(
+                        (fun v -> v.ToString()),
+                        (fun v -> StringBuilder(v)),
+                        (ConverterMappingHints(size = 10))))
+
+                let property2 = entityType.AddProperty("Ham", typeof<RawEnum>)
+                property2.SetValueConverter(
+                    ValueConverter<RawEnum, string>(
+                        (fun v -> v.ToString()),
+                        (fun v -> Enum.Parse(typeof<RawEnum>, v) :?> _),
+                        (ConverterMappingHints(size = 10))))
+
+                entityType.SetPrimaryKey(property2) |> ignore
+
+                modelBuilder.FinalizeModel() |> ignore
+
+                let modelSnapshotCode =
+                    generator.GenerateSnapshot(
+                        "MyNamespace",
+                        typeof<MyContext>,
+                        "MySnapshot",
+                        model)
+
+                let expectedCode = "// <auto-generated />
+namespace MyNamespace
+
+open System
+open System.Text.RegularExpressions
+open EntityFrameworkCore.FSharp.Test.Migrations.Design
+open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Infrastructure
+open Microsoft.EntityFrameworkCore.Metadata
+open Microsoft.EntityFrameworkCore.Migrations
+open Microsoft.EntityFrameworkCore.Storage.ValueConversion
+
+[<DbContext(typeof<MyContext>)>]
+type MySnapshot() =
+    inherit ModelSnapshot()
+
+    override this.BuildModel(modelBuilder: ModelBuilder) =
+        modelBuilder.HasAnnotation(\"Some:EnumValue\", RegexOptions.Multiline)
+         |> ignore
+        modelBuilder.Entity(\"Cheese\", (fun b ->
+
+            b.Property<string>(\"Ham\")
+                .HasColumnType(\"just_string(10)\") |> ignore
+            b.Property<string>(\"Pickle\")
+                .HasColumnType(\"just_string(10)\") |> ignore
+
+            b.HasKey(\"Ham\") |> ignore
+
+            b.ToTable(\"Cheese\") |> ignore
+
+        )) |> ignore
+
+        modelBuilder.Entity(\"EntityFrameworkCore.FSharp.Test.Migrations.Design.FSharpMigrationsGeneratorTest+EntityWithConstructorBinding\", (fun b ->
+
+            b.Property<int>(\"Id\")
+                .ValueGeneratedOnAdd()
+                .HasColumnType(\"default_int_mapping\") |> ignore
+            b.Property<Guid>(\"PropertyWithValueGenerator\")
+                .IsRequired()
+                .HasColumnType(\"default_guid_mapping\") |> ignore
+
+            b.HasKey(\"Id\") |> ignore
+
+            b.ToTable(\"EntityWithConstructorBinding\") |> ignore
+
+        )) |> ignore
+
+"
+                Expect.equal modelSnapshotCode expectedCode ""
+
+                let snapshot = compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
+                Expect.equal (snapshot.Model.GetEntityTypes() |> Seq.length) 2 "Expect 2 entity types"
+            }
+
+            test "Snapshot with default values are round tripped" {
+                let (_, _, generator) = createMigrationsCodeGenerator()
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder();
+                modelBuilder.Entity<EntityWithEveryPrimitive>(fun eb ->
+                    eb.Property(fun e -> e.Boolean).HasDefaultValue(false) |> ignore
+                    eb.Property(fun e -> e.Byte).HasDefaultValue(Byte.MinValue) |> ignore
+                    eb.Property(fun e -> e.ByteArray).HasDefaultValue([| 0uy |]) |> ignore
+                    eb.Property(fun e -> e.Char).HasDefaultValue('0') |> ignore
+                    eb.Property(fun e -> e.DateTime).HasDefaultValue(DateTime.MinValue) |> ignore
+                    eb.Property(fun e -> e.DateTimeOffset).HasDefaultValue(DateTimeOffset.MinValue) |> ignore
+                    eb.Property(fun e -> e.Decimal).HasDefaultValue(Decimal.MinValue) |> ignore
+                    eb.Property(fun e -> e.Double).HasDefaultValue(Double.MinValue) |> ignore //double.NegativeInfinity
+                    eb.Property(fun e -> e.Enum).HasDefaultValue(Enum1.Default) |> ignore
+                    eb.Property(fun e -> e.NullableEnum).HasDefaultValue(Enum1.Default).HasConversion<string>() |> ignore
+                    eb.Property(fun e -> e.Guid).HasDefaultValue(Guid.NewGuid()) |> ignore
+                    eb.Property(fun e -> e.Int16).HasDefaultValue(Int16.MaxValue) |> ignore
+                    eb.Property(fun e -> e.Int32).HasDefaultValue(Int32.MaxValue) |> ignore
+                    eb.Property(fun e -> e.Int64).HasDefaultValue(Int64.MaxValue) |> ignore
+                    eb.Property(fun e -> e.Single).HasDefaultValue(Single.Epsilon) |> ignore
+                    eb.Property(fun e -> e.SByte).HasDefaultValue(SByte.MinValue) |> ignore
+                    eb.Property(fun e -> e.String).HasDefaultValue("'\"'@\r\\\n") |> ignore
+                    eb.Property(fun e -> e.TimeSpan).HasDefaultValue(TimeSpan.MaxValue) |> ignore
+                    eb.Property(fun e -> e.UInt16).HasDefaultValue(UInt16.MinValue) |> ignore
+                    eb.Property(fun e -> e.UInt32).HasDefaultValue(UInt32.MinValue) |> ignore
+                    eb.Property(fun e -> e.UInt64).HasDefaultValue(UInt64.MinValue) |> ignore
+                    eb.Property(fun e -> e.NullableBoolean).HasDefaultValue(true) |> ignore
+                    eb.Property(fun e -> e.NullableByte).HasDefaultValue(Byte.MaxValue) |> ignore
+                    eb.Property(fun e -> e.NullableChar).HasDefaultValue('\'') |> ignore
+                    eb.Property(fun e -> e.NullableDateTime).HasDefaultValue(DateTime.MaxValue) |> ignore
+                    eb.Property(fun e -> e.NullableDateTimeOffset).HasDefaultValue(DateTimeOffset.MaxValue) |> ignore
+                    eb.Property(fun e -> e.NullableDecimal).HasDefaultValue(Decimal.MaxValue) |> ignore
+                    eb.Property(fun e -> e.NullableDouble).HasDefaultValue(0.6822871999174) |> ignore
+                    eb.Property(fun e -> e.NullableEnum).HasDefaultValue(Enum1.One ||| Enum1.Two) |> ignore
+                    eb.Property(fun e -> e.NullableStringEnum).HasDefaultValue(Enum1.One).HasConversion<string>() |> ignore
+                    eb.Property(fun e -> e.NullableGuid).HasDefaultValue(new Guid()) |> ignore
+                    eb.Property(fun e -> e.NullableInt16).HasDefaultValue(Int16.MinValue) |> ignore
+                    eb.Property(fun e -> e.NullableInt32).HasDefaultValue(Int32.MinValue) |> ignore
+                    eb.Property(fun e -> e.NullableInt64).HasDefaultValue(Int64.MinValue) |> ignore
+                    eb.Property(fun e -> e.NullableSingle).HasDefaultValue(0.3333333) |> ignore
+                    eb.Property(fun e -> e.NullableSByte).HasDefaultValue(SByte.MinValue) |> ignore
+                    eb.Property(fun e -> e.NullableTimeSpan).HasDefaultValue(TimeSpan.MinValue.Add(new TimeSpan())) |> ignore
+                    eb.Property(fun e -> e.NullableUInt16).HasDefaultValue(UInt16.MaxValue) |> ignore
+                    eb.Property(fun e -> e.NullableUInt32).HasDefaultValue(UInt32.MaxValue) |> ignore
+                    eb.Property(fun e -> e.NullableUInt64).HasDefaultValue(UInt64.MaxValue) |> ignore
+
+                    eb.HasKey(fun e -> e.Boolean :> obj) |> ignore
+                    ) |> ignore
+
+                modelBuilder.FinalizeModel() |> ignore
+
+                let modelSnapshotCode =
+                    generator.GenerateSnapshot(
+                        "MyNamespace",
+                        typeof<MyContext>,
+                        "MySnapshot",
+                        modelBuilder.Model)
+
+                let snapshot = compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
+                let entityType = snapshot.Model.GetEntityTypes() |> Seq.head
+
+                Expect.equal (entityType |> Microsoft.EntityFrameworkCore.EntityTypeExtensions.DisplayName) typeof<EntityWithEveryPrimitive>.FullName ""
+
+                (modelBuilder.Model.GetEntityTypes() |> Seq.head).GetProperties()
+                |> Seq.iter (fun property ->
+                    let expected = property.GetDefaultValue()
+                    let mutable actual = entityType.FindProperty(property.Name).GetDefaultValue()
+
+                    match expected |> Option.ofObj, actual |> Option.ofObj with
+                    | Some expected, Some actual' when expected.GetType().IsEnum ->
+                        actual <-
+                            match actual' with
+                            | :? String as a -> Enum.Parse(expected.GetType(), a)
+                            | _ -> Enum.ToObject(expected.GetType(), actual')
+                    | Some expected, Some actual' when actual'.GetType() <> expected.GetType() ->
+                        actual <- Convert.ChangeType(actual', expected.GetType())
+                    | _ -> ()
+
+                    Expect.equal actual expected ""
+                )
+
+                ()
             }
         ]
