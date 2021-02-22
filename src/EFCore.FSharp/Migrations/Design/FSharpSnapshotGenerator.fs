@@ -921,7 +921,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
             if annotations |> Seq.isEmpty |> not || productVersion |> isNull |> not then
                 sb
-                    |> append builderName
+                    |> appendLine builderName
                     |> indent
                     |> ignore
 
@@ -963,8 +963,8 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
                 sb
                     |> generateAnnotations (remainingAnnotations |> Seq.append ambiguousAnnotations)
+                    |> appendLine "|> ignore"
                     |> unindent
-                    |> append " |> ignore"
                     |> ignore
 
             for sequence in model.GetSequences() do
