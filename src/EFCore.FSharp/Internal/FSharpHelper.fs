@@ -173,9 +173,6 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
                 builder.Append(name) |> string
 
-    member private this.DisplayName (t: Type) useFullName =
-        EntityFrameworkCore.FSharp.SharedTypeExtensions.displayName t useFullName
-
     member private this.ensureDecimalPlaces (number:string) =
         if number.IndexOf('.') >= 0 then number else number + ".0"
 

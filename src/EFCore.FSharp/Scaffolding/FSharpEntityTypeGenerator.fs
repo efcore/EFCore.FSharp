@@ -124,40 +124,40 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             let a = AttributeWriter(attrName)
             a.AddParameter (code.Literal ml.Value)
 
-            sb |> append (a |> string)
+            sb |> append (string a)
         else
             sb
 
     let generateTableAttribute (entityType : IEntityType) sb =
         sb |> append "// Annotations"
 
-    let GenerateEntityTypeDataAnnotations entityType sb =
+    let generateEntityTypeDataAnnotations entityType sb =
         sb |> generateTableAttribute entityType
 
 
-    let GenerateConstructor (entityType : IEntityType) sb =
+    let generateConstructor (entityType : IEntityType) sb =
         sb |> appendLine "new() = { }"
 
-    let GenerateProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) sb =
+    let generateProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) sb =
         // TODO: add key etc.
         sb |> appendLine "// Properties"
 
-    let GenerateNavigationProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) sb =
+    let generateNavigationProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) sb =
         sb |> appendLine "// NavigationProperties"
 
-    let GenerateClass (entityType : IEntityType) useDataAnnotations optionOrNullable sb =
+    let generateClass (entityType : IEntityType) ``namespace`` useDataAnnotations optionOrNullable sb =
 
         sb
             |>
                 if useDataAnnotations then
-                    GenerateEntityTypeDataAnnotations entityType
+                    generateEntityTypeDataAnnotations entityType
                 else
                     id
-            |> appendLine ("type " + entityType.Name + "() =")
+            |> appendLine (sprintf "type %s() =" entityType.Name)
             |> indent
-            |> GenerateConstructor entityType
-            |> GenerateProperties entityType optionOrNullable
-            |> GenerateNavigationProperties entityType optionOrNullable
+            |> generateConstructor entityType
+            |> generateProperties entityType optionOrNullable
+            |> generateNavigationProperties entityType optionOrNullable
             |> unindent
 
     let generateRecordTypeEntry useDataAnnotations optionOrNullable (p: IProperty) sb =
@@ -221,7 +221,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
         nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations skipFinalNewLine optionOrNullable sb)
         sb
 
-    let generateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable sb =
+    let generateRecord (entityType : IEntityType) ``namespace`` (useDataAnnotations:bool) optionOrNullable sb =
         let properties =
             entityType.GetProperties()
 
@@ -234,7 +234,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
 
         sb
             |> appendLine ("CLIMutable" |> createAttributeQuick)
-            |> appendLine ("type " + entityType.Name + " = {")
+            |> appendLine (sprintf "type %s = {" entityType.Name)
             |> indent
             |> writeRecordProperties properties useDataAnnotations navsIsEmpty optionOrNullable
             |> writeNavigationProperties navProperties useDataAnnotations true optionOrNullable
@@ -243,18 +243,18 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             |> appendEmptyLine
 
 
-    let writeCode (entityType: IEntityType) (useDataAnnotation: bool) createTypesAs optionOrNullable sb =
+    let writeCode (entityType: IEntityType) ``namespace`` (useDataAnnotation: bool) createTypesAs optionOrNullable sb =
 
         let generate =
             match createTypesAs with
-            | ClassType -> GenerateClass
+            | ClassType -> generateClass
             | RecordType -> generateRecord
 
         sb
             |> indent
-            |> generate entityType useDataAnnotation optionOrNullable
+            |> generate entityType ``namespace`` useDataAnnotation optionOrNullable
             |> string
 
     interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpEntityTypeGenerator with
-        member __.WriteCode(entityType, _, useDataAnnotations) =
-            writeCode entityType useDataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes (IndentedStringBuilder())
+        member __.WriteCode(entityType, ``namespace``, useDataAnnotations) =
+            writeCode entityType ``namespace`` useDataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes (IndentedStringBuilder())
