@@ -133,7 +133,7 @@ module FSharpMigrationsGeneratorTest =
             System.Reflection.CustomAttributeExtensions.GetCustomAttribute<DbContextAttribute>(snapshotType)
 
         Expect.isNotNull contextTypeAttribute "Should not be null"
-        Expect.equal contextTypeAttribute.ContextType typeof<MyContext> "Should be equal"
+        Expect.equal contextTypeAttribute.ContextType.FullName typeof<MyContext>.FullName "Should be equal"
 
         Activator.CreateInstance(snapshotType) :?> ModelSnapshot
 

@@ -47,12 +47,12 @@ type FSharpDbContextGenerator
         sb
             |> append "open " |> appendLine (contextName.Replace("Context", "Domain"))
             |> appendEmptyLine
-            |> append "type " |> append contextName |> appendLine " ="
+            |> appendLine (sprintf "type %s =" contextName)
             |> indent
             |> appendLine "inherit DbContext"
             |> appendEmptyLine
             |> appendLine "new() = { inherit DbContext() }"
-            |> append "new(options : DbContextOptions<" |> append contextName |> appendLine ">) ="
+            |> appendLine (sprintf "new(options : DbContextOptions<%s>) =" contextName)
             |> appendLineIndent "{ inherit DbContext(options) }"
             |> appendEmptyLine
 
@@ -63,11 +63,11 @@ type FSharpDbContextGenerator
 
         sb
             |> appendLine "[<DefaultValue>]"
-            |> append "val mutable private " |> append mutableName |> append " : DbSet<" |> append entityType.Name |> appendLine ">"
-            |> append "member this." |> appendLine dbSetName
+            |> append (sprintf "val mutable private %s : DbSet<%s>" mutableName entityType.Name)
+            |> appendLine (sprintf "member this.%s" dbSetName)
             |> indent
-            |> append "with get() = this." |> appendLine mutableName
-            |> append "and set v = this." |> append mutableName |> appendLine " <- v"
+            |> append (sprintf "with get() = this.%s" mutableName)
+            |> append (sprintf "and set v = this.%s <- v" mutableName)
             |> unindent
             |> ignore
 
@@ -79,9 +79,9 @@ type FSharpDbContextGenerator
             |> Seq.iter(fun entityType -> entityType |> generateDbSet sb)
 
         if model.GetEntityTypes() |> Seq.isEmpty |> not then
-            sb |> appendEmptyLine |> ignore
-
-        sb
+            sb |> appendEmptyLine
+        else
+            sb
 
     let generateEntityTypeErrors (model:IModel) (sb:IndentedStringBuilder) =
 
@@ -91,9 +91,9 @@ type FSharpDbContextGenerator
             |> Seq.iter (fun e -> sb |> appendLine (sprintf "// %s Please see the warning messages." e.Value) |> ignore)
 
         if entityTypeErrors |> Seq.isEmpty |> not then
-            sb |> appendEmptyLine |> ignore
-
-        sb
+            sb |> appendEmptyLine
+        else
+            sb
 
     let generateOnConfiguring (connectionString:string) suppressOnConfiguring suppressConnectionStringWarning (sb:IndentedStringBuilder) =
 
@@ -553,10 +553,12 @@ type FSharpDbContextGenerator
 
         annotationCodeGenerator.RemoveAnnotationsHandledByConventions(model, annotations)
 
-        annotations.Remove(CoreAnnotationNames.ProductVersion) |> ignore
-        annotations.Remove(RelationalAnnotationNames.MaxIdentifierLength) |> ignore
-        annotations.Remove(ScaffoldingAnnotationNames.DatabaseName) |> ignore
-        annotations.Remove(ScaffoldingAnnotationNames.EntityTypeErrors) |> ignore
+        seq {
+            CoreAnnotationNames.ProductVersion
+            RelationalAnnotationNames.MaxIdentifierLength
+            ScaffoldingAnnotationNames.DatabaseName
+            ScaffoldingAnnotationNames.EntityTypeErrors
+        } |> Seq.iter (annotations.Remove >> ignore)
 
         let generateAnnotations (a: IAnnotation seq) =
             a
@@ -573,9 +575,9 @@ type FSharpDbContextGenerator
             sb
                 |> appendEmptyLine
                 |> indent
-                |> append "modelBuilder"
+                |> append ("modelBuilder" + (lines |> Seq.head))
                 |> indent
-                |> appendLines lines false
+                |> appendLines (lines |> Seq.tail) false
                 |> appendLine "|> ignore"
                 |> appendEmptyLine
                 |> unindent
