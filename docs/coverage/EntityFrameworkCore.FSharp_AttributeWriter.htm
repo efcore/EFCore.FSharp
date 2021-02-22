@@ -16,7 +16,7 @@
 <tbody>
 <tr><th>Class:</th><td>EntityFrameworkCore.FSharp.Scaffolding.AttributeWriter</td></tr>
 <tr><th>Assembly:</th><td>EntityFrameworkCore.FSharp</td></tr>
-<tr><th>File(s):</th><td><a href="#homesimonefcorefsharpsrcEFCoreFSharpScaffoldingFSharpEntityTypeGeneratorfs" class="navigatetohash">/home/simon/efcore.fsharp/src/EFCore.FSharp/Scaffolding/FSharpEntityTypeGenerator.fs</a></td></tr>
+<tr><th>File(s):</th><td><a href="#homesimonsrcEFCoreFSharpsrcEFCoreFSharpScaffoldingFSharpEntityTypeGeneratorfs" class="navigatetohash">/home/simon/src/EFCore.FSharp/src/EFCore.FSharp/Scaffolding/FSharpEntityTypeGenerator.fs</a></td></tr>
 <tr><th>Covered lines:</th><td>8</td></tr>
 <tr><th>Uncovered lines:</th><td>1</td></tr>
 <tr><th>Coverable lines:</th><td>9</td></tr>
@@ -44,7 +44,7 @@
 </tbody>
 </table>
 <h1>File(s)</h1>
-<h2 id="homesimonefcorefsharpsrcEFCoreFSharpScaffoldingFSharpEntityTypeGeneratorfs">/home/simon/efcore.fsharp/src/EFCore.FSharp/Scaffolding/FSharpEntityTypeGenerator.fs</h2>
+<h2 id="homesimonsrcEFCoreFSharpsrcEFCoreFSharpScaffoldingFSharpEntityTypeGeneratorfs">/home/simon/src/EFCore.FSharp/src/EFCore.FSharp/Scaffolding/FSharpEntityTypeGenerator.fs</h2>
 <table class="lineAnalysis">
 <thead><tr><th></th><th>#</th><th>Line</th><th></th><th>Line coverage</th></tr></thead>
 <tbody>
@@ -265,7 +265,7 @@
 <tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line215"></a><code>215</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sprintf&nbsp;&quot;ICollection&lt;%s&gt;&quot;&nbsp;referencedTypeName</code></td></tr>
 <tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line216"></a><code>216</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else</code></td></tr>
 <tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line217"></a><code>217</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;referencedTypeName</code></td></tr>
-<tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line218"></a><code>218</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sb&nbsp;|&gt;&nbsp;appendLine&nbsp;(sprintf&nbsp;&quot;%s:&nbsp;%s&quot;&nbsp;n.Name&nbsp;navigationType)&nbsp;|&gt;&nbsp;ignore</code></td></tr>
+<tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line218"></a><code>218</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sb&nbsp;|&gt;&nbsp;appendLine&nbsp;(sprintf&nbsp;&quot;mutable&nbsp;%s:&nbsp;%s&quot;&nbsp;n.Name&nbsp;navigationType)&nbsp;|&gt;&nbsp;ignore</code></td></tr>
 <tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line219"></a><code>219</code></td><td></td><td class="lightgray"><code></code></td></tr>
 <tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line220"></a><code>220</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;writeNavigationProperties&nbsp;(nav:INavigation&nbsp;seq)&nbsp;(useDataAnnotations:bool)&nbsp;(skipFinalNewLine:&nbsp;bool)&nbsp;optionOrNulla</code></td></tr>
 <tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line221"></a><code>221</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nav&nbsp;|&gt;&nbsp;Seq.iter(fun&nbsp;n&nbsp;-&gt;&nbsp;generateNavigateTypeEntry&nbsp;n&nbsp;useDataAnnotations&nbsp;skipFinalNewLine&nbsp;optionOrNullable&nbsp;sb)</code></td></tr>
@@ -310,7 +310,7 @@
 <tr class="" title="Not coverable" data-coverage="{'AllTestMethods': {'VC': '', 'LVS': 'gray'}}"><td class="gray">&nbsp;</td><td class="leftmargin rightmargin right"></td><td class="rightmargin right"><a id="file0_line260"></a><code>260</code></td><td></td><td class="lightgray"><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;writeCode&nbsp;entityType&nbsp;``namespace``&nbsp;useDataAnnotations&nbsp;RecordOrType.RecordType&nbsp;OptionOrNullable.OptionTypes&nbsp;(</code></td></tr>
 </tbody>
 </table>
-<div class="footer">Generated by: ReportGenerator 4.2.15.0<br />02/22/2021 - 10:37:12<br /><a href="https://github.com/danielpalme/ReportGenerator">GitHub</a> | <a href="http://www.palmmedia.de">www.palmmedia.de</a></div></div>
+<div class="footer">Generated by: ReportGenerator 4.2.15.0<br />02/22/2021 - 19:57:56<br /><a href="https://github.com/danielpalme/ReportGenerator">GitHub</a> | <a href="http://www.palmmedia.de">www.palmmedia.de</a></div></div>
 <div class="containerright">
 <div class="containerrightfixed">
 <h1>Methods/Properties</h1>

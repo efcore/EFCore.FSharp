@@ -715,7 +715,7 @@ type MyMigration() =
 
                 let migration = Activator.CreateInstance(migrationType) :?> Migration
 
-                Expect.equal attribute.ContextType (typeof<MyContext>) $"Expected context type {nameof MyContext}"
+                Expect.equal attribute.ContextType.FullName (typeof<MyContext>).FullName $"Expected context type {nameof MyContext}"
                 Expect.equal migration.UpOperations.Count 4 "Expected 4 up operations"
                 Expect.equal (migration.DownOperations.Count) 0 "Expected 0 down operations"
                 Expect.hasCountOf (migration.TargetModel.GetEntityTypes()) 1u (fun _ -> true) "Expected one entity"

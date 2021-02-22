@@ -228,21 +228,21 @@ var assemblies = [
       { "name": "EntityFrameworkCore.FSharp.EFCoreFSharpServices", "rp": "EntityFrameworkCore.FSharp_EFCoreFSharpServices.htm", "cl": 11, "ucl": 0, "cal": 11, "tl": 26, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.EntityFrameworkExtensions", "rp": "EntityFrameworkCore.FSharp_EntityFrameworkExtensions.htm", "cl": 21, "ucl": 17, "cal": 38, "tl": 69, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Extensions", "rp": "EntityFrameworkCore.FSharp_Extensions.htm", "cl": 9, "ucl": 17, "cal": 26, "tl": 56, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities", "rp": "EntityFrameworkCore.FSharp_IndentedStringBuilderUtilities.htm", "cl": 30, "ucl": 22, "cal": 52, "tl": 74, "ct": "LineCoverage", "mc": "-", "cb": 8, "tb": 20, "lch": [], "bch": [], "hc": [] },
-      { "name": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "rp": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "cl": 205, "ucl": 348, "cal": 553, "tl": 695, "ct": "LineCoverage", "mc": "-", "cb": 81, "tb": 382, "lch": [], "bch": [], "hc": [] },
-      { "name": "EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "rp": "EntityFrameworkCore.FSharp_FSharpUtilities.htm", "cl": 31, "ucl": 32, "cal": 63, "tl": 265, "ct": "LineCoverage", "mc": "-", "cb": 30, "tb": 63, "lch": [], "bch": [], "hc": [] },
-      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "cl": 1, "ucl": 607, "cal": 608, "tl": 733, "ct": "LineCoverage", "mc": "-", "cb": 12, "tb": 184, "lch": [], "bch": [], "hc": [] },
-      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationsGenerator.htm", "cl": 48, "ucl": 132, "cal": 180, "tl": 157, "ct": "LineCoverage", "mc": "-", "cb": 2, "tb": 30, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities", "rp": "EntityFrameworkCore.FSharp_IndentedStringBuilderUtilities.htm", "cl": 38, "ucl": 14, "cal": 52, "tl": 74, "ct": "LineCoverage", "mc": "-", "cb": 11, "tb": 20, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "rp": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "cl": 271, "ucl": 300, "cal": 571, "tl": 722, "ct": "LineCoverage", "mc": "-", "cb": 111, "tb": 388, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Internal.FSharpUtilities", "rp": "EntityFrameworkCore.FSharp_FSharpUtilities.htm", "cl": 32, "ucl": 31, "cal": 63, "tl": 265, "ct": "LineCoverage", "mc": "-", "cb": 32, "tb": 63, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "cl": 189, "ucl": 432, "cal": 621, "tl": 748, "ct": "LineCoverage", "mc": "-", "cb": 73, "tb": 186, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationsGenerator.htm", "cl": 109, "ucl": 80, "cal": 189, "tl": 172, "ct": "LineCoverage", "mc": "-", "cb": 5, "tb": 32, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsGeneratorDependencies", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationsGeneratorDependencies.htm", "cl": 7, "ucl": 3, "cal": 10, "tl": 37, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationsScaffolder", "rp": "EntityFrameworkCore.FSharp_FSharpMigrationsScaffolder.htm", "cl": 0, "ucl": 27, "cal": 27, "tl": 53, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 6, "lch": [], "bch": [], "hc": [] },
-      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "cl": 430, "ucl": 335, "cal": 765, "tl": 970, "ct": "LineCoverage", "mc": "-", "cb": 99, "tb": 253, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "cl": 477, "ucl": 287, "cal": 764, "tl": 970, "ct": "LineCoverage", "mc": "-", "cb": 116, "tb": 261, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.OptionConverter`1", "rp": "EntityFrameworkCore.FSharp_OptionConverter_1.htm", "cl": 0, "ucl": 3, "cal": 3, "tl": 21, "ct": "LineCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Scaffolding.AttributeWriter", "rp": "EntityFrameworkCore.FSharp_AttributeWriter.htm", "cl": 8, "ucl": 1, "cal": 9, "tl": 260, "ct": "LineCoverage", "mc": "-", "cb": 2, "tb": 4, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Scaffolding.FSharpDbContextGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpDbContextGenerator.htm", "cl": 313, "ucl": 155, "cal": 468, "tl": 662, "ct": "LineCoverage", "mc": "-", "cb": 45, "tb": 154, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpEntityTypeGenerator.htm", "cl": 59, "ucl": 86, "cal": 145, "tl": 260, "ct": "LineCoverage", "mc": "-", "cb": 7, "tb": 62, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Scaffolding.Internal.FSharpModelGenerator", "rp": "EntityFrameworkCore.FSharp_FSharpModelGenerator.htm", "cl": 90, "ucl": 1, "cal": 91, "tl": 119, "ct": "LineCoverage", "mc": "-", "cb": 5, "tb": 8, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes", "rp": "EntityFrameworkCore.FSharp_ScaffoldingTypes.htm", "cl": 0, "ucl": 0, "cal": 0, "tl": 0, "ct": "MethodCoverage", "mc": "-", "cb": 0, "tb": 0, "lch": [], "bch": [], "hc": [] },
-      { "name": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "rp": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "cl": 27, "ucl": 55, "cal": 82, "tl": 168, "ct": "LineCoverage", "mc": "-", "cb": 14, "tb": 74, "lch": [], "bch": [], "hc": [] },
+      { "name": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "rp": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "cl": 27, "ucl": 54, "cal": 81, "tl": 167, "ct": "LineCoverage", "mc": "-", "cb": 15, "tb": 74, "lch": [], "bch": [], "hc": [] },
       { "name": "EntityFrameworkCore.FSharp.Utilities.Multigraph`2", "rp": "EntityFrameworkCore.FSharp_Multigraph_2.htm", "cl": 51, "ucl": 29, "cal": 80, "tl": 119, "ct": "LineCoverage", "mc": "-", "cb": 12, "tb": 28, "lch": [], "bch": [], "hc": [] },
     ]},
 ];
@@ -266,12 +266,12 @@ var riskHotspots = [
   {
     "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateEntityTypeAnnotations(System.String,Microsoft.EntityFrameworkCore.Metadata.IEntityType,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateEntityTypeAnnotations(...)", "fileIndex": 0, "line": 468,
     "metrics": [
-      { "value": 25, "exceeded": false },
-      { "value": 32768, "exceeded": true },
-      { "value": 25.45, "exceeded": true },
+      { "value": 33, "exceeded": true },
+      { "value": 1048576, "exceeded": true },
+      { "value": 34.04, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::handleExpression(System.Linq.Expressions.Expression,System.Boolean,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "handleExpression(...)", "fileIndex": 0, "line": 308,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::handleExpression(System.Linq.Expressions.Expression,System.Boolean,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "handleExpression(...)", "fileIndex": 0, "line": 335,
     "metrics": [
       { "value": 20, "exceeded": false },
       { "value": 6144, "exceeded": true },
@@ -292,7 +292,7 @@ var riskHotspots = [
       { "value": 0, "exceeded": false },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateForeignKey(System.String,Microsoft.EntityFrameworkCore.Metadata.IForeignKey,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateForeignKey(...)", "fileIndex": 0, "line": 676,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateForeignKey(System.String,Microsoft.EntityFrameworkCore.Metadata.IForeignKey,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateForeignKey(...)", "fileIndex": 0, "line": 677,
     "metrics": [
       { "value": 15, "exceeded": false },
       { "value": 4096, "exceeded": true },
@@ -306,11 +306,11 @@ var riskHotspots = [
       { "value": 731.26, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::unknownLiteral(System.Object)", "methodShortName": "unknownLiteral(...)", "fileIndex": 0, "line": 534,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::unknownLiteral(System.Object)", "methodShortName": "unknownLiteral(...)", "fileIndex": 0, "line": 561,
     "metrics": [
       { "value": 32, "exceeded": true },
       { "value": 1536, "exceeded": true },
-      { "value": 731.26, "exceeded": true },
+      { "value": 165.85, "exceeded": true },
     ]},
   {
     "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Scaffolding.FSharpDbContextGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpDbContextGenerator.htm", "methodName": "System.Void EntityFrameworkCore.FSharp.Scaffolding.FSharpDbContextGenerator::generateRelationship(Microsoft.EntityFrameworkCore.Metadata.IForeignKey,System.Boolean,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateRelationship(...)", "fileIndex": 0, "line": 454,
@@ -320,14 +320,7 @@ var riskHotspots = [
       { "value": 272, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "Microsoft.FSharp.Core.FSharpFunc`2<Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder> EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator::generateOperation(Microsoft.EntityFrameworkCore.Migrations.Operations.MigrationOperation)", "methodShortName": "generateOperation(...)", "fileIndex": 0, "line": 688,
-    "metrics": [
-      { "value": 30, "exceeded": false },
-      { "value": 56, "exceeded": false },
-      { "value": 930, "exceeded": true },
-    ]},
-  {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isIdentifierPartCharacter(System.Char)", "methodShortName": "isIdentifierPartCharacter(...)", "fileIndex": 0, "line": 444,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isIdentifierPartCharacter(System.Char)", "methodShortName": "isIdentifierPartCharacter(...)", "fileIndex": 0, "line": 471,
     "metrics": [
       { "value": 14, "exceeded": false },
       { "value": 864, "exceeded": true },
@@ -355,32 +348,25 @@ var riskHotspots = [
       { "value": 413.81, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@636-5::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 636,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@651-5::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 651,
     "metrics": [
       { "value": 28, "exceeded": false },
       { "value": 512, "exceeded": true },
-      { "value": 142.29, "exceeded": true },
+      { "value": 117.83, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Void EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateEntityType(System.String,Microsoft.EntityFrameworkCore.Metadata.IEntityType,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateEntityType(...)", "fileIndex": 0, "line": 822,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Void EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateEntityType(System.String,Microsoft.EntityFrameworkCore.Metadata.IEntityType,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateEntityType(...)", "fileIndex": 0, "line": 823,
     "metrics": [
       { "value": 16, "exceeded": false },
       { "value": 512, "exceeded": true },
-      { "value": 51.19, "exceeded": true },
+      { "value": 54.83, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@566-3::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 566,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "Microsoft.FSharp.Core.FSharpFunc`2<Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder> EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator::generateOperation(Microsoft.EntityFrameworkCore.Migrations.Operations.MigrationOperation)", "methodShortName": "generateOperation(...)", "fileIndex": 0, "line": 703,
     "metrics": [
-      { "value": 17, "exceeded": false },
-      { "value": 32, "exceeded": false },
-      { "value": 306, "exceeded": true },
-    ]},
-  {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@601-4::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 601,
-    "metrics": [
-      { "value": 17, "exceeded": false },
-      { "value": 32, "exceeded": false },
-      { "value": 306, "exceeded": true },
+      { "value": 30, "exceeded": false },
+      { "value": 56, "exceeded": false },
+      { "value": 484.95, "exceeded": true },
     ]},
   {
     "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isIdentifierPartCharacter(System.Char)", "methodShortName": "isIdentifierPartCharacter(...)", "fileIndex": 0, "line": 412,
@@ -397,7 +383,7 @@ var riskHotspots = [
       { "value": 0, "exceeded": false },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::IdentifierWithScope(System.String,System.Collections.Generic.ICollection`1<System.String>)", "methodShortName": "IdentifierWithScope(...)", "fileIndex": 0, "line": 497,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::IdentifierWithScope(System.String,System.Collections.Generic.ICollection`1<System.String>)", "methodShortName": "IdentifierWithScope(...)", "fileIndex": 0, "line": 524,
     "metrics": [
       { "value": 13, "exceeded": false },
       { "value": 256, "exceeded": true },
@@ -418,7 +404,7 @@ var riskHotspots = [
       { "value": 156, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Void EntityFrameworkCore.FSharp.SharedTypeExtensions/getNamespaces@87::Close()", "methodShortName": "Close()", "fileIndex": 0, "line": 87,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Void EntityFrameworkCore.FSharp.SharedTypeExtensions/getNamespaces@86::Close()", "methodShortName": "Close()", "fileIndex": 0, "line": 86,
     "metrics": [
       { "value": 11, "exceeded": false },
       { "value": 0, "exceeded": false },
@@ -432,7 +418,7 @@ var riskHotspots = [
       { "value": 120.03, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Void <StartupCode$EntityFrameworkCore-FSharp>.$FSharpSnapshotGenerator/remainingAnnotations@957::Close()", "methodShortName": "Close()", "fileIndex": 0, "line": 957,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Void <StartupCode$EntityFrameworkCore-FSharp>.$FSharpSnapshotGenerator/remainingAnnotations@956::Close()", "methodShortName": "Close()", "fileIndex": 0, "line": 956,
     "metrics": [
       { "value": 10, "exceeded": false },
       { "value": 0, "exceeded": false },
@@ -446,14 +432,14 @@ var riskHotspots = [
       { "value": 103.2, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.SharedTypeExtensions::isInteger(System.Type)", "methodShortName": "isInteger(...)", "fileIndex": 0, "line": 139,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.SharedTypeExtensions::isInteger(System.Type)", "methodShortName": "isInteger(...)", "fileIndex": 0, "line": 138,
     "metrics": [
       { "value": 9, "exceeded": false },
       { "value": 2, "exceeded": false },
       { "value": 90, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Int32 EntityFrameworkCore.FSharp.SharedTypeExtensions/getNamespaces@87::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 87,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Int32 EntityFrameworkCore.FSharp.SharedTypeExtensions/getNamespaces@86::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 86,
     "metrics": [
       { "value": 11, "exceeded": false },
       { "value": 16, "exceeded": false },
@@ -467,39 +453,18 @@ var riskHotspots = [
       { "value": 85.43, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isLetterChar(System.Globalization.UnicodeCategory)", "methodShortName": "isLetterChar(...)", "fileIndex": 0, "line": 433,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isLetterChar(System.Globalization.UnicodeCategory)", "methodShortName": "isLetterChar(...)", "fileIndex": 0, "line": 460,
     "metrics": [
       { "value": 8, "exceeded": false },
       { "value": 8, "exceeded": false },
       { "value": 72, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String <StartupCode$EntityFrameworkCore-FSharp>.$FSharpHelper/rowContents@276::Invoke(System.Int32)", "methodShortName": "Invoke(...)", "fileIndex": 0, "line": 277,
-    "metrics": [
-      { "value": 8, "exceeded": false },
-      { "value": 4, "exceeded": false },
-      { "value": 72, "exceeded": true },
-    ]},
-  {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator::generateAlterColumnOperation(Microsoft.EntityFrameworkCore.Migrations.Operations.AlterColumnOperation,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateAlterColumnOperation(...)", "fileIndex": 0, "line": 160,
-    "metrics": [
-      { "value": 8, "exceeded": false },
-      { "value": 64, "exceeded": false },
-      { "value": 72, "exceeded": true },
-    ]},
-  {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::handleScope(System.Collections.Generic.ICollection`1<System.String>,System.Text.StringBuilder)", "methodShortName": "handleScope(...)", "fileIndex": 0, "line": 481,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::handleScope(System.Collections.Generic.ICollection`1<System.String>,System.Text.StringBuilder)", "methodShortName": "handleScope(...)", "fileIndex": 0, "line": 508,
     "metrics": [
       { "value": 10, "exceeded": false },
       { "value": 16, "exceeded": false },
       { "value": 64.77, "exceeded": true },
-    ]},
-  {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator::generateAddColumnOperation(Microsoft.EntityFrameworkCore.Migrations.Operations.AddColumnOperation,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateAddColumnOperation(...)", "fileIndex": 0, "line": 84,
-    "metrics": [
-      { "value": 7, "exceeded": false },
-      { "value": 8, "exceeded": false },
-      { "value": 56, "exceeded": true },
     ]},
   {
     "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::ReferenceFullName(System.Type,System.Boolean)", "methodShortName": "ReferenceFullName(...)", "fileIndex": 0, "line": 146,
@@ -507,6 +472,13 @@ var riskHotspots = [
       { "value": 8, "exceeded": false },
       { "value": 32, "exceeded": false },
       { "value": 49.67, "exceeded": true },
+    ]},
+  {
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@616-4::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 616,
+    "metrics": [
+      { "value": 17, "exceeded": false },
+      { "value": 32, "exceeded": false },
+      { "value": 47.72, "exceeded": true },
     ]},
   {
     "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpEntityTypeGenerator.htm", "methodName": "Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator::generateMaxLengthAttribute(Microsoft.EntityFrameworkCore.Metadata.IProperty,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateMaxLengthAttribute(...)", "fileIndex": 0, "line": 118,
@@ -551,20 +523,6 @@ var riskHotspots = [
       { "value": 30, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Void EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::Microsoft.EntityFrameworkCore.Migrations.Design.ICSharpSnapshotGenerator.Generate(System.String,Microsoft.EntityFrameworkCore.Metadata.IModel,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "Microsoft.EntityFrameworkCore.Migrations.Design.ICSharpSnapshotGenerator.Generate(...)", "fileIndex": 0, "line": 914,
-    "metrics": [
-      { "value": 8, "exceeded": false },
-      { "value": 16, "exceeded": false },
-      { "value": 26.97, "exceeded": true },
-    ]},
-  {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "Microsoft.FSharp.Core.FSharpOption`1<Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter> EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::findValueConverter(Microsoft.EntityFrameworkCore.Metadata.IProperty)", "methodShortName": "findValueConverter(...)", "fileIndex": 0, "line": 38,
-    "metrics": [
-      { "value": 11, "exceeded": false },
-      { "value": 32, "exceeded": false },
-      { "value": 26.12, "exceeded": true },
-    ]},
-  {
     "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpEntityTypeGenerator.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Scaffolding.FSharpEntityTypeGenerator::getTypeName(EntityFrameworkCore.FSharp.Scaffolding.ScaffoldingTypes/OptionOrNullable,System.Type)", "methodShortName": "getTypeName(...)", "fileIndex": 0, "line": 53,
     "metrics": [
       { "value": 7, "exceeded": false },
@@ -593,11 +551,11 @@ var riskHotspots = [
       { "value": 21.52, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.String EntityFrameworkCore.FSharp.Internal.FSharpHelper::literalList(System.Collections.Generic.IReadOnlyList`1<System.Object>,System.Boolean,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "literalList(...)", "fileIndex": 0, "line": 252,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpMigrationOperationGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpMigrationOperationGenerator.htm", "methodName": "System.Int32 <StartupCode$EntityFrameworkCore-FSharp>.$FSharpMigrationOperationGenerator/parameters@574-3::GenerateNext(System.Collections.Generic.IEnumerable`1<System.String>&)", "methodShortName": "GenerateNext(...)", "fileIndex": 0, "line": 574,
     "metrics": [
-      { "value": 4, "exceeded": false },
-      { "value": 4, "exceeded": false },
-      { "value": 20, "exceeded": true },
+      { "value": 14, "exceeded": false },
+      { "value": 32, "exceeded": false },
+      { "value": 20.17, "exceeded": true },
     ]},
   {
     "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator", "reportPath": "EntityFrameworkCore.FSharp_FSharpSnapshotGenerator.htm", "methodName": "System.Void EntityFrameworkCore.FSharp.Migrations.Design.FSharpSnapshotGenerator::generateSequence(System.String,Microsoft.EntityFrameworkCore.Metadata.ISequence,Microsoft.EntityFrameworkCore.Infrastructure.IndentedStringBuilder)", "methodShortName": "generateSequence(...)", "fileIndex": 0, "line": 352,
@@ -628,28 +586,28 @@ var riskHotspots = [
       { "value": 20, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Type EntityFrameworkCore.FSharp.SharedTypeExtensions::unwrapEnumType(System.Type)", "methodShortName": "unwrapEnumType(...)", "fileIndex": 0, "line": 124,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Type EntityFrameworkCore.FSharp.SharedTypeExtensions::unwrapEnumType(System.Type)", "methodShortName": "unwrapEnumType(...)", "fileIndex": 0, "line": 123,
     "metrics": [
       { "value": 4, "exceeded": false },
       { "value": 8, "exceeded": false },
       { "value": 20, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.SharedTypeExtensions::isNumeric(System.Type)", "methodShortName": "isNumeric(...)", "fileIndex": 0, "line": 151,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.SharedTypeExtensions::isNumeric(System.Type)", "methodShortName": "isNumeric(...)", "fileIndex": 0, "line": 150,
     "metrics": [
       { "value": 4, "exceeded": false },
       { "value": 2, "exceeded": false },
       { "value": 20, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.SharedTypeExtensions::isSignedInteger(System.Type)", "methodShortName": "isSignedInteger(...)", "fileIndex": 0, "line": 159,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.SharedTypeExtensions", "reportPath": "EntityFrameworkCore.FSharp_SharedTypeExtensions.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.SharedTypeExtensions::isSignedInteger(System.Type)", "methodShortName": "isSignedInteger(...)", "fileIndex": 0, "line": 158,
     "metrics": [
       { "value": 4, "exceeded": false },
       { "value": 2, "exceeded": false },
       { "value": 20, "exceeded": true },
     ]},
   {
-    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isIdentifierStartCharacter(System.Char)", "methodShortName": "isIdentifierStartCharacter(...)", "fileIndex": 0, "line": 468,
+    "assembly": "EntityFrameworkCore.FSharp", "class": "EntityFrameworkCore.FSharp.Internal.FSharpHelper", "reportPath": "EntityFrameworkCore.FSharp_FSharpHelper.htm", "methodName": "System.Boolean EntityFrameworkCore.FSharp.Internal.FSharpHelper::isIdentifierStartCharacter(System.Char)", "methodShortName": "isIdentifierStartCharacter(...)", "fileIndex": 0, "line": 495,
     "metrics": [
       { "value": 6, "exceeded": false },
       { "value": 32, "exceeded": false },

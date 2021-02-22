@@ -17,7 +17,7 @@ This package will be published to NuGet at some point. In the meantime, it must 
 
 1. Clone this repository
 1. From the command line, run `./build.sh` (Linux/Mac) or `.\build.cmd` (Windows)
-1. The built NuGet package will be located in the `dist` folder in the root of the repository, named something like `EntityFrameworkCore.FSharp.3.1.5-alpha1.nupkg`
+1. The built NuGet package will be located in the `dist` folder in the root of the repository, named something like `EntityFrameworkCore.FSharp.5.0.3-alpha1.nupkg`
 
 ## Create a new dotnet project and install dotnet tools
 
@@ -52,7 +52,7 @@ We will use `Paket` for package management, though you can apply the same princi
 
     ```
     md packages-local
-    cp {LocationOfLocalRepo}/dist/EntityFrameworkCore.FSharp.3.1.5-alpha1.nupkg ./packages-local
+    cp {LocationOfLocalRepo}/dist/EntityFrameworkCore.FSharp.5.0.3-alpha1.nupkg ./packages-local
     ```
 
 1. In our `paket.dependencies` file, reference this and the NuGet package for our desired Entity Framework provider
