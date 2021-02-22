@@ -450,13 +450,10 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
     member this.generateCheckConstraints (builderName: string) (entityType:IEntityType) (sb:IndentedStringBuilder) =
         let generateCheckConstraint (c: ICheckConstraint) sb =
-            sb
-                |> append builderName
-                |> append ".HasCheckConstraint("
-                |> append (code.Literal(c.Name))
-                |> append ", "
-                |> append (code.Literal(c.Sql))
-                |> append ") |> ignore"
+            let name = code.Literal c.Name
+            let sql = code.Literal c.Sql
+
+            sb |> append (sprintf "%s.HasCheckConstraint(%s, %s) |> ignore" builderName name sql)
 
         entityType.GetCheckConstraints()
         |> Seq.iter (fun c ->
