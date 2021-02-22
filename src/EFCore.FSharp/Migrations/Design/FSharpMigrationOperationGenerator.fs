@@ -23,15 +23,17 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
     let writeName nameValue sb =
         sb
-            |> append "name = " |> appendLine (nameValue |> code.UnknownLiteral)
+            |> append "name = "
+            |> append (nameValue |> code.UnknownLiteral)
+            |> appendLine ","
 
     let writeParameter name value sb =
 
         let n = sanitiseName name
         let v = value |> code.UnknownLiteral
-        let fmt = sprintf ", %s = %s" n v
+        let fmt = sprintf "%s = %s," n v
 
-        sb |> append fmt
+        sb |> appendLine fmt
 
     let writeParameterIfTrue trueOrFalse name value sb =
         if trueOrFalse then
@@ -40,7 +42,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             sb
 
     let writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
-        sb |> writeParameterIfTrue (value |> notNull) name (sprintf "Nullable(%s)" value)
+        sb
+            |> writeParameterIfTrue (value |> notNull) name (sprintf "Nullable(%s)" value)
 
     let writeNullableParameterIfValue name (nullableParameter: Nullable<_>) sb =
 
@@ -106,7 +109,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     id
             |> append ")"
             |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> code.Reference))
-
             |> annotations (op.GetAnnotations())
             |> unindent
 
@@ -179,7 +181,13 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     writeParameter "defaultValue" op.DefaultValue
                 else
                     id
-            |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldClrType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
+            |>
+                if op.OldColumn.ClrType |> isNull |> not then
+                    (fun sb -> sb
+                               |> append (sprintf "oldClrType = typedefof<%s>," (op.OldColumn.ClrType |> code.Reference))
+                               |> appendEmptyLine)
+                else
+                    id
             |> writeOptionalParameter "oldType" op.OldColumn.ColumnType
             |> writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
             |> writeNullableParameterIfValue "oldMaxLength" op.OldColumn.MaxLength
@@ -554,7 +562,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
     let generateSqlOperation (op:SqlOperation) (sb:IndentedStringBuilder) =
         sb
-            |> appendLine (sprintf ".Sql(%s)" (op.Sql |> code.Literal))
+            |> append (sprintf ".Sql(%s)" (op.Sql |> code.Literal))
             |> indent
             |> annotations (op.GetAnnotations())
             |> unindent
@@ -564,28 +572,35 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         let parameters =
             seq {
                 if notNull op.Schema then
-                    yield sprintf "schema = %s, " (op.Schema |> code.Literal)
+                    yield sprintf "schema = %s," (op.Schema |> code.Literal)
 
-                yield sprintf "table = %s, " (op.Table |> code.Literal)
+                yield sprintf "table = %s," (op.Table |> code.Literal)
 
                 if op.Columns.Length = 1 then
-                    yield sprintf "column = %s, " (op.Columns.[0] |> code.Literal)
+                    yield sprintf "column = %s," (op.Columns.[0] |> code.Literal)
                 else
-                    yield sprintf "columns = %s, " (op.Columns |> code.Literal)
+                    yield sprintf "columns = %s," (op.Columns |> code.Literal)
 
                 let length0 = op.Values.GetLength(0)
                 let length1 = op.Values.GetLength(1)
 
-                if length0 = 1 && length1 = 1 then
-                    yield sprintf "value = %s" (op.Values.[0,0] |> code.UnknownLiteral)
-                elif length0 = 1 then
-                    yield sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
-                elif length1 = 1 then
-                    let arr = op.Values |> toOnedimensionalArray true
-                    let lines = code.Literal(arr, true)
-                    yield sprintf "values = %s" lines
-                else
-                    yield sprintf "values = %s" (op.Values |> code.Literal)
+                let valuesArray =
+                    if length0 = 1 && length1 = 1 then
+                        sprintf "value = %s :> obj" (op.Values.[0,0] |> code.UnknownLiteral)
+                    elif length0 = 1 then
+                        sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
+                    elif length1 = 1 then
+                        let arr = op.Values |> toOnedimensionalArray true
+                        let lines = code.Literal(arr, true)
+                        sprintf "values = %s" lines
+                    else
+                        sprintf "values = %s" (op.Values |> code.Literal)
+                // Every item in the array needs to be downcast to obj
+                // Possibly a tidier way of doing this?
+                yield (valuesArray
+                           .Replace(";", " :> obj;")
+                           .Replace(" |]", ":> obj |]")
+                           .Replace("null :> obj", "null"))
             }
 
         sb
@@ -593,7 +608,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> indent
             |> appendLines parameters false
             |> unindent
-            |> appendLine ")"
+            |> append ")"
 
     let generateDeleteDataOperation (op:DeleteDataOperation) (sb:IndentedStringBuilder) =
         let parameters =

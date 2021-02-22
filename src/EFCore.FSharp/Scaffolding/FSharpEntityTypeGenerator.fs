@@ -215,7 +215,7 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
                 sprintf "ICollection<%s>" referencedTypeName
             else
                 referencedTypeName
-        sb |> appendLine (sprintf "%s: %s" n.Name navigationType) |> ignore
+        sb |> appendLine (sprintf "mutable %s: %s" n.Name navigationType) |> ignore
 
     let writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
         nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations skipFinalNewLine optionOrNullable sb)

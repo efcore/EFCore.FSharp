@@ -482,9 +482,10 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
         let tableName =
             match tryGetAnnotationByName RelationalAnnotationNames.TableName with
             | Some t ->
-                t.Value |> Option.ofObj |> Option.map string
-            | None when entityType.BaseType |> Option.ofObj |> Option.isNone ->
-                entityType.GetTableName() |> Option.ofObj
+                if t.Value |> isNull then None else t.Value |> string |> Some
+            | None when entityType.BaseType |> isNull ->
+                let tableName = entityType.GetTableName()
+                if tableName |> isNull then None else tableName |> string |> Some
             | _ -> None
 
         let hasSchema, schema =
@@ -847,8 +848,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                 "b" + if counter = 0 then "" else counter.ToString()
             else "b"
 
-        let properties = entityType.GetDeclaredProperties()
-
         sb
             |> appendEmptyLine
             |> append builderName
@@ -919,7 +918,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
             if annotations |> Seq.isEmpty |> not || productVersion |> isNull |> not then
                 sb
-                    |> append builderName
+                    |> appendLine builderName
                     |> indent
                     |> ignore
 
@@ -961,7 +960,8 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
                 sb
                     |> generateAnnotations (remainingAnnotations |> Seq.append ambiguousAnnotations)
-                    |> append " |> ignore"
+                    |> appendLine "|> ignore"
+                    |> unindent
                     |> ignore
 
             for sequence in model.GetSequences() do
