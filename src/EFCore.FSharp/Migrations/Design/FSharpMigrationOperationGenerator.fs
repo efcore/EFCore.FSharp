@@ -186,7 +186,13 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     writeParameter "defaultValue" op.DefaultValue
                 else
                     id
-            |> writeParameterIfTrue (op.OldColumn.ClrType |> isNull |> not) "oldClrType" (sprintf "typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
+            |>
+                if op.OldColumn.ClrType |> isNull |> not then
+                    (fun sb -> sb
+                               |> append (sprintf "oldClrType = typedefof<%s>," (op.OldColumn.ClrType |> code.Reference))
+                               |> appendEmptyLine)
+                else
+                    id
             |> writeOptionalParameter "oldType" op.OldColumn.ColumnType
             |> writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
             |> writeNullableParameterIfValue "oldMaxLength" op.OldColumn.MaxLength
