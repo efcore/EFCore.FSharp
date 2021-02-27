@@ -189,7 +189,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |>
                 if op.OldColumn.ClrType |> isNull |> not then
                     (fun sb -> sb
-                               |> append (sprintf "oldClrType = typedefof<%s>," (op.OldColumn.ClrType |> code.Reference))
+                               |> append (sprintf ", oldClrType = typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
                                |> appendEmptyLine)
                 else
                     id
