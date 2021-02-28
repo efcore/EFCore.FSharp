@@ -2,7 +2,6 @@ namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open System.Collections.Generic
-open Microsoft.FSharp.Linq.NullableOperators
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
@@ -12,6 +11,7 @@ open EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Migrations
 open Microsoft.EntityFrameworkCore.Design
+open Microsoft.EntityFrameworkCore.Migrations.Design
 
 type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
@@ -22,18 +22,10 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         if FSharpUtilities.isKeyword name then sprintf "``%s``" name else name
 
     let writeName nameValue sb =
-        sb
-            |> append "name = "
-            |> append (nameValue |> code.UnknownLiteral)
-            |> appendLine ","
+        sb |> appendLine (sprintf "name = %s" (code.UnknownLiteral nameValue))
 
     let writeParameter name value sb =
-
-        let n = sanitiseName name
-        let v = value |> code.UnknownLiteral
-        let fmt = sprintf "%s = %s," n v
-
-        sb |> appendLine fmt
+        sb |> appendLine (sprintf ",%s = %s" (sanitiseName name) (code.UnknownLiteral value))
 
     let writeParameterIfTrue trueOrFalse name value sb =
         if trueOrFalse then
@@ -60,11 +52,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> Seq.iter(fun a ->
                 sb
                 |> appendEmptyLine
-                |> append ".Annotation("
-                |> append (code.Literal a.Name)
-                |> append ", "
-                |> append (code.UnknownLiteral a.Value)
-                |> append ")"
+                |> append (sprintf ".Annotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
                 |> ignore
             )
         sb
@@ -184,7 +172,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |>
                 if op.OldColumn.ClrType |> isNull |> not then
                     (fun sb -> sb
-                               |> append (sprintf "oldClrType = typedefof<%s>," (op.OldColumn.ClrType |> code.Reference))
+                               |> append (sprintf ",oldClrType = typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
                                |> appendEmptyLine)
                 else
                     id
@@ -743,6 +731,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     |> ignore
             )
 
-    interface Microsoft.EntityFrameworkCore.Migrations.Design.ICSharpMigrationOperationGenerator with
+    interface ICSharpMigrationOperationGenerator with
         member this.Generate(builderName, operations, builder) =
             generate builderName operations builder

@@ -6,8 +6,8 @@ open System.Collections.Generic
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-
 open EntityFrameworkCore.FSharp.Utilities
+
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Infrastructure
@@ -202,9 +202,9 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
         let isPropertyRequired =
             let isNullable =
-                p.IsPrimaryKey() |> not ||
-                p.ClrType |> isOptionType ||
-                p.ClrType |> isNullableType
+                not (p.IsPrimaryKey()) ||
+                isOptionType p.ClrType ||
+                isNullableType p.ClrType
 
             isNullable <> p.IsNullable
 

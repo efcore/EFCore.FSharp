@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp.Test.Migrations.Design
+namespace EntityFrameworkCore.FSharp.Test.Migrations.Design
 
 open System
 open System.Collections.Generic
@@ -643,17 +643,17 @@ type MyMigration() =
             .Annotation("Some:EnumValue", RegexOptions.Multiline) |> ignore
 
         migrationBuilder.AlterColumn<Database>(
-            name = "C1",
-            table = "C2",
-            nullable = false,
-            oldClrType = typedefof<Property>,
-            oldNullable = false,
+            name = "C1"
+            ,table = "C2"
+            ,nullable = false
+            ,oldClrType = typedefof<Property>
+            ,oldNullable = false
             ) |> ignore
 
         migrationBuilder.AddColumn<PropertyEntry>(
-            name = "C3",
-            table = "T1",
-            nullable = false,
+            name = "C3"
+            ,table = "T1"
+            ,nullable = false
             ) |> ignore
 
         migrationBuilder.InsertData(

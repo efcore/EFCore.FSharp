@@ -5,10 +5,9 @@ open System.Collections.Generic
 open System.Reflection
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Design
-open Microsoft.EntityFrameworkCore.Design.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata
-open Microsoft.EntityFrameworkCore.Metadata.Internal
+open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
@@ -18,8 +17,6 @@ module ScaffoldingTypes =
     type OptionOrNullable = | OptionTypes | NullableTypes
 
 open ScaffoldingTypes
-open Microsoft.EntityFrameworkCore.Design
-open Microsoft.EntityFrameworkCore.Internal
 
 type internal AttributeWriter(name:string) =
     let parameters = List<string>()
@@ -255,6 +252,6 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
             |> generate entityType ``namespace`` useDataAnnotation optionOrNullable
             |> string
 
-    interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpEntityTypeGenerator with
+    interface ICSharpEntityTypeGenerator with
         member __.WriteCode(entityType, ``namespace``, useDataAnnotations) =
             writeCode entityType ``namespace`` useDataAnnotations RecordOrType.RecordType OptionOrNullable.OptionTypes (IndentedStringBuilder())

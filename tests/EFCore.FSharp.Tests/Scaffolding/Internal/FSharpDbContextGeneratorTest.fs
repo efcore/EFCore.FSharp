@@ -5,6 +5,9 @@ open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Expecto
 
+let normaliseLineEndings (str: string) =
+    str.Replace("\r\n", "\n").Replace("\r", "\n")
+
 let emptyModelDbContext = """namespace TestNamespace
 
 open System
@@ -42,7 +45,7 @@ let FSharpDbContextGeneratorTest =
             testBase.Test(
                 (fun m -> ()),
                 (ModelCodeGenerationOptions()),
-                (fun code -> Expect.equal code.ContextFile.Code emptyModelDbContext "Should be equal"),
+                (fun code -> Expect.equal (normaliseLineEndings code.ContextFile.Code) (normaliseLineEndings emptyModelDbContext) "Should be equal"),
                 (fun model -> Expect.isEmpty (model.GetEntityTypes()) "Should be empty")
             )
         }

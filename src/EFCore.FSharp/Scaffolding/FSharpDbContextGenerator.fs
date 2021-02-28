@@ -2,16 +2,17 @@ namespace EntityFrameworkCore.FSharp.Scaffolding
 
 open System
 open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Design
+open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata
+open Microsoft.EntityFrameworkCore.Metadata.Conventions
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
+open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
-open Microsoft.EntityFrameworkCore.Infrastructure
-open Microsoft.EntityFrameworkCore.Design
-open Microsoft.EntityFrameworkCore.Metadata.Conventions
 
 #nowarn "0044"
 
@@ -222,14 +223,9 @@ type FSharpDbContextGenerator
             sb
             |> indent
             |> appendEmptyLine
-            |> appendLine entityLambdaIdentifier
+            |> append entityLambdaIdentifier
             |> indent
-            |> ignore
-
-            lines
-            |> Seq.iter(fun l -> sb |> appendLine l |> ignore)
-
-            sb
+            |> appendLines lines false
             |> appendLine "|> ignore"
             |> unindent
             |> unindent
@@ -238,7 +234,7 @@ type FSharpDbContextGenerator
     let generateKeyGuardClause (key : IKey) (annotations : IAnnotation seq) useDataAnnotations explicitName =
         if key.Properties.Count = 1 && annotations |> Seq.isEmpty then
             match key with
-            | :? Key as concreteKey ->
+            | :? IConventionKey as concreteKey ->
                 let keyProperties = key.Properties
                 let concreteDeclaringProperties =
                     concreteKey.DeclaringEntityType.GetProperties()
@@ -262,7 +258,7 @@ type FSharpDbContextGenerator
     let generateKey (key : IKey) (entityType: IEntityType) useDataAnnotations sb =
 
         if isNull key then
-            if useDataAnnotations |> not then
+            if not useDataAnnotations then
                 let lines = ResizeArray()
                 lines.Add ".HasNoKey()"
                 appendMultiLineFluentApi entityType lines sb
@@ -281,18 +277,19 @@ type FSharpDbContextGenerator
             // TODO: guard clause code
             let earlyExit = generateKeyGuardClause key annotations.Values useDataAnnotations explicitName
 
-            let lines = ResizeArray<string>()
-            lines.Add(sprintf ".HasKey(%s)" (generateLambdaToKey key.Properties "e"))
+            if not earlyExit then
+                let lines = ResizeArray<string>()
+                lines.Add(sprintf ".HasKey(%s)" (generateLambdaToKey key.Properties "e"))
 
-            if explicitName then
-                lines.Add(sprintf ".HasName(%s)" (code.Literal (key.GetName())))
+                if explicitName then
+                    lines.Add(sprintf ".HasName(%s)" (code.Literal (key.GetName())))
 
-            annotationCodeGenerator.GenerateFluentApiCalls(key, annotations)
-            |> Seq.map code.Fragment
-            |> Seq.append (generateAnnotations annotations.Values)
-            |> lines.AddRange
+                annotationCodeGenerator.GenerateFluentApiCalls(key, annotations)
+                |> Seq.map code.Fragment
+                |> Seq.append (generateAnnotations annotations.Values)
+                |> lines.AddRange
 
-            appendMultiLineFluentApi key.DeclaringEntityType lines sb
+                appendMultiLineFluentApi key.DeclaringEntityType lines sb
 
     let generateTableName (entityType : IEntityType) sb =
 
@@ -621,7 +618,7 @@ type FSharpDbContextGenerator
             |> generateOnConfiguring connectionString suppressOnConfiguring suppressConnectionStringWarning
             |> generateOnModelCreating model useDataAnnotations
 
-    interface Microsoft.EntityFrameworkCore.Scaffolding.Internal.ICSharpDbContextGenerator with
+    interface ICSharpDbContextGenerator with
         member this.WriteCode (model,
                                 contextName,
                                 connectionString,

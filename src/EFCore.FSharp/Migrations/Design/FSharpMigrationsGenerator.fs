@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp.Migrations.Design
+namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 
@@ -66,9 +66,9 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         |> appendEmptyLine
         |> createTypesForOperations allOperations // This will eventually become redundant with anon record types
         |> appendEmptyLine
-        |> append "[<DbContext(typeof<" |> append (contextType |> code.Reference) |> appendLine ">)>]"
-        |> append "[<Migration(" |> append (migrationId |> code.Literal) |> appendLine ")>]"
-        |> append "type " |> append (migrationName |> code.Identifier) |> appendLine "() ="
+        |> appendLine (sprintf "[<DbContext(typeof<%s>)>]" (contextType |> code.Reference))
+        |> appendLine (sprintf "[<Migration(%s)>]" (migrationId |> code.Literal))
+        |> appendLine (sprintf "type %s() =" (migrationName |> code.Identifier))
         |> indent |> appendLine "inherit Migration()"
         |> appendEmptyLine
         |> appendLine "override this.Up(migrationBuilder:MigrationBuilder) ="
@@ -109,15 +109,15 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
 
         let defaultNamespaces =
             seq {
-                 yield "System"
-                 yield "Microsoft.EntityFrameworkCore"
-                 yield "Microsoft.EntityFrameworkCore.Infrastructure"
-                 yield "Microsoft.EntityFrameworkCore.Metadata"
-                 yield "Microsoft.EntityFrameworkCore.Migrations"
-                 yield "Microsoft.EntityFrameworkCore.Storage.ValueConversion"
+                 "System"
+                 "Microsoft.EntityFrameworkCore"
+                 "Microsoft.EntityFrameworkCore.Infrastructure"
+                 "Microsoft.EntityFrameworkCore.Metadata"
+                 "Microsoft.EntityFrameworkCore.Migrations"
+                 "Microsoft.EntityFrameworkCore.Storage.ValueConversion"
 
                  if contextType.Namespace |> String.IsNullOrEmpty |> not then
-                    yield contextType.Namespace
+                    contextType.Namespace
             }
             |> Seq.toList
 
@@ -136,8 +136,8 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
             |> appendEmptyLine
             |> writeNamespaces namespaces
             |> appendEmptyLine
-            |> append "[<DbContext(typeof<" |> append (contextType |> code.Reference) |> appendLine ">)>]"
-            |> append "type " |> append (modelSnapshotName |> code.Identifier) |> appendLine "() ="
+            |> appendLine (sprintf "[<DbContext(typeof<%s>)>]" (code.Reference contextType))
+            |> appendLine (sprintf "type %s() =" (code.Identifier modelSnapshotName))
             |> indent |> appendLine "inherit ModelSnapshot()"
             |> appendEmptyLine
             |> appendLine "override this.BuildModel(modelBuilder: ModelBuilder) ="

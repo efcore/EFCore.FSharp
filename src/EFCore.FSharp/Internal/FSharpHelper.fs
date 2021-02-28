@@ -13,7 +13,6 @@ open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.Infrastructure
-open EntityFrameworkCore.FSharp.SharedTypeExtensions
 
 type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
     let _builtInTypes =
