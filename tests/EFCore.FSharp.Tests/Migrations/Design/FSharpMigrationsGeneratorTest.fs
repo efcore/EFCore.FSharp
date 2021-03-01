@@ -632,7 +632,6 @@ open Microsoft.EntityFrameworkCore.Migrations
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 
-
 [<DbContext(typeof<MyContext>)>]
 [<Migration("20150511161616_MyMigration")>]
 type MyMigration() =

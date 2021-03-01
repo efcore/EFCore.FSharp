@@ -22,23 +22,6 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
     let mutable tempDownOperations = list.Empty
     let mutable tempMigrationName = String.Empty
 
-    let writeCreateTableType (sb: IndentedStringBuilder) (op:CreateTableOperation) =
-        sb
-            |> appendEmptyLine
-            |> append "type private " |> append op.Name |> appendLine "Table = {"
-            |> indent
-            |> appendLines (op.Columns |> Seq.map (fun c -> sprintf "%s: OperationBuilder<AddColumnOperation>" c.Name)) false
-            |> unindent
-            |> appendLine "}"
-            |> ignore
-
-    let createTypesForOperations (operations: MigrationOperation seq) (sb: IndentedStringBuilder) =
-        operations
-            |> Seq.filter(fun op -> (op :? CreateTableOperation))
-            |> Seq.map(fun op -> (op :?> CreateTableOperation))
-            |> Seq.iter(fun op -> op |> writeCreateTableType sb)
-        sb
-
     member private this.GenerateMigrationImpl (migrationNamespace) (migrationName) (migrationId: string) (contextType:Type) (upOperations) (downOperations) (model) =
         let sb = IndentedStringBuilder()
 
@@ -63,8 +46,6 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         |> append "namespace " |> appendLine (code.Namespace [|migrationNamespace|])
         |> appendEmptyLine
         |> writeNamespaces namespaces
-        |> appendEmptyLine
-        |> createTypesForOperations allOperations // This will eventually become redundant with anon record types
         |> appendEmptyLine
         |> appendLine (sprintf "[<DbContext(typeof<%s>)>]" (contextType |> code.Reference))
         |> appendLine (sprintf "[<Migration(%s)>]" (migrationId |> code.Literal))

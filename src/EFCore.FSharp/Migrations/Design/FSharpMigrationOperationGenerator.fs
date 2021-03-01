@@ -290,11 +290,13 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             map.Add(c.Name, propertyName)
 
             sb
-                |> append propertyName
-                |> append " = table.Column<"
+                |> appendLine (sprintf "%s =" propertyName)
+                |> indent
+                |> append "table.Column<"
                 |> append (code.Reference c.ClrType)
-                |> append ">("
-                |> append "nullable = " |> append (c.IsNullable |> code.Literal)
+                |> appendLine ">("
+                |> indent
+                |> appendLine (sprintf "nullable = %s" (code.Literal c.IsNullable))
                 |> writeParameterIfTrue (c.Name <> propertyName) "name" c.Name
                 |> writeParameterIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
                 |> writeNullableParameterIfValue "unicode" c.IsUnicode
@@ -302,17 +304,19 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 |> writeParameterIfTrue (c.IsRowVersion) "rowVersion" c.IsRowVersion
                 |>
                     if c.DefaultValueSql |> notNull then
-                        append (sprintf ", defaultValueSql = %s" (c.DefaultValueSql |> code.Literal))
+                        appendLine (sprintf ", defaultValueSql = %s" (code.Literal c.DefaultValueSql))
                     elif c.ComputedColumnSql |> notNull then
-                        append (sprintf ", computedColumnSql = %s" (c.ComputedColumnSql |> code.Literal))
+                        appendLine (sprintf ", computedColumnSql = %s" (code.Literal c.ComputedColumnSql))
                     elif c.DefaultValue |> notNull then
-                        append (sprintf ", defaultValue = %s" (c.DefaultValue |> code.UnknownLiteral))
+                        appendLine (sprintf ", defaultValue = %s" (code.UnknownLiteral c.DefaultValue))
                     else
-                        id
+                        appendEmptyLine
+                |> unindent
                 |> append ")"
                 |> appendIfTrue (c.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (c.ClrType |> unwrapOptionType |> code.Reference))
                 |> indent
                 |> annotations (c.GetAnnotations())
+                |> unindent
                 |> unindent
                 |> appendEmptyLine
                 |> ignore
@@ -320,16 +324,16 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         let writeColumns sb =
 
             sb
-                |> append "," |> appendLine "columns = (fun table -> "
-                |> appendLine "{"
+                |> appendLine ",columns = (fun table -> "
+                |> appendLine "{|"
                 |> indent
                 |> ignore
 
-            op.Columns |> Seq.filter(notNull) |> Seq.iter(writeColumn)
+            op.Columns |> Seq.filter notNull |> Seq.iter writeColumn
 
             sb
                 |> unindent
-                |> appendLine "})"
+                |> appendLine "|})"
 
         let writeUniqueConstraint (uc:AddUniqueConstraintOperation) =
             sb
@@ -351,17 +355,17 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
                 |> append "name = " |> append (fk.Name |> code.Literal) |> appendLine ","
                 |> append (if fk.Columns.Length = 1 then "column = " else "columns = ")
-                |> append (fk.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
+                |> appendLine (fk.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
                 |> writeParameterIfTrue (fk.PrincipalSchema |> notNull) "principalSchema" fk.PrincipalSchema
                 |> writeParameter "principalTable" fk.PrincipalTable
                 |> writeParameterIfTrue (fk.PrincipalColumns.Length = 1) "principalColumn" fk.PrincipalColumns.[0]
                 |> writeParameterIfTrue (fk.PrincipalColumns.Length <> 1) "principalColumns" fk.PrincipalColumns
                 |> writeParameterIfTrue (fk.OnUpdate <> ReferentialAction.NoAction) "onUpdate" fk.OnUpdate
                 |> writeParameterIfTrue (fk.OnDelete <> ReferentialAction.NoAction) "onDelete" fk.OnDelete
+                |> unindent
 
                 |> append ")"
                 |> annotations (fk.GetAnnotations())
-                |> unindent
                 |> appendLine " |> ignore"
                 |> appendEmptyLine
                 |> ignore
@@ -374,15 +378,16 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> indent
             |> ignore
 
-            if op.PrimaryKey |> notNull then
+            if notNull op.PrimaryKey then
                 sb
                     |> append "table.PrimaryKey("
                     |> append (op.PrimaryKey.Name |> code.Literal)
                     |> append ", "
                     |> append (op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
-                    |> appendLine ") |> ignore"
+                    |> append ")"
                     |> indent
                     |> annotations (op.PrimaryKey.GetAnnotations())
+                    |> appendLine " |> ignore"
                     |> unindent
                     |> ignore
 
