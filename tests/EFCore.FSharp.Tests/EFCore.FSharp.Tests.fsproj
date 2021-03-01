@@ -23,6 +23,7 @@
         <Compile Include="Scaffolding\Internal\ModelCodeGeneratorTestBase.fs" />
         <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
         <Compile Include="Scaffolding\Internal\FSharpDbContextGeneratorTest.fs" />
+        <Compile Include="ValueConverters\ValueConvertersTest.fs" />
         <Compile Include="Main.fs" />
     </ItemGroup>
     <ItemGroup>
