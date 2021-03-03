@@ -20,6 +20,7 @@
         <Compile Include="TestUtilities\RelationalTestHelpers.fs" />
         <Compile Include="Internal\FSharpUtilitiesTest.fs" />
         <Compile Include="Migrations\Design\FSharpMigrationsGeneratorTest.fs" />
+        <Compile Include="Migrations\Design\FSharpMigrationsScaffolderTest.fs" />
         <Compile Include="Scaffolding\Internal\ModelCodeGeneratorTestBase.fs" />
         <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
         <Compile Include="Scaffolding\Internal\FSharpDbContextGeneratorTest.fs" />
