@@ -7,6 +7,7 @@ open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata
+open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
@@ -137,6 +138,9 @@ type FSharpEntityTypeGenerator(code : ICSharpHelper) =
 
     let generateProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) sb =
         // TODO: add key etc.
+        let props =
+            entityType.GetProperties()
+            |> Seq.sortBy ScaffoldingPropertyExtensions.GetColumnOrdinal
         sb |> appendLine "// Properties"
 
     let generateNavigationProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) sb =

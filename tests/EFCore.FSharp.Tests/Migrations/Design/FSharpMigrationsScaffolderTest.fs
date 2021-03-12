@@ -1,6 +1,8 @@
 namespace EntityFrameworkCore.FSharp.Test.Migrations.Design
 
+open System
 open System.Collections.Generic
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.EntityFrameworkCore
@@ -202,6 +204,21 @@ module FSharpMigrationsScaffolderTest =
 
                 Expect.stringContains migration.SnapshotCode "namespace OverrideNamespace.OverrideSubNamespace" "Should contain namespace"
                 Expect.equal "OverrideNamespace.OverrideSubNamespace" migration.SnapshotSubnamespace "Should be equal"
+            }
+
+            test "ScaffoldMigration save works as expected" {
+                let outputDir =  Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+
+                let scaffolder = createMigrationScaffolder<ContextWithSnapshot>()
+                let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
+
+                let saveResult = scaffolder.Save(null, migration, outputDir)
+
+                Expect.isTrue (File.Exists saveResult.MigrationFile) "MigrationFile should exist"
+                Expect.isTrue (File.Exists saveResult.MetadataFile) "MetadataFile should exist"
+                Expect.isTrue (File.Exists saveResult.SnapshotFile) "SnapshotFile should exist"
+
+                Directory.Delete(outputDir, true)
             }
 
     ]
