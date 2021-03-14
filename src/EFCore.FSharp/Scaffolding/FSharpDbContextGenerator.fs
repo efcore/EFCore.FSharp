@@ -64,11 +64,11 @@ type FSharpDbContextGenerator
 
         sb
             |> appendLine "[<DefaultValue>]"
-            |> append (sprintf "val mutable private %s : DbSet<%s>" mutableName entityType.Name)
+            |> appendLine (sprintf "val mutable private %s : DbSet<%s>" mutableName entityType.Name)
             |> appendLine (sprintf "member this.%s" dbSetName)
             |> indent
-            |> append (sprintf "with get() = this.%s" mutableName)
-            |> append (sprintf "and set v = this.%s <- v" mutableName)
+            |> appendLine (sprintf "with get() = this.%s" mutableName)
+            |> appendLine (sprintf "and set v = this.%s <- v" mutableName)
             |> unindent
             |> ignore
 

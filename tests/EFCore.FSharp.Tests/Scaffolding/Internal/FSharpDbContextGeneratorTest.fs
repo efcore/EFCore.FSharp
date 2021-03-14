@@ -42,11 +42,11 @@ let FSharpDbContextGeneratorTest =
 
     testList "FSharpDbContextGeneratorTest" [
         test "Empty Model" {
-            testBase.Test(
-                (fun m -> ()),
-                (ModelCodeGenerationOptions()),
-                (fun code -> Expect.equal (normaliseLineEndings code.ContextFile.Code) (normaliseLineEndings emptyModelDbContext) "Should be equal"),
-                (fun model -> Expect.isEmpty (model.GetEntityTypes()) "Should be empty")
+            testBase.Test
+                (fun m -> ())
+                (ModelCodeGenerationOptions())
+                (fun code -> Expect.equal (normaliseLineEndings code.ContextFile.Code) (normaliseLineEndings emptyModelDbContext) "Should be equal")
+                (fun model -> Expect.isEmpty (model.GetEntityTypes()) "Should be empty"
             )
         }
     ]

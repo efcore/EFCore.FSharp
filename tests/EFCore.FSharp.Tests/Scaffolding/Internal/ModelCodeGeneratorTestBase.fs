@@ -1,4 +1,4 @@
-﻿module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.ModelCodeGeneratorTestBase
+module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.ModelCodeGeneratorTestBase
 
 open System
 open Microsoft.EntityFrameworkCore
@@ -125,7 +125,7 @@ type ModelCodeGeneratorTestBase() =
 
         conventionSet
 
-    member this.Test((buildModel : ModelBuilder -> unit), (options : ModelCodeGenerationOptions), (assertScaffold : ScaffoldedModel -> unit), (assertModel : IModel -> unit)) =
+    member this.Test (buildModel : ModelBuilder -> unit) (options : ModelCodeGenerationOptions) (assertScaffold : ScaffoldedModel -> unit) (assertModel : IModel -> unit) =
         let modelBuilder = SqlServerTestHelpers.CreateConventionBuilder true
         modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
         buildModel(modelBuilder)
@@ -154,7 +154,7 @@ type ModelCodeGeneratorTestBase() =
                 model,
                 options)
 
-        assertScaffold(scaffoldedModel);
+        assertScaffold scaffoldedModel
 
         let sources =
             scaffoldedModel.ContextFile.Code :: (scaffoldedModel.AdditionalFiles |> Seq.map (fun f -> f.Code) |> Seq.toList)
@@ -171,5 +171,5 @@ type ModelCodeGeneratorTestBase() =
 
         let context = assembly.CreateInstance("TestNamespace.TestDbContext") :?> DbContext
 
-        assertModel(context.Model)
+        assertModel context.Model
 

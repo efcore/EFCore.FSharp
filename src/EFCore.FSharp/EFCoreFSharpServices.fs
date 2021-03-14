@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp
+namespace EntityFrameworkCore.FSharp
 
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Migrations.Design
@@ -11,10 +11,14 @@ open EntityFrameworkCore.FSharp.Scaffolding.Internal
 open EntityFrameworkCore.FSharp.Migrations.Design
 open EntityFrameworkCore.FSharp.Internal
 
-type EFCoreFSharpServices() =
+type EFCoreFSharpServices(scaffoldOptions : ScaffoldOptions) =
+
+    new () = EFCoreFSharpServices(ScaffoldOptions(RecordOrType = RecordType, OptionOrNullable = OptionTypes))
+    
     interface IDesignTimeServices with
         member __.ConfigureDesignTimeServices(services: IServiceCollection) =
             services
+                .AddSingleton<ScaffoldOptions>(scaffoldOptions)
                 .AddSingleton<ICSharpHelper, FSharpHelper>()
                 .AddSingleton<ICSharpEntityTypeGenerator, FSharpEntityTypeGenerator>()
                 .AddSingleton<ICSharpDbContextGenerator, FSharpDbContextGenerator>()
