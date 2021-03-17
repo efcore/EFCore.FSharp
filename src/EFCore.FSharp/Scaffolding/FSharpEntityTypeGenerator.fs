@@ -18,12 +18,12 @@ type RecordOrType = | ClassType | RecordType
 type OptionOrNullable = | OptionTypes | NullableTypes
 
 [<AllowNullLiteral>]
-type ScaffoldOptions() = 
+type ScaffoldOptions() =
     member val RecordOrType = RecordType with get,set
     member val OptionOrNullable = OptionTypes with get,set
 
     static member Default = ScaffoldOptions()
-    
+
 open System.ComponentModel.DataAnnotations
 open System.ComponentModel.DataAnnotations.Schema
 open Microsoft.Extensions.Options
@@ -55,14 +55,12 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
         }
         |> dict
 
-    let writeProperty name ``type`` sb =
+    let writeProperty name ``type`` func sb =
         sb
         |> appendLine (sprintf "[<DefaultValue>] val mutable private _%s : %s" name ``type``)
-        |> appendLine (sprintf "member this.%s" name)
-        |> indent
-        |> appendLine (sprintf "with get() = this._%s" name)
-        |> appendLine (sprintf "and set v = this._%s <- v" name)
-        |> unindent
+        |> appendEmptyLine
+        |> func
+        |> appendLine (sprintf "member this.%s with get() = this._%s and set v = this._%s <- v" name name name)
         |> appendEmptyLine
         |> ignore
 
@@ -161,12 +159,12 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         if tableAttributeNeeded then
             let tableAttribute = AttributeWriter(nameof TableAttribute)
-            
+
             tableAttribute.AddParameter(code.Literal(tableName));
-            
+
             if schemaParameterNeeded then
                 tableAttribute.AddParameter($"Schema = {code.Literal(schema)}")
-            
+
             sb |> appendLine (string tableAttribute)
         else
             sb
@@ -210,7 +208,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 let param = String.Join(",", names)
                 foreignKeyAttribute.AddParameter (code.Literal param)
             else
-                foreignKeyAttribute.AddParameter $"nameof{navigation.ForeignKey.Properties.[0].Name}"
+                foreignKeyAttribute.AddParameter (code.Literal navigation.ForeignKey.Properties.[0].Name)
 
             sb |> appendLine (string foreignKeyAttribute)
         else
@@ -230,7 +228,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 if nameMatches then
                     code.Literal inverseNavigation.Name
                 else
-                     $"nameof({inverseNavigation.DeclaringEntityType.Name}.{inverseNavigation.Name})"
+                     $"\"{inverseNavigation.DeclaringEntityType.Name}.{inverseNavigation.Name}\""
 
             inversePropertyAttribute.AddParameter param
 
@@ -282,15 +280,14 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
             a.Arguments |> Seq.iter(fun arg -> attributeWriter.AddParameter(code.UnknownLiteral arg))
             sb |> appendLine (string a) |> ignore
         )
-        
-        ()
+
+        sb
 
     let generateNavigationDataAnnotations(navigation:INavigation) (sb:IndentedStringBuilder) =
 
         sb
         |> generateForeignKeyAttribute navigation
         |> generateInversePropertyAttribute navigation
-        |> ignore
 
     let generateProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) useDataAnnotations sb =
 
@@ -300,16 +297,20 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         props
         |> Seq.iter(fun p ->
-            if useDataAnnotations then
-                sb |> generatePropertyDataAnnotations p
+            let func =
+                if useDataAnnotations then
+                    generatePropertyDataAnnotations p
+                else
+                    (fun s -> s)
 
-            sb |> writeProperty p.Name p.ClrType.FullName
+            let typeName = getTypeName optionOrNullable p.ClrType
+            sb |> writeProperty p.Name typeName func
         )
 
         sb
 
-    let generateNavigationProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) useDataAnnotations sb =
-        
+    let generateNavigationProperties (entityType: IEntityType) optionOrNullable useDataAnnotations sb =
+
         let sortedNavigations =
             entityType.GetNavigations()
             |> Seq.sortBy(fun n -> if n.IsOnDependent then 0 else 1)
@@ -320,13 +321,21 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         sortedNavigations
         |> Seq.iter(fun p ->
-            if useDataAnnotations then
-                sb |> generateNavigationDataAnnotations p
 
-            let name = p.TargetEntityType.Name
-            let navigationType = if p.IsCollection then $"ICollection<{name}>" else name
-            
-            sb |> writeProperty p.Name navigationType
+            let func =
+                if useDataAnnotations then
+                    generateNavigationDataAnnotations p
+                else
+                    (fun s -> s)
+
+            let typeName =
+                if isNull p.TargetEntityType.ClrType then
+                    p.TargetEntityType.Name
+                else
+                    getTypeName optionOrNullable p.TargetEntityType.ClrType
+            let navigationType = if p.IsCollection then $"ICollection<{typeName}>" else typeName
+
+            sb |> writeProperty p.Name navigationType func
         )
 
         sb
@@ -362,28 +371,6 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
         |> Seq.iter(fun p -> generateRecordTypeEntry useDataAnnotations optionOrNullable p sb)
 
         sb
-
-    let generateForeignKeyAttribute (n:INavigation) sb =
-
-        if n.IsOnDependent && n.ForeignKey.PrincipalKey.IsPrimaryKey() then
-            let a = "ForeignKeyAttribute" |> AttributeWriter
-            let props = n.ForeignKey.Properties |> Seq.map (fun n' -> n'.Name)
-            String.Join(",", props) |> FSharpUtilities.delimitString |> a.AddParameter
-            sb |> appendLine (a |> string)
-        else
-            sb
-
-    let generateInversePropertyAttribute (n:INavigation) sb =
-        if n.ForeignKey.PrincipalKey.IsPrimaryKey() then
-            let inverse = n.Inverse
-            if isNull inverse then
-                sb
-            else
-                let a = "InversePropertyAttribute" |> AttributeWriter
-                inverse.Name |> FSharpUtilities.delimitString |> a.AddParameter
-                sb |> appendLine (a |> string)
-        else
-            sb
 
     let generateNavigateTypeEntry (n:INavigation) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
         if useDataAnnotations then

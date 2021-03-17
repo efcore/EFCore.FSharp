@@ -1,5 +1,6 @@
 module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpModelGeneratorTests
 
+open System
 open System.IO
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.Extensions.DependencyInjection
@@ -31,7 +32,7 @@ let createGenerator options =
 
 let getModelBuilder () =
     let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
-    
+
     modelBuilder
         .Entity("BlogPost")
         .Property<int>("Id")
@@ -41,16 +42,22 @@ let getModelBuilder () =
         .Entity("BlogPost")
         .Property<string>("Title")
         .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 1) |> ignore
-        
+
     modelBuilder
         .Entity("Comment")
         .Property<int>("Id")
         .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 0) |> ignore
-        
+
     modelBuilder
         .Entity("Comment")
         .Property<int>("BlogPostId")
         .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 1) |> ignore
+
+    modelBuilder
+        .Entity("Comment")
+        .Property<Nullable<Guid>>("OptionalGuid")
+        .IsRequired(false)
+        .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 2) |> ignore
 
     modelBuilder
         .Entity("BlogPost")
@@ -59,13 +66,14 @@ let getModelBuilder () =
 
     modelBuilder
 
-let getModelBuilderOptions () =
+let getModelBuilderOptions useDataAnnotations =
     ModelCodeGenerationOptions(
         ModelNamespace = "TestNamespace",
         ContextNamespace = "ContextNameSpace",
         ContextDir = Path.Combine("..", (sprintf "%s%c" "TestContextDir" Path.DirectorySeparatorChar)),
         ContextName = "TestContext",
-        ConnectionString = "Data Source=Test")
+        ConnectionString = "Data Source=Test",
+        UseDataAnnotations = useDataAnnotations)
 
 [<Tests>]
 let FSharpModelGeneratorTests =
@@ -83,7 +91,7 @@ let FSharpModelGeneratorTests =
         test "Write code works" {
             let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.ClassType))
             let modelBuilder = getModelBuilder()
-            let modelBuilderOptions = getModelBuilderOptions ()
+            let modelBuilderOptions = getModelBuilderOptions false
 
             let result =
                 generator.GenerateModel(
@@ -102,7 +110,7 @@ let FSharpModelGeneratorTests =
         test "Record types created correctly" {
             let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.RecordType))
             let modelBuilder = getModelBuilder()
-            let modelBuilderOptions = getModelBuilderOptions ()
+            let modelBuilderOptions = getModelBuilderOptions false
 
             let result =
                 generator.GenerateModel(
@@ -129,6 +137,53 @@ let FSharpModelGeneratorTests =
                     "    type Comment = {"
                     "        mutable Id: int"
                     "        mutable BlogPostId: int"
+                    "        mutable OptionalGuid: Guid option"
+                    "        mutable BlogPost: BlogPost"
+                    "    }"
+                } |> join _eol
+
+            Expect.isNotEmpty result.AdditionalFiles.[0].Code "Should not be empty"
+            Expect.equal (result.AdditionalFiles.[0].Code.Trim())  expectedCode "Should be equal"
+        }
+
+        test "Record types created correctly with annotations" {
+            let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.RecordType))
+            let modelBuilder = getModelBuilder()
+            let modelBuilderOptions = getModelBuilderOptions true
+
+            let result =
+                generator.GenerateModel(
+                    modelBuilder.Model,
+                    modelBuilderOptions)
+
+            let expectedCode =
+                seq {
+                    "namespace TestNamespace"
+                    ""
+                    "open System.ComponentModel.DataAnnotations"
+                    "open System.ComponentModel.DataAnnotations.Schema"
+                    "open System"
+                    "open System.Collections.Generic"
+                    ""
+                    "module rec TestDomain ="
+                    ""
+                    "    [<CLIMutable>]"
+                    "    type BlogPost = {"
+                    "        [<KeyAttribute>]"
+                    "        mutable Id: int"
+                    "        mutable Title: string"
+                    "        [<InversePropertyAttribute(\"Comment.BlogPost\")>]"
+                    "        mutable Comments: ICollection<Comment>"
+                    "    }"
+                    ""
+                    "    [<CLIMutable>]"
+                    "    type Comment = {"
+                    "        [<KeyAttribute>]"
+                    "        mutable Id: int"
+                    "        mutable BlogPostId: int"
+                    "        mutable OptionalGuid: Guid option"
+                    "        [<ForeignKeyAttribute(\"BlogPostId\")>]"
+                    "        [<InversePropertyAttribute(\"Comments\")>]"
                     "        mutable BlogPost: BlogPost"
                     "    }"
                 } |> join _eol
@@ -140,7 +195,7 @@ let FSharpModelGeneratorTests =
         test "Class types created correctly" {
             let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.ClassType))
             let modelBuilder = getModelBuilder()
-            let modelBuilderOptions = getModelBuilderOptions ()
+            let modelBuilderOptions = getModelBuilderOptions false
 
             let result =
                 generator.GenerateModel(
@@ -160,38 +215,103 @@ let FSharpModelGeneratorTests =
                     "        do"
                     "            this.Comments <- HashSet<Comment>() :> ICollection<Comment>"
                     ""
-                    "        [<DefaultValue>] val mutable private _Id : System.Int32"
-                    "        member this.Id"
-                    "            with get() = this._Id"
-                    "            and set v = this._Id <- v"
+                    "        [<DefaultValue>] val mutable private _Id : int"
                     ""
-                    "        [<DefaultValue>] val mutable private _Title : System.String"
-                    "        member this.Title"
-                    "            with get() = this._Title"
-                    "            and set v = this._Title <- v"
+                    "        member this.Id with get() = this._Id and set v = this._Id <- v"
+                    ""
+                    "        [<DefaultValue>] val mutable private _Title : string"
+                    ""
+                    "        member this.Title with get() = this._Title and set v = this._Title <- v"
                     ""
                     ""
                     "        [<DefaultValue>] val mutable private _Comments : ICollection<Comment>"
-                    "        member this.Comments"
-                    "            with get() = this._Comments"
-                    "            and set v = this._Comments <- v"
+                    ""
+                    "        member this.Comments with get() = this._Comments and set v = this._Comments <- v"
                     ""
                     "    type Comment() as this ="
-                    "        [<DefaultValue>] val mutable private _Id : System.Int32"
-                    "        member this.Id"
-                    "            with get() = this._Id"
-                    "            and set v = this._Id <- v"
+                    "        [<DefaultValue>] val mutable private _Id : int"
                     ""
-                    "        [<DefaultValue>] val mutable private _BlogPostId : System.Int32"
-                    "        member this.BlogPostId"
-                    "            with get() = this._BlogPostId"
-                    "            and set v = this._BlogPostId <- v"
+                    "        member this.Id with get() = this._Id and set v = this._Id <- v"
+                    ""
+                    "        [<DefaultValue>] val mutable private _BlogPostId : int"
+                    ""
+                    "        member this.BlogPostId with get() = this._BlogPostId and set v = this._BlogPostId <- v"
+                    ""
+                    "        [<DefaultValue>] val mutable private _OptionalGuid : Guid option"
+                    ""
+                    "        member this.OptionalGuid with get() = this._OptionalGuid and set v = this._OptionalGuid <- v"
                     ""
                     ""
                     "        [<DefaultValue>] val mutable private _BlogPost : BlogPost"
-                    "        member this.BlogPost"
-                    "            with get() = this._BlogPost"
-                    "            and set v = this._BlogPost <- v"
+                    ""
+                    "        member this.BlogPost with get() = this._BlogPost and set v = this._BlogPost <- v"
+                } |> join _eol
+
+            Expect.isNotEmpty result.AdditionalFiles.[0].Code "Should not be empty"
+            Expect.equal (result.AdditionalFiles.[0].Code.Trim()) expectedCode "Should be equal"
+
+        }
+
+        test "Class types created correctly with annotations" {
+            let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.ClassType))
+            let modelBuilder = getModelBuilder()
+            let modelBuilderOptions = getModelBuilderOptions true
+
+            let result =
+                generator.GenerateModel(
+                    modelBuilder.Model,
+                    modelBuilderOptions)
+
+            let expectedCode =
+                seq {
+                    "namespace TestNamespace"
+                    ""
+                    "open System.ComponentModel.DataAnnotations"
+                    "open System.ComponentModel.DataAnnotations.Schema"
+                    "open System"
+                    "open System.Collections.Generic"
+                    ""
+                    "module rec TestDomain ="
+                    ""
+                    "    type BlogPost() as this ="
+                    "        do"
+                    "            this.Comments <- HashSet<Comment>() :> ICollection<Comment>"
+                    ""
+                    "        [<DefaultValue>] val mutable private _Id : int"
+                    ""
+                    "        [<KeyAttribute>]"
+                    "        member this.Id with get() = this._Id and set v = this._Id <- v"
+                    ""
+                    "        [<DefaultValue>] val mutable private _Title : string"
+                    ""
+                    "        member this.Title with get() = this._Title and set v = this._Title <- v"
+                    ""
+                    ""
+                    "        [<DefaultValue>] val mutable private _Comments : ICollection<Comment>"
+                    ""
+                    "        [<InversePropertyAttribute(\"Comment.BlogPost\")>]"
+                    "        member this.Comments with get() = this._Comments and set v = this._Comments <- v"
+                    ""
+                    "    type Comment() as this ="
+                    "        [<DefaultValue>] val mutable private _Id : int"
+                    ""
+                    "        [<KeyAttribute>]"
+                    "        member this.Id with get() = this._Id and set v = this._Id <- v"
+                    ""
+                    "        [<DefaultValue>] val mutable private _BlogPostId : int"
+                    ""
+                    "        member this.BlogPostId with get() = this._BlogPostId and set v = this._BlogPostId <- v"
+                    ""
+                    "        [<DefaultValue>] val mutable private _OptionalGuid : Guid option"
+                    ""
+                    "        member this.OptionalGuid with get() = this._OptionalGuid and set v = this._OptionalGuid <- v"
+                    ""
+                    ""
+                    "        [<DefaultValue>] val mutable private _BlogPost : BlogPost"
+                    ""
+                    "        [<ForeignKeyAttribute(\"BlogPostId\")>]"
+                    "        [<InversePropertyAttribute(\"Comments\")>]"
+                    "        member this.BlogPost with get() = this._BlogPost and set v = this._BlogPost <- v"
                 } |> join _eol
 
             Expect.isNotEmpty result.AdditionalFiles.[0].Code "Should not be empty"
