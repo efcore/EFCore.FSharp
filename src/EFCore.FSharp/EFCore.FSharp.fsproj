@@ -23,6 +23,7 @@
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ScaffoldOptions.fs" />
     <Compile Include="Utilities\SharedTypeExtensions.fs" />
     <Compile Include="Utilities\EntityFrameworkExtensions.fs" />
     <Compile Include="Utilities\IndentedStringBuilderUtilities.fs" />

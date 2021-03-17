@@ -24,7 +24,9 @@ let createGenerator options =
             .AddSingleton<ProviderCodeGenerator, TestProviderCodeGenerator>()
             .AddSingleton<IProviderConfigurationCodeGenerator, TestProviderCodeGenerator>()
 
-    (EFCoreFSharpServices(options) :> IDesignTimeServices).ConfigureDesignTimeServices(services)
+    let designTimeServices = EFCoreFSharpServices.WithScaffoldOptions options
+
+    designTimeServices.ConfigureDesignTimeServices(services)
 
     services
         .BuildServiceProvider()
@@ -81,7 +83,7 @@ let FSharpModelGeneratorTests =
     testList "FSharpModelGeneratorTests" [
 
         test "Language Works" {
-            let generator = createGenerator Scaffolding.ScaffoldOptions.Default
+            let generator = createGenerator ScaffoldOptions.Default
 
             let result = generator.Language
 
@@ -89,7 +91,7 @@ let FSharpModelGeneratorTests =
         }
 
         test "Write code works" {
-            let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.ClassType))
+            let generator = createGenerator (ScaffoldOptions(ScaffoldTypesAs = ClassType))
             let modelBuilder = getModelBuilder()
             let modelBuilderOptions = getModelBuilderOptions false
 
@@ -108,7 +110,7 @@ let FSharpModelGeneratorTests =
         }
 
         test "Record types created correctly" {
-            let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.RecordType))
+            let generator = createGenerator (ScaffoldOptions(ScaffoldTypesAs = RecordType))
             let modelBuilder = getModelBuilder()
             let modelBuilderOptions = getModelBuilderOptions false
 
@@ -147,7 +149,7 @@ let FSharpModelGeneratorTests =
         }
 
         test "Record types created correctly with annotations" {
-            let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.RecordType))
+            let generator = createGenerator (ScaffoldOptions(ScaffoldTypesAs = RecordType))
             let modelBuilder = getModelBuilder()
             let modelBuilderOptions = getModelBuilderOptions true
 
@@ -193,7 +195,7 @@ let FSharpModelGeneratorTests =
         }
 
         test "Class types created correctly" {
-            let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.ClassType))
+            let generator = createGenerator (ScaffoldOptions(ScaffoldTypesAs = ClassType))
             let modelBuilder = getModelBuilder()
             let modelBuilderOptions = getModelBuilderOptions false
 
@@ -253,7 +255,7 @@ let FSharpModelGeneratorTests =
         }
 
         test "Class types created correctly with annotations" {
-            let generator = createGenerator (Scaffolding.ScaffoldOptions(RecordOrType = Scaffolding.ClassType))
+            let generator = createGenerator (ScaffoldOptions(ScaffoldTypesAs = ClassType))
             let modelBuilder = getModelBuilder()
             let modelBuilderOptions = getModelBuilderOptions true
 

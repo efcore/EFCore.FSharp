@@ -9,29 +9,23 @@ open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
+open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
 
-
-type RecordOrType = | ClassType | RecordType
-type OptionOrNullable = | OptionTypes | NullableTypes
-
-[<AllowNullLiteral>]
-type ScaffoldOptions() =
-    member val RecordOrType = RecordType with get,set
-    member val OptionOrNullable = OptionTypes with get,set
-
-    static member Default = ScaffoldOptions()
-
 open System.ComponentModel.DataAnnotations
 open System.ComponentModel.DataAnnotations.Schema
-open Microsoft.Extensions.Options
 
+/// Create attributes of a given name
 type internal AttributeWriter(name:string) =
     let parameters = List<string>()
+
+    /// Add parameter to Attribute
     member __.AddParameter p =
         parameters.Add p
+
+    /// Write attribute to string
     override __.ToString() =
         if Seq.isEmpty parameters then
             sprintf "[<%s>]" name
@@ -64,19 +58,19 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
         |> appendEmptyLine
         |> ignore
 
-    let rec getTypeName optionOrNullable (t:Type) =
+    let rec getTypeName scaffoldNullableColumnsAs (t:Type) =
 
         if t.IsArray then
-            (getTypeName optionOrNullable (t.GetElementType())) + "[]"
+            (getTypeName scaffoldNullableColumnsAs (t.GetElementType())) + "[]"
 
         else if t.GetTypeInfo().IsGenericType then
             if t.GetGenericTypeDefinition() = typedefof<Nullable<_>> then
-                match optionOrNullable with
-                | NullableTypes ->  "Nullable<" + (getTypeName optionOrNullable (Nullable.GetUnderlyingType(t))) + ">";
-                | OptionTypes -> (getTypeName optionOrNullable (Nullable.GetUnderlyingType(t))) + " option"
+                match scaffoldNullableColumnsAs with
+                | NullableTypes ->  "Nullable<" + (getTypeName scaffoldNullableColumnsAs (Nullable.GetUnderlyingType(t))) + ">";
+                | OptionTypes -> (getTypeName scaffoldNullableColumnsAs (Nullable.GetUnderlyingType(t))) + " option"
             else
                 let genericTypeDefName = t.Name.Substring(0, t.Name.IndexOf('`'));
-                let genericTypeArguments = String.Join(", ", t.GenericTypeArguments |> Seq.map(fun t' -> getTypeName optionOrNullable t'))
+                let genericTypeArguments = String.Join(", ", t.GenericTypeArguments |> Seq.map(fun t' -> getTypeName scaffoldNullableColumnsAs t'))
                 genericTypeDefName + "<" + genericTypeArguments + ">";
 
         else
@@ -198,7 +192,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         sb
 
-    let generateForeignKeyAttribute (navigation:INavigation) (sb:IndentedStringBuilder) =
+    let generateForeignKeyAttribute (navigation:INavigation) sb =
 
         if navigation.IsOnDependent && navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
             let foreignKeyAttribute = AttributeWriter(nameof ForeignKeyAttribute)
@@ -214,7 +208,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
         else
             sb
 
-    let generateInversePropertyAttribute (navigation:INavigation) (sb:IndentedStringBuilder) =
+    let generateInversePropertyAttribute (navigation:INavigation) sb =
 
         if navigation.ForeignKey.PrincipalKey.IsPrimaryKey() && notNull navigation.Inverse then
             let inverseNavigation = navigation.Inverse
@@ -259,7 +253,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
             |> unindent
 
 
-    let generatePropertyDataAnnotations (p:IProperty) (sb:IndentedStringBuilder) =
+    let generatePropertyDataAnnotations (p:IProperty) sb =
 
         sb
         |> generateKeyAttribute p
@@ -283,13 +277,13 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         sb
 
-    let generateNavigationDataAnnotations(navigation:INavigation) (sb:IndentedStringBuilder) =
+    let generateNavigationDataAnnotations(navigation:INavigation) sb =
 
         sb
         |> generateForeignKeyAttribute navigation
         |> generateInversePropertyAttribute navigation
 
-    let generateProperties (entityType : IEntityType) (optionOrNullable:OptionOrNullable) useDataAnnotations sb =
+    let generateProperties (entityType : IEntityType) scaffoldNullableColumnsAs useDataAnnotations sb =
 
         let props =
             entityType.GetProperties()
@@ -303,13 +297,13 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 else
                     (fun s -> s)
 
-            let typeName = getTypeName optionOrNullable p.ClrType
+            let typeName = getTypeName scaffoldNullableColumnsAs p.ClrType
             sb |> writeProperty p.Name typeName func
         )
 
         sb
 
-    let generateNavigationProperties (entityType: IEntityType) optionOrNullable useDataAnnotations sb =
+    let generateNavigationProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations sb =
 
         let sortedNavigations =
             entityType.GetNavigations()
@@ -332,7 +326,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 if isNull p.TargetEntityType.ClrType then
                     p.TargetEntityType.Name
                 else
-                    getTypeName optionOrNullable p.TargetEntityType.ClrType
+                    getTypeName scaffoldNullableColumnsAs p.TargetEntityType.ClrType
             let navigationType = if p.IsCollection then $"ICollection<{typeName}>" else typeName
 
             sb |> writeProperty p.Name navigationType func
@@ -340,7 +334,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         sb
 
-    let generateClass (entityType : IEntityType) useDataAnnotations optionOrNullable sb =
+    let generateClass (entityType : IEntityType) useDataAnnotations scaffoldNullableColumnsAs sb =
 
         sb
             |>
@@ -351,28 +345,28 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
             |> appendLine (sprintf "type %s() as this =" entityType.Name)
             |> indent
             |> generateConstructor entityType
-            |> generateProperties entityType optionOrNullable useDataAnnotations
-            |> generateNavigationProperties entityType optionOrNullable useDataAnnotations
+            |> generateProperties entityType scaffoldNullableColumnsAs useDataAnnotations
+            |> generateNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
             |> unindent
 
-    let generateRecordTypeEntry useDataAnnotations optionOrNullable (p: IProperty) sb =
+    let generateRecordTypeEntry useDataAnnotations scaffoldNullableColumnsAs (p: IProperty) sb =
 
         if useDataAnnotations then
             sb
                 |> generatePropertyDataAnnotations p
                 |> ignore
 
-        let typeName = getTypeName optionOrNullable p.ClrType
+        let typeName = getTypeName scaffoldNullableColumnsAs p.ClrType
         sb |> appendLine (sprintf "mutable %s: %s" p.Name typeName) |> ignore
         ()
 
-    let writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
+    let writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) scaffoldNullableColumnsAs sb =
         properties
-        |> Seq.iter(fun p -> generateRecordTypeEntry useDataAnnotations optionOrNullable p sb)
+        |> Seq.iter(fun p -> generateRecordTypeEntry useDataAnnotations scaffoldNullableColumnsAs p sb)
 
         sb
 
-    let generateNavigateTypeEntry (n:INavigation) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
+    let generateNavigateTypeEntry (n:INavigation) (useDataAnnotations:bool) sb =
         if useDataAnnotations then
             sb
                 |> generateNavigationDataAnnotations n
@@ -386,11 +380,11 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 referencedTypeName
         sb |> appendLine (sprintf "mutable %s: %s" n.Name navigationType) |> ignore
 
-    let writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) (skipFinalNewLine: bool) optionOrNullable sb =
-        nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations skipFinalNewLine optionOrNullable sb)
+    let writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) sb =
+        nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations sb)
         sb
 
-    let generateRecord (entityType : IEntityType) (useDataAnnotations:bool) optionOrNullable sb =
+    let generateRecord (entityType : IEntityType) (useDataAnnotations:bool) scaffoldNullableColumnsAs sb =
         let properties =
             entityType.GetProperties()
 
@@ -399,33 +393,31 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                     |> EntityTypeExtensions.GetNavigations
                     |> Seq.sortBy(fun n -> ((if n.IsOnDependent then 0 else 1), (if n.IsCollection then 1 else 0)))
 
-        let navsIsEmpty = navProperties |> Seq.isEmpty
-
         sb
             |> appendLine ("CLIMutable" |> createAttributeQuick)
             |> appendLine (sprintf "type %s = {" entityType.Name)
             |> indent
-            |> writeRecordProperties properties useDataAnnotations navsIsEmpty optionOrNullable
-            |> writeNavigationProperties navProperties useDataAnnotations true optionOrNullable
+            |> writeRecordProperties properties useDataAnnotations scaffoldNullableColumnsAs
+            |> writeNavigationProperties navProperties useDataAnnotations
             |> unindent
             |> appendLine "}"
             |> appendEmptyLine
 
 
-    let writeCode (entityType: IEntityType) (useDataAnnotation: bool) createTypesAs optionOrNullable sb =
+    let writeCode (entityType: IEntityType) (useDataAnnotation: bool) scaffoldTypesAs scaffoldNullableColumnsAs sb =
 
         let generate =
-            match createTypesAs with
+            match scaffoldTypesAs with
             | ClassType -> generateClass
             | RecordType -> generateRecord
 
         sb
             |> indent
-            |> generate entityType useDataAnnotation optionOrNullable
+            |> generate entityType useDataAnnotation scaffoldNullableColumnsAs
             |> string
 
     interface ICSharpEntityTypeGenerator with
         member this.WriteCode(entityType, ``namespace``, useDataAnnotations) =
-            let createTypesAs = if notNull config then config.RecordOrType else RecordType
-            let optionOrNullable = if notNull config then config.OptionOrNullable else OptionTypes
-            writeCode entityType useDataAnnotations createTypesAs optionOrNullable (IndentedStringBuilder())
+            let scaffoldTypesAs = if notNull config then config.ScaffoldTypesAs else RecordType
+            let scaffoldNullableColumnsAs = if notNull config then config.ScaffoldNullableColumnsAs else OptionTypes
+            writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs (IndentedStringBuilder())

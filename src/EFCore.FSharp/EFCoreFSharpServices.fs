@@ -6,6 +6,7 @@ open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 open Microsoft.Extensions.DependencyInjection
 
+open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.Scaffolding
 open EntityFrameworkCore.FSharp.Scaffolding.Internal
 open EntityFrameworkCore.FSharp.Migrations.Design
@@ -13,8 +14,11 @@ open EntityFrameworkCore.FSharp.Internal
 
 type EFCoreFSharpServices(scaffoldOptions : ScaffoldOptions) =
 
-    new () = EFCoreFSharpServices(ScaffoldOptions(RecordOrType = RecordType, OptionOrNullable = OptionTypes))
-    
+    new () = EFCoreFSharpServices(ScaffoldOptions.Default)
+
+    static member Default = EFCoreFSharpServices() :> IDesignTimeServices
+    static member WithScaffoldOptions scaffoldOptions = EFCoreFSharpServices scaffoldOptions :> IDesignTimeServices
+
     interface IDesignTimeServices with
         member __.ConfigureDesignTimeServices(services: IServiceCollection) =
             services
