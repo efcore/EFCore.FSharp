@@ -50,6 +50,7 @@ group Docs
     nuget Fake.DotNet.Cli 5.20.4-alpha.1642
     nuget FSharp.Formatting 4.0.0-rc1
     nuget FSharp.Literate 4.0.0-rc1
+    nuget FSharp.Compiler.Service 34.1
     nuget Fable.React
 
 group Analyzers

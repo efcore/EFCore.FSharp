@@ -224,7 +224,8 @@ module GenerateDocs =
                     libDirs = libDirs,
                     sourceFolder = cfg.RepositoryRoot.FullName,
                     sourceRepo = (cfg.GitHubRepoUrl |> Uri.simpleCombine "tree/master" |> string),
-                    markDownComments = false
+                    markDownComments = false,
+                    parameters = [("project-name", projName)]
                     )
 
             let fi = FileInfo <| targetApiDir @@ (sprintf "%s.html" generatorOutput.AssemblyGroup.Name)
@@ -247,6 +248,7 @@ module GenerateDocs =
                         Title = sprintf "%s-%s" m.Module.Name cfg.ProjectName
                     }
                 )
+
             let typeDocs =
                 generatorOutput.TypesInfos
                 |> List.map (fun m ->
