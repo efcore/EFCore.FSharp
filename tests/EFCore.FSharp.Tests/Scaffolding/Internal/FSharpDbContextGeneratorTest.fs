@@ -4,6 +4,8 @@ open System
 open Microsoft.EntityFrameworkCore.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Expecto
+open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Metadata
 
 let normaliseLineEndings (str: string) =
     str.Replace("\r\n", "\n").Replace("\r", "\n")
@@ -42,12 +44,17 @@ let FSharpDbContextGeneratorTest =
 
     testList "FSharpDbContextGeneratorTest" [
         test "Empty Model" {
-            testBase.Test(
-                (fun m -> ()),
-                (ModelCodeGenerationOptions()),
-                (fun code -> Expect.equal (normaliseLineEndings code.ContextFile.Code) (normaliseLineEndings emptyModelDbContext) "Should be equal"),
-                (fun model -> Expect.isEmpty (model.GetEntityTypes()) "Should be empty")
-            )
+
+            let buildModel (m: ModelBuilder) = ()
+            let options = ModelCodeGenerationOptions()
+
+            let assertScaffold (code: ScaffoldedModel) =
+                Expect.equal (normaliseLineEndings code.ContextFile.Code) (normaliseLineEndings emptyModelDbContext) "Should be equal"
+
+            let assertModel (model: IModel) =
+                Expect.isEmpty (model.GetEntityTypes()) "Should be empty"
+
+            testBase.Test buildModel options assertScaffold assertModel
         }
     ]
 

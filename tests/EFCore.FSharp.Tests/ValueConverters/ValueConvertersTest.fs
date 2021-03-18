@@ -38,4 +38,10 @@ let ValueConvertersTest =
             let g = Nullable(Guid.NewGuid())
             Expect.equal (c.Compile().Invoke(Some g)) g "Should be equal"
         }
+
+        test "Can create OptionConverter" {
+            let oc = OptionConverter<string>()
+
+            Expect.isNotNull (box oc) "Should not be null"
+        }
     ]

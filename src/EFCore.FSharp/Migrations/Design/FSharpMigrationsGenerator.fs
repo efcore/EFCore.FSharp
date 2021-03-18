@@ -2,13 +2,24 @@ namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 
+open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Metadata
-open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Migrations.Design
 
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+
+type FSharpMigrationsGeneratorDependencies
+    (
+        fSharpHelper : ICSharpHelper,
+        fSharpMigrationOperationGenerator : ICSharpMigrationOperationGenerator,
+        fSharpSnapshotGenerator : ICSharpSnapshotGenerator
+    ) =
+
+    member __.FSharpHelper = fSharpHelper
+    member __.FSharpMigrationOperationGenerator = fSharpMigrationOperationGenerator
+    member __.FSharpSnapshotGenerator = fSharpSnapshotGenerator
 
 type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigrationsGeneratorDependencies) =
     inherit MigrationsCodeGenerator(dependencies)

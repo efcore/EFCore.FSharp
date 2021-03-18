@@ -35,7 +35,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
     let writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
         sb
-            |> writeParameterIfTrue (value |> notNull) name (sprintf "Nullable(%s)" value)
+            |> writeParameterIfTrue (value |> notNull) name (sanitiseName value)
 
     let writeNullableParameterIfValue name (nullableParameter: Nullable<_>) sb =
 
@@ -116,9 +116,10 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeParameterIfTrue (op.PrincipalColumns.Length <> 1) "principalColumns" op.PrincipalColumns
             |> writeParameterIfTrue (op.OnUpdate <> ReferentialAction.NoAction) "onUpdate" op.OnUpdate
             |> writeParameterIfTrue (op.OnDelete <> ReferentialAction.NoAction) "onDelete" op.OnDelete
+            |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
+
 
     let generateAddPrimaryKeyOperation (op:AddPrimaryKeyOperation) (sb:IndentedStringBuilder) =
         sb
@@ -129,9 +130,9 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
             |> writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+            |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
 
     let generateAddUniqueConstraintOperation (op:AddUniqueConstraintOperation) (sb:IndentedStringBuilder) =
         sb
@@ -142,9 +143,9 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
             |> writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+            |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
 
     let generateAlterColumnOperation (op:AlterColumnOperation) (sb:IndentedStringBuilder) =
         sb
@@ -310,7 +311,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     elif c.DefaultValue |> notNull then
                         appendLine (sprintf ", defaultValue = %s" (code.UnknownLiteral c.DefaultValue))
                     else
-                        appendEmptyLine
+                        id
                 |> unindent
                 |> append ")"
                 |> appendIfTrue (c.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (c.ClrType |> unwrapOptionType |> code.Reference))
@@ -362,41 +363,49 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 |> writeParameterIfTrue (fk.PrincipalColumns.Length <> 1) "principalColumns" fk.PrincipalColumns
                 |> writeParameterIfTrue (fk.OnUpdate <> ReferentialAction.NoAction) "onUpdate" fk.OnUpdate
                 |> writeParameterIfTrue (fk.OnDelete <> ReferentialAction.NoAction) "onDelete" fk.OnDelete
-                |> unindent
 
                 |> append ")"
                 |> annotations (fk.GetAnnotations())
                 |> appendLine " |> ignore"
                 |> appendEmptyLine
+                |> unindent
                 |> ignore
             ()
 
         let writeConstraints sb =
-            sb |> append "," |> appendLine "constraints ="
-            |> indent
-            |> appendLine "(fun table -> "
-            |> indent
-            |> ignore
 
-            if notNull op.PrimaryKey then
+            let hasConstraints =
+                notNull op.PrimaryKey && (op.UniqueConstraints |> Seq.isEmpty |> not) && (op.ForeignKeys |> Seq.isEmpty |> not)
+
+            if hasConstraints then
+
+                sb |> append "," |> appendLine "constraints ="
+                |> indent
+                |> appendLine "(fun table -> "
+                |> indent
+                |> ignore
+
+                if notNull op.PrimaryKey then
+                    sb
+                        |> append "table.PrimaryKey("
+                        |> append (op.PrimaryKey.Name |> code.Literal)
+                        |> append ", "
+                        |> append (op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
+                        |> append ")"
+                        |> indent
+                        |> annotations (op.PrimaryKey.GetAnnotations())
+                        |> appendLine " |> ignore"
+                        |> unindent
+                        |> ignore
+
+                op.UniqueConstraints |> Seq.iter(writeUniqueConstraint)
+                op.ForeignKeys |> Seq.iter(writeForeignKeyConstraint)
+
                 sb
-                    |> append "table.PrimaryKey("
-                    |> append (op.PrimaryKey.Name |> code.Literal)
-                    |> append ", "
-                    |> append (op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
-                    |> append ")"
-                    |> indent
-                    |> annotations (op.PrimaryKey.GetAnnotations())
-                    |> appendLine " |> ignore"
                     |> unindent
-                    |> ignore
-
-            op.UniqueConstraints |> Seq.iter(writeUniqueConstraint)
-            op.ForeignKeys |> Seq.iter(writeForeignKeyConstraint)
-
-            sb
-                |> unindent
-                |> appendLine ") "
+                    |> appendLine ") "
+            else
+                sb
 
         sb
             |> appendLine ".CreateTable("

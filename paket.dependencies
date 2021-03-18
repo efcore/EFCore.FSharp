@@ -9,12 +9,15 @@ nuget Microsoft.NET.Test.Sdk 16.8.3
 nuget altcover ~> 7
 
 nuget Microsoft.EntityFrameworkCore.Design 5.0.3
+nuget Microsoft.EntityFrameworkCore.Relational 5.0.3
 nuget Microsoft.EntityFrameworkCore.Sqlite 5.0.3
 nuget Microsoft.EntityFrameworkCore.SqlServer 5.0.3
 nuget Microsoft.EntityFrameworkCore.Specification.Tests 5.0.3
 nuget FSharp.Compiler.Service 39.0.0
 nuget Microsoft.CodeAnalysis >= 3.8.0
 nuget Fantomas
+nuget NetTopologySuite.IO.SqlServerBytes 2.0.0
+nuget System.Runtime.Numerics
 
 // [ FAKE GROUP ]
 group Build
@@ -47,6 +50,7 @@ group Docs
     nuget Fake.DotNet.Cli 5.20.4-alpha.1642
     nuget FSharp.Formatting 4.0.0-rc1
     nuget FSharp.Literate 4.0.0-rc1
+    nuget FSharp.Compiler.Service 34.1
     nuget Fable.React
 
 group Analyzers
