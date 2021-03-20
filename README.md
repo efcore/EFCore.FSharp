@@ -18,6 +18,18 @@ EFCore.FSharp | [![NuGet Badge](https://buildstats.info/nuget/EFCore.FSharp)](ht
 
 ---
 
+## Usage
+
+Install the package from NuGet and follow our [Getting Started](./GETTING_STARTED.md) guide or our full documentation at [https://efcore.github.io/EFCore.FSharp](https://efcore.github.io/EFCore.FSharp)
+
+Currently created migrations must be manually added to your solution in the correct order. Although migrations are created with sequential file names so a glob can also be used
+
+```xml
+<Compile Include="Migrations/*.fs" />
+```
+
+---
+
 ### Building
 
 ```sh
@@ -28,13 +40,12 @@ $ ./build.sh  <optional buildtarget>// on unix
 After building the solution, it will create a NuGet package in the `dist` folder.
 This can then be referenced as usual.
 
-Currently created migrations must be manually added to your solution in the correct order.
 
 ### Developing
 
 Make sure the following **requirements** are installed on your system:
 
-- [dotnet SDK](https://www.microsoft.com/net/download/core) 3.0 or higher
+- [dotnet SDK](https://www.microsoft.com/net/download/core) 5.0 or higher
 
 or
 
@@ -74,71 +85,4 @@ or
 - `FormatCode` - Runs [Fantomas](https://github.com/fsprojects/fantomas) on the solution file.
 - `BuildDocs` - Generates Documentation from `docsSrc` and the [XML Documentation Comments](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/xmldoc/) from your libraries in `src`.
 - `WatchDocs` - Generates documentation and starts a webserver locally.  It will rebuild and hot reload if it detects any changes made to `docsSrc` files, libraries in `src`, or the `docsTool` itself.
-- `ReleaseDocs` - Will stage, commit, and push docs generated in the `BuildDocs` target.
-- [`Release`](#Releasing) - Task that runs all release type tasks such as `PublishToNuGet`, `GitRelease`, `ReleaseDocs`, and `GitHubRelease`. Make sure to read [Releasing](#Releasing) to setup your environment correctly for releases.
----
-
-
-### Releasing
-
-- [Create your NuGeT API key](https://docs.microsoft.com/en-us/nuget/nuget-org/publish-a-package#create-api-keys)
-    - [Add your NuGet API key to paket](https://fsprojects.github.io/Paket/paket-config.html#Adding-a-NuGet-API-key)
-
-    ```sh
-    paket config add-token "https://www.nuget.org" 4003d786-cc37-4004-bfdf-c4f3e8ef9b3a
-    ```
-
-    - or set the environment variable `NUGET_TOKEN` to your key
-
-
-- [Create a GitHub OAuth Token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
-  - You can then set the environment variable `GITHUB_TOKEN` to upload release notes and artifacts to github
-  - Otherwise it will fallback to username/password
-
-- Then update the `CHANGELOG.md` with an "Unreleased" section containing release notes for this version, in [KeepAChangelog](https://keepachangelog.com/en/1.1.0/) format.
-
-NOTE: Its highly recommend to add a link to the Pull Request next to the release note that it affects. The reason for this is when the `RELEASE` target is run, it will add these new notes into the body of git commit. GitHub will notice the links and will update the Pull Request with what commit referenced it saying ["added a commit that referenced this pull request"](https://github.com/TheAngryByrd/MiniScaffold/pull/179#ref-commit-837ad59). Since the build script automates the commit message, it will say "Bump Version to x.y.z". The benefit of this is when users goto a Pull Request, it will be clear when and which version those code changes released. Also when reading the `CHANGELOG`, if someone is curious about how or why those changes were made, they can easily discover the work and discussions.
-
-Here's an example of adding an "Unreleased" section to a `CHANGELOG.md` with a `0.1.0` section already released.
-
-```markdown
-## [Unreleased]
-
-### Added
-- Does cool stuff!
-
-### Fixed
-- Fixes that silly oversight
-
-## [0.1.0] - 2017-03-17
-First release
-
-### Added
-- This release already has lots of features
-
-[Unreleased]: https://github.com/user/MyCoolNewLib.git/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/user/MyCoolNewLib.git/releases/tag/v0.1.0
-```
-
-- You can then use the `Release` target, specifying the version number either in the `RELEASE_VERSION` environment
-  variable, or else as a parameter after the target name.  This will:
-  - update `CHANGELOG.md`, moving changes from the `Unreleased` section into a new `0.2.0` section
-    - if there were any prerelease versions of 0.2.0 in the changelog, it will also collect their changes into the final 0.2.0 entry
-  - make a commit bumping the version:  `Bump version to 0.2.0` and adds the new changelog section to the commit's body
-  - publish the package to NuGet
-  - push a git tag
-  - create a GitHub release for that git tag
-
-macOS/Linux Parameter:
-
-```sh
-./build.sh Release 0.2.0
-```
-
-macOS/Linux Environment Variable:
-
-```sh
-RELEASE_VERSION=0.2.0 ./build.sh Release
-```
-
 
