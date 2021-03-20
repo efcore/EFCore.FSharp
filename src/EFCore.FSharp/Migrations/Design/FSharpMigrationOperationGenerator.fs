@@ -417,7 +417,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
 
     let generateDropColumnOperation (op:DropColumnOperation) (sb:IndentedStringBuilder) =
         sb
