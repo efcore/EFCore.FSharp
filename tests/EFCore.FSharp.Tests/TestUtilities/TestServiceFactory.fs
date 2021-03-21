@@ -34,9 +34,9 @@ module TestServiceFactory =
         ]
 
     let private tryGetEnumerableType (t : Type) =
-        
+
         let typeInfo = System.Reflection.IntrospectionExtensions.GetTypeInfo t
-        
+
         if not (typeInfo.IsGenericTypeDefinition)
                && typeInfo.IsGenericType
                && t.GetGenericTypeDefinition() = typeof<IEnumerable<_>> then
@@ -59,7 +59,7 @@ module TestServiceFactory =
             match serviceTypeOpt with
             | None ->
                 if implementationTypes |> Seq.length = 1 then
-                    let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no single implementation type in same assembly." (serviceType.DisplayName())
+                    let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no single implementation type in same assembly." (serviceType.Name)
                     invalidOp msg
 
                 [ { Type = serviceType; ImplementationType = implementationTypes |> Seq.head }]
@@ -68,8 +68,8 @@ module TestServiceFactory =
                     |> Seq.map(fun t -> { Type = s; ImplementationType = t })
                     |> Seq.toList
         else
-            [ { Type = serviceType; ImplementationType = serviceType } ]            
-        
+            [ { Type = serviceType; ImplementationType = serviceType } ]
+
     let rec private addType (serviceCollection :ServiceCollection) (serviceType: Type) (specialCases : Implementation list) =
         let implementation =
             specialCases
@@ -104,7 +104,7 @@ module TestServiceFactory =
 
                         match constructor with
                         | None ->
-                            let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no public constructor." (t.ImplementationType.DisplayName())
+                            let msg = sprintf "Cannot use 'TestServiceFactory' for '%s': no public constructor." (t.ImplementationType.Name)
                             invalidOp msg
                         | Some c ->
                                 c.GetParameters()
@@ -126,4 +126,3 @@ module TestServiceFactory =
 
 
 
-    

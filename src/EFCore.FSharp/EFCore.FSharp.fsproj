@@ -1,27 +1,33 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFrameworks>net5.0</TargetFrameworks>
     <AssemblyName>EntityFrameworkCore.FSharp</AssemblyName>
     <RootNamespace>EntityFrameworkCore.FSharp</RootNamespace>
-    <Authors>Brice Lambson</Authors>
+    <Authors>Simon Reynolds, Brice Lambson et al.</Authors>
     <Description>Adds F# design-time support to EF Core</Description>
-    <PackageLicenseUrl>https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE.md</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/efcore/EFCore.FSharp</PackageProjectUrl>
-    <PackageTags>EFCore</PackageTags>
+    <PackageTags>Entity Framework Core;entity-framework-core;ef;efcore;fsharp</PackageTags>
     <RepositoryUrl>https://github.com/efcore/EFCore.FSharp.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Copyright>© 2018 Brice Lambson. All rights reserved.</Copyright>
     <LangVersion>latest</LangVersion>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>3.1.5-alpha1</Version>
+    <Version>5.0.3-alpha1</Version>
     <DevelopmentDependency>true</DevelopmentDependency>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+  </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ScaffoldOptions.fs" />
     <Compile Include="Utilities\SharedTypeExtensions.fs" />
     <Compile Include="Utilities\EntityFrameworkExtensions.fs" />
     <Compile Include="Utilities\IndentedStringBuilderUtilities.fs" />
+    <Compile Include="Utilities\Multigraph.fs" />
     <Compile Include="Internal\FSharpHelper.fs" />
     <Compile Include="Internal\FSharpUtilities.fs" />
     <Compile Include="ValueConverters\Converters.fs" />
@@ -30,11 +36,11 @@
     <Compile Include="Scaffolding\Internal\FSharpModelGenerator.fs" />
     <Compile Include="Migrations\Design\FSharpSnapshotGenerator.fs" />
     <Compile Include="Migrations\Design\FSharpMigrationOperationGenerator.fs" />
-    <Compile Include="Migrations\Design\FSharpMigrationsGeneratorDependencies.fs" />
     <Compile Include="Migrations\Design\FSharpMigrationsGenerator.fs" />
     <Compile Include="Migrations\Design\FSharpMigrationsScaffolder.fs" />
     <Compile Include="Extensions\ModelBuilderExtensions.fs" />
     <Compile Include="EFCoreFSharpServices.fs" />
+    <Compile Include="DbContextHelpers.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="build\**\*">

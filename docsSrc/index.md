@@ -8,7 +8,9 @@ EFCore.FSharp provides F# design time support for EF Core.
 
 ## Why use EFCore.FSharp?
 
-I created it because I had to solve an issue with this other thing.
+EF Core is the default option for data access that most people with experience in .NET are aware of. It should be possible to use any .NET language with it, not just C#
+
+This provides support for code-first and database-first use of EF Core in F#, including supporting record and option types.
 
 ---
 
@@ -17,7 +19,7 @@ I created it because I had to solve an issue with this other thing.
     <div class="card h-100">
       <div class="card-body">
         <h5 class="card-title">Tutorials</h5>
-        <p class="card-text">Takes you by the hand through a series of steps to create your first thing. </p>
+        <p class="card-text">The basics of getting started with EFCore.FSharp. </p>
       </div>
       <div class="card-footer text-right   border-top-0">
         <a href="{{siteBaseUrl}}/Tutorials/Getting_Started.html" class="btn btn-primary">Get started</a>
@@ -31,7 +33,7 @@ I created it because I had to solve an issue with this other thing.
         <p class="card-text">Guides you through the steps involved in addressing key problems and use-cases. </p>
       </div>
       <div class="card-footer text-right   border-top-0">
-        <a href="{{siteBaseUrl}}/How_Tos/Doing_A_Thing.html" class="btn btn-primary">Learn Usecases</a>
+        <a href="{{siteBaseUrl}}/How_Tos/Scaffold_As_Types.html" class="btn btn-primary">Scaffolding &amp; Code Generation</a>
       </div>
     </div>
   </div>

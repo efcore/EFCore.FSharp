@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.Numerics
 open Microsoft.CodeAnalysis
 open Microsoft.Extensions.DependencyModel
 open Fantomas

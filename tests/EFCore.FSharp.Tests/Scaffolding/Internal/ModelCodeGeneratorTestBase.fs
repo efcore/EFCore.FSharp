@@ -1,4 +1,4 @@
-﻿module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.ModelCodeGeneratorTestBase
+module EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.ModelCodeGeneratorTestBase
 
 open System
 open Microsoft.EntityFrameworkCore
@@ -65,6 +65,13 @@ type ModelCodeGeneratorTestBase() =
                 "System.Globalization.dll"
                 "System.IO.FileSystem.dll"
                 "System.Runtime.InteropServices.dll"
+                "System.Runtime.Numerics.dll"
+                "System.Net.Requests.dll"
+                "System.Linq.Expressions.dll"
+                "System.Net.WebClient.dll"
+                "System.ObjectModel.dll"
+                "System.ComponentModel.dll"
+                "System.Data.Common.dll"
             ]
 
         let localNames =
@@ -118,7 +125,7 @@ type ModelCodeGeneratorTestBase() =
 
         conventionSet
 
-    member this.Test((buildModel : ModelBuilder -> unit), (options : ModelCodeGenerationOptions), (assertScaffold : ScaffoldedModel -> unit), (assertModel : IModel -> unit)) =
+    member this.Test (buildModel : ModelBuilder -> unit) (options : ModelCodeGenerationOptions) (assertScaffold : ScaffoldedModel -> unit) (assertModel : IModel -> unit) =
         let modelBuilder = SqlServerTestHelpers.CreateConventionBuilder true
         modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
         buildModel(modelBuilder)
@@ -140,13 +147,14 @@ type ModelCodeGeneratorTestBase() =
 
         options.ContextName <- "TestDbContext"
         options.ConnectionString <- "Initial Catalog=TestDatabase"
+        options.SuppressConnectionStringWarning <- true
 
         let scaffoldedModel =
             generator.GenerateModel(
                 model,
                 options)
 
-        assertScaffold(scaffoldedModel);
+        assertScaffold scaffoldedModel
 
         let sources =
             scaffoldedModel.ContextFile.Code :: (scaffoldedModel.AdditionalFiles |> Seq.map (fun f -> f.Code) |> Seq.toList)
@@ -163,5 +171,5 @@ type ModelCodeGeneratorTestBase() =
 
         let context = assembly.CreateInstance("TestNamespace.TestDbContext") :?> DbContext
 
-        assertModel(context.Model)
+        assertModel context.Model
 

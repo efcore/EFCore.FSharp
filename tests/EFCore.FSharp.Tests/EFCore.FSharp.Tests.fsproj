@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
-        <IsPackable>false</IsPackable>
+        <TargetFrameworks>net5.0</TargetFrameworks>
+        <GenerateProgramFile>false</GenerateProgramFile>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />
@@ -12,6 +12,7 @@
         <Compile Include="TestUtilities\TestRelationalTypeMappingSource.fs" />
         <Compile Include="TestUtilities\TestRelationalMigrationSqlGenerator.fs" />
         <Compile Include="TestUtilities\TestRelationalConventionSetBuilder.fs" />
+        <Compile Include="TestUtilities\FakeDiagnosticsLogger.fs" />
         <Compile Include="TestUtilities\TestModificationCommandBatchFactory.fs" />
         <Compile Include="TestUtilities\TestProviderCodeGenerator.fs" />
         <Compile Include="TestUtilities\FakeProvider\FakeDbConnection.fs" />
@@ -19,9 +20,13 @@
         <Compile Include="TestUtilities\RelationalTestHelpers.fs" />
         <Compile Include="Internal\FSharpUtilitiesTest.fs" />
         <Compile Include="Migrations\Design\FSharpMigrationsGeneratorTest.fs" />
+        <Compile Include="Migrations\Design\FSharpMigrationsScaffolderTest.fs" />
+        <Compile Include="Migrations\Design\FSharpMigrationOperationGeneratorTest.fs" />
         <Compile Include="Scaffolding\Internal\ModelCodeGeneratorTestBase.fs" />
         <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
         <Compile Include="Scaffolding\Internal\FSharpDbContextGeneratorTest.fs" />
+        <Compile Include="ValueConverters\ValueConvertersTest.fs" />
+        <Compile Include="DbContextHelperTests.fs" />
         <Compile Include="Main.fs" />
     </ItemGroup>
     <ItemGroup>
@@ -29,3 +34,4 @@
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
+

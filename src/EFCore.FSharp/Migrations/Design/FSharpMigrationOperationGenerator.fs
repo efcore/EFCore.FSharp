@@ -2,7 +2,6 @@ namespace EntityFrameworkCore.FSharp.Migrations.Design
 
 open System
 open System.Collections.Generic
-open Microsoft.FSharp.Linq.NullableOperators
 open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
@@ -12,6 +11,7 @@ open EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Migrations
 open Microsoft.EntityFrameworkCore.Design
+open Microsoft.EntityFrameworkCore.Migrations.Design
 
 type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
@@ -22,16 +22,10 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         if FSharpUtilities.isKeyword name then sprintf "``%s``" name else name
 
     let writeName nameValue sb =
-        sb
-            |> append "name = " |> appendLine (nameValue |> code.UnknownLiteral)
+        sb |> appendLine (sprintf "name = %s" (code.UnknownLiteral nameValue))
 
     let writeParameter name value sb =
-
-        let n = sanitiseName name
-        let v = value |> code.UnknownLiteral
-        let fmt = sprintf ", %s = %s" n v
-
-        sb |> append fmt
+        sb |> appendLine (sprintf ",%s = %s" (sanitiseName name) (code.UnknownLiteral value))
 
     let writeParameterIfTrue trueOrFalse name value sb =
         if trueOrFalse then
@@ -40,7 +34,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             sb
 
     let writeOptionalParameter (name:string) value (sb:IndentedStringBuilder) =
-        sb |> writeParameterIfTrue (value |> notNull) name (sprintf "Nullable(%s)" value)
+        sb
+            |> writeParameterIfTrue (value |> notNull) name (sanitiseName value)
 
     let writeNullableParameterIfValue name (nullableParameter: Nullable<_>) sb =
 
@@ -57,11 +52,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> Seq.iter(fun a ->
                 sb
                 |> appendEmptyLine
-                |> append ".Annotation("
-                |> append (code.Literal a.Name)
-                |> append ", "
-                |> append (code.UnknownLiteral a.Value)
-                |> append ")"
+                |> append (sprintf ".Annotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
                 |> ignore
             )
         sb
@@ -80,13 +71,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         invalidOp ((op.GetType()) |> DesignStrings.UnknownOperation)
 
     let generateAddColumnOperation (op:AddColumnOperation) (sb:IndentedStringBuilder) =
-
-        let isPropertyRequired =
-            let isNullable =
-                op.ClrType |> isOptionType ||
-                op.ClrType |> isNullableType
-
-            isNullable <> op.IsNullable
 
         sb
             |> append ".AddColumn<"
@@ -113,7 +97,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     id
             |> append ")"
             |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> code.Reference))
-
             |> annotations (op.GetAnnotations())
             |> unindent
 
@@ -133,9 +116,10 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeParameterIfTrue (op.PrincipalColumns.Length <> 1) "principalColumns" op.PrincipalColumns
             |> writeParameterIfTrue (op.OnUpdate <> ReferentialAction.NoAction) "onUpdate" op.OnUpdate
             |> writeParameterIfTrue (op.OnDelete <> ReferentialAction.NoAction) "onDelete" op.OnDelete
+            |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
+
 
     let generateAddPrimaryKeyOperation (op:AddPrimaryKeyOperation) (sb:IndentedStringBuilder) =
         sb
@@ -146,9 +130,9 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
             |> writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+            |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
 
     let generateAddUniqueConstraintOperation (op:AddUniqueConstraintOperation) (sb:IndentedStringBuilder) =
         sb
@@ -159,9 +143,9 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> writeParameter "table" op.Table
             |> writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
             |> writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+            |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
 
     let generateAlterColumnOperation (op:AlterColumnOperation) (sb:IndentedStringBuilder) =
         sb
@@ -189,7 +173,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |>
                 if op.OldColumn.ClrType |> isNull |> not then
                     (fun sb -> sb
-                               |> append (sprintf ", oldClrType = typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
+                               |> append (sprintf ",oldClrType = typedefof<%s>" (op.OldColumn.ClrType |> code.Reference))
                                |> appendEmptyLine)
                 else
                     id
@@ -307,11 +291,13 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             map.Add(c.Name, propertyName)
 
             sb
-                |> append propertyName
-                |> append " = table.Column<"
+                |> appendLine (sprintf "%s =" propertyName)
+                |> indent
+                |> append "table.Column<"
                 |> append (code.Reference c.ClrType)
-                |> append ">("
-                |> append "nullable = " |> append (c.IsNullable |> code.Literal)
+                |> appendLine ">("
+                |> indent
+                |> appendLine (sprintf "nullable = %s" (code.Literal c.IsNullable))
                 |> writeParameterIfTrue (c.Name <> propertyName) "name" c.Name
                 |> writeParameterIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
                 |> writeNullableParameterIfValue "unicode" c.IsUnicode
@@ -319,17 +305,19 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 |> writeParameterIfTrue (c.IsRowVersion) "rowVersion" c.IsRowVersion
                 |>
                     if c.DefaultValueSql |> notNull then
-                        append (sprintf ", defaultValueSql = %s" (c.DefaultValueSql |> code.Literal))
+                        appendLine (sprintf ", defaultValueSql = %s" (code.Literal c.DefaultValueSql))
                     elif c.ComputedColumnSql |> notNull then
-                        append (sprintf ", computedColumnSql = %s" (c.ComputedColumnSql |> code.Literal))
+                        appendLine (sprintf ", computedColumnSql = %s" (code.Literal c.ComputedColumnSql))
                     elif c.DefaultValue |> notNull then
-                        append (sprintf ", defaultValue = %s" (c.DefaultValue |> code.UnknownLiteral))
+                        appendLine (sprintf ", defaultValue = %s" (code.UnknownLiteral c.DefaultValue))
                     else
                         id
+                |> unindent
                 |> append ")"
                 |> appendIfTrue (c.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (c.ClrType |> unwrapOptionType |> code.Reference))
                 |> indent
                 |> annotations (c.GetAnnotations())
+                |> unindent
                 |> unindent
                 |> appendEmptyLine
                 |> ignore
@@ -337,16 +325,16 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         let writeColumns sb =
 
             sb
-                |> append "," |> appendLine "columns = (fun table -> "
-                |> appendLine "{"
+                |> appendLine ",columns = (fun table -> "
+                |> appendLine "{|"
                 |> indent
                 |> ignore
 
-            op.Columns |> Seq.filter(notNull) |> Seq.iter(writeColumn)
+            op.Columns |> Seq.filter notNull |> Seq.iter writeColumn
 
             sb
                 |> unindent
-                |> appendLine "})"
+                |> appendLine "|})"
 
         let writeUniqueConstraint (uc:AddUniqueConstraintOperation) =
             sb
@@ -368,7 +356,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
                 |> append "name = " |> append (fk.Name |> code.Literal) |> appendLine ","
                 |> append (if fk.Columns.Length = 1 then "column = " else "columns = ")
-                |> append (fk.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
+                |> appendLine (fk.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
                 |> writeParameterIfTrue (fk.PrincipalSchema |> notNull) "principalSchema" fk.PrincipalSchema
                 |> writeParameter "principalTable" fk.PrincipalTable
                 |> writeParameterIfTrue (fk.PrincipalColumns.Length = 1) "principalColumn" fk.PrincipalColumns.[0]
@@ -378,37 +366,46 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
                 |> append ")"
                 |> annotations (fk.GetAnnotations())
-                |> unindent
                 |> appendLine " |> ignore"
                 |> appendEmptyLine
+                |> unindent
                 |> ignore
             ()
 
         let writeConstraints sb =
-            sb |> append "," |> appendLine "constraints ="
-            |> indent
-            |> appendLine "(fun table -> "
-            |> indent
-            |> ignore
 
-            if op.PrimaryKey |> notNull then
+            let hasConstraints =
+                notNull op.PrimaryKey && (op.UniqueConstraints |> Seq.isEmpty |> not) && (op.ForeignKeys |> Seq.isEmpty |> not)
+
+            if hasConstraints then
+
+                sb |> append "," |> appendLine "constraints ="
+                |> indent
+                |> appendLine "(fun table -> "
+                |> indent
+                |> ignore
+
+                if notNull op.PrimaryKey then
+                    sb
+                        |> append "table.PrimaryKey("
+                        |> append (op.PrimaryKey.Name |> code.Literal)
+                        |> append ", "
+                        |> append (op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
+                        |> append ")"
+                        |> indent
+                        |> annotations (op.PrimaryKey.GetAnnotations())
+                        |> appendLine " |> ignore"
+                        |> unindent
+                        |> ignore
+
+                op.UniqueConstraints |> Seq.iter(writeUniqueConstraint)
+                op.ForeignKeys |> Seq.iter(writeForeignKeyConstraint)
+
                 sb
-                    |> append "table.PrimaryKey("
-                    |> append (op.PrimaryKey.Name |> code.Literal)
-                    |> append ", "
-                    |> append (op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
-                    |> appendLine ") |> ignore"
-                    |> indent
-                    |> annotations (op.PrimaryKey.GetAnnotations())
                     |> unindent
-                    |> ignore
-
-            op.UniqueConstraints |> Seq.iter(writeUniqueConstraint)
-            op.ForeignKeys |> Seq.iter(writeForeignKeyConstraint)
-
-            sb
-                |> unindent
-                |> appendLine ") "
+                    |> appendLine ") "
+            else
+                sb
 
         sb
             |> appendLine ".CreateTable("
@@ -420,7 +417,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> unindent
             |> append ")"
             |> annotations (op.GetAnnotations())
-            |> unindent
 
     let generateDropColumnOperation (op:DropColumnOperation) (sb:IndentedStringBuilder) =
         sb
@@ -567,7 +563,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
     let generateSqlOperation (op:SqlOperation) (sb:IndentedStringBuilder) =
         sb
-            |> appendLine (sprintf ".Sql(%s)" (op.Sql |> code.Literal))
+            |> append (sprintf ".Sql(%s)" (op.Sql |> code.Literal))
             |> indent
             |> annotations (op.GetAnnotations())
             |> unindent
@@ -577,28 +573,35 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         let parameters =
             seq {
                 if notNull op.Schema then
-                    yield sprintf "schema = %s, " (op.Schema |> code.Literal)
+                    yield sprintf "schema = %s," (op.Schema |> code.Literal)
 
-                yield sprintf "table = %s, " (op.Table |> code.Literal)
+                yield sprintf "table = %s," (op.Table |> code.Literal)
 
                 if op.Columns.Length = 1 then
-                    yield sprintf "column = %s, " (op.Columns.[0] |> code.Literal)
+                    yield sprintf "column = %s," (op.Columns.[0] |> code.Literal)
                 else
-                    yield sprintf "columns = %s, " (op.Columns |> code.Literal)
+                    yield sprintf "columns = %s," (op.Columns |> code.Literal)
 
                 let length0 = op.Values.GetLength(0)
                 let length1 = op.Values.GetLength(1)
 
-                if length0 = 1 && length1 = 1 then
-                    yield sprintf "value = %s" (op.Values.[0,0] |> code.UnknownLiteral)
-                elif length0 = 1 then
-                    yield sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
-                elif length1 = 1 then
-                    let arr = op.Values |> toOnedimensionalArray true
-                    let lines = code.Literal(arr, true)
-                    yield sprintf "values = %s" lines
-                else
-                    yield sprintf "values = %s" (op.Values |> code.Literal)
+                let valuesArray =
+                    if length0 = 1 && length1 = 1 then
+                        sprintf "value = %s :> obj" (op.Values.[0,0] |> code.UnknownLiteral)
+                    elif length0 = 1 then
+                        sprintf "values = %s" (op.Values |> toOnedimensionalArray false |> code.Literal)
+                    elif length1 = 1 then
+                        let arr = op.Values |> toOnedimensionalArray true
+                        let lines = code.Literal(arr, true)
+                        sprintf "values = %s" lines
+                    else
+                        sprintf "values = %s" (op.Values |> code.Literal)
+                // Every item in the array needs to be downcast to obj
+                // Possibly a tidier way of doing this?
+                yield (valuesArray
+                           .Replace(";", " :> obj;")
+                           .Replace(" |]", ":> obj |]")
+                           .Replace("null :> obj", "null"))
             }
 
         sb
@@ -606,7 +609,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             |> indent
             |> appendLines parameters false
             |> unindent
-            |> appendLine ")"
+            |> append ")"
 
     let generateDeleteDataOperation (op:DeleteDataOperation) (sb:IndentedStringBuilder) =
         let parameters =
@@ -741,6 +744,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                     |> ignore
             )
 
-    interface Microsoft.EntityFrameworkCore.Migrations.Design.ICSharpMigrationOperationGenerator with
+    interface ICSharpMigrationOperationGenerator with
         member this.Generate(builderName, operations, builder) =
             generate builderName operations builder
