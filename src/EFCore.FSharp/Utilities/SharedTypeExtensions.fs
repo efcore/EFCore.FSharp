@@ -3,6 +3,7 @@ namespace EntityFrameworkCore.FSharp
 open System
 open System.Reflection
 open System.Text
+open FSharp.Reflection
 
 module internal rec SharedTypeExtensions =
 
@@ -94,6 +95,13 @@ module internal rec SharedTypeExtensions =
 
     let isValidEntityType (t:Type) =
         t.GetTypeInfo().IsClass
+
+    let isUnionType (t:Type) =
+        FSharpType.IsUnion t
+
+    let isEnumUnionType (t:Type) =
+        FSharpType.IsUnion t &&
+        FSharpType.GetUnionCases t |> Array.forall(fun a -> a.GetFields().Length = 0)
 
     let isNullableType (t:Type) =
         let typeInfo = t.GetTypeInfo()

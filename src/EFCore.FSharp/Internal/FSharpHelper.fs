@@ -421,6 +421,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         |> Seq.except [| defaultValue |]
         |> Seq.filter flags.HasFlag
         |> Seq.toList
+
     member private this.getCompositeEnumValue t flags =
         let allValues = flags |> this.getFlags |> HashSet
 
