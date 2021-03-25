@@ -5,8 +5,8 @@ open EntityFrameworkCore.FSharp
 open Expecto
 
 [<Tests>]
-let ValueConvertersTest =
-    testList "ValueConvertersTest" [
+let OptionConverterTests =
+    testList "OptionConverterTests" [
         test "string -> string option" {
             let c = Conversion.toOption<string>
             Expect.equal (c.Compile().Invoke(null)) None "Should be equal"
@@ -44,4 +44,34 @@ let ValueConvertersTest =
 
             Expect.isNotNull (box oc) "Should not be null"
         }
+    ]
+
+type TestEnumLikeUnion = | First | Second
+
+[<Tests>]
+let EnumLikeUnionConverterTests =
+    testList "EnumLikeUnionConverterTests" [
+
+        test "Can convert to string from enum-like DU" {
+            let c = Conversion.fromEnumLikeUnion<TestEnumLikeUnion>
+
+            Expect.equal (c.Compile().Invoke(TestEnumLikeUnion.First)) "First" "Should be equal"
+            Expect.equal (c.Compile().Invoke(TestEnumLikeUnion.Second)) "Second" "Should be equal"
+        }
+
+        test "Can convert from string to enum-like DU" {
+            let c = Conversion.toEnumLikeUnion<TestEnumLikeUnion>
+
+            Expect.equal (c.Compile().Invoke("First")) TestEnumLikeUnion.First "Should be equal"
+            Expect.equal (c.Compile().Invoke("Second")) TestEnumLikeUnion.Second "Should be equal"
+
+            Expect.throws (fun () -> c.Compile().Invoke("Third") |> ignore) "Could not parse Third to Union type of type TestEnumLikeUnion"
+        }
+
+        test "Can create EnumLikeUnionConverter" {
+            let oc = EnumLikeUnionConverter<TestEnumLikeUnion>()
+
+            Expect.isNotNull (box oc) "Should not be null"
+        }
+
     ]

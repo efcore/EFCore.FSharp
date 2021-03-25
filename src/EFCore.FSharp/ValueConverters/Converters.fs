@@ -19,9 +19,9 @@ module Conversion =
 
     let toEnumLikeUnion<'a> =
         <@ Func<string, 'a>(fun x ->
-            match FSharpType.GetUnionCases typeof<'a> |> Seq.filter (fun case -> case.Name = x) |> Seq.head with
-            | case -> FSharpValue.MakeUnion(case,[||]) :?> 'a
-            |_ -> failwithf "Could not parse %s to Union type of type %A" x (typeof<'a>)
+            match FSharpType.GetUnionCases typeof<'a> |> Seq.filter (fun case -> case.Name = x) |> Seq.tryHead with
+            | Some case -> FSharpValue.MakeUnion(case,[||]) :?> 'a
+            | _ -> failwithf "Could not parse %s to Union type of type %A" x (typeof<'a>)
         ) @>
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<string, 'a>>>
@@ -30,7 +30,7 @@ module Conversion =
         <@ Func<'a, string>(fun x -> match FSharpValue.GetUnionFields(x, typeof<'a>) with | case, _ -> case.Name) @>
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<'a, string>>>
-        
+
 type OptionConverter<'T> () =
     inherit Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<'T option, 'T>
         (Conversion.fromOption, Conversion.toOption)
