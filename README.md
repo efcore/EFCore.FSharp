@@ -14,7 +14,7 @@ For a basic introduction to running code-first migrations, please see the [getti
 
 Package | Stable | Prerelease
 --- | --- | ---
-EFCore.FSharp | [![NuGet Badge](https://buildstats.info/nuget/EFCore.FSharp)](https://www.nuget.org/packages/EFCore.FSharp/) | [![NuGet Badge](https://buildstats.info/nuget/EFCore.FSharp?includePreReleases=true)](https://www.nuget.org/packages/EFCore.FSharp/)
+EFCore.FSharp | [![NuGet Badge](https://buildstats.info/nuget/EntityFrameworkCore.FSharp)](https://www.nuget.org/packages/EntityFrameworkCore.FSharp/) | [![NuGet Badge](https://buildstats.info/nuget/EntityFrameworkCore.FSharp?includePreReleases=true)](https://www.nuget.org/packages/EntityFrameworkCore.FSharp/)
 
 ---
 

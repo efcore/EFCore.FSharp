@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Removed unneeded dependency
+- Link to NuGet badges in README.md
 
 ## [5.0.3-alpha1] - 2021-03-21
 
