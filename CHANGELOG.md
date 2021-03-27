@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
+
 ### Fixed
 - Removed unneeded dependency
+- Link to NuGet badges in README.md
 
 ## [5.0.3-alpha1] - 2021-03-21
 
