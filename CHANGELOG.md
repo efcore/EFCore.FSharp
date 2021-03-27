@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
+
 ### Fixed
 - Removed unneeded dependency
 - Link to NuGet badges in README.md
