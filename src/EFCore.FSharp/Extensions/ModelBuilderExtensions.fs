@@ -3,11 +3,28 @@ namespace EntityFrameworkCore.FSharp
 open System
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
-open System.Runtime.CompilerServices
+open EntityFrameworkCore.FSharp.ValueConverters
 
 module Extensions =
 
-    let private genericOptionConverterType = typedefof<OptionConverter<_>>
+    let private makeConverter<'a> typeToConvert =
+        let converterType' = typeof<'a>.MakeGenericType([|typeToConvert|])
+        let converter = converterType'.GetConstructor([||]).Invoke([||]) :?> ValueConverter
+        converter
+
+    let private registerTypes findType (makeConverter: Type -> ValueConverter) (mb: ModelBuilder) =
+        let converterDetails =
+            mb.Model.GetEntityTypes()
+            |> Seq.collect (fun e -> e.GetProperties())
+            |> Seq.filter (fun p -> findType p.ClrType)
+            |> Seq.map(fun p -> (p.Name, p.DeclaringType.Name, (makeConverter p.ClrType)) )
+            
+        converterDetails
+        |> Seq.iter(fun (propName, entityName, converter) ->
+            mb.Entity(entityName).Property(propName).HasConversion(converter) |> ignore
+        )
+
+        mb
 
     type ModelBuilder with
 
@@ -28,23 +45,10 @@ module Extensions =
             this
 
         member this.RegisterOptionTypes() =
+            registerTypes SharedTypeExtensions.isOptionType (SharedTypeExtensions.unwrapOptionType >> makeConverter<OptionConverter<_>>) this
 
-            let makeOptionConverter t =
-                let underlyingType = SharedTypeExtensions.unwrapOptionType t
-                let converterType = genericOptionConverterType.MakeGenericType(underlyingType)
-                let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
-                converter
-            
-            let converterDetails =
-                this.Model.GetEntityTypes()
-                |> Seq.collect (fun e -> e.GetProperties())
-                |> Seq.filter (fun p -> SharedTypeExtensions.isOptionType p.ClrType)
-                |> Seq.map(fun p -> (p.Name, p.DeclaringType.Name, (makeOptionConverter p.ClrType)) )
-                
-            converterDetails
-            |> Seq.iter(fun (propName, entityName, converter) ->
-                this.Entity(entityName).Property(propName).HasConversion(converter) |> ignore
-            )
+        member this.RegisterEnumLikeUnionTypes() =
+            registerTypes SharedTypeExtensions.isEnumUnionType makeConverter<EnumLikeUnionConverter<_>> this
 
     let registerOptionTypes (modelBuilder : ModelBuilder) =
         modelBuilder.RegisterOptionTypes()
@@ -54,3 +58,6 @@ module Extensions =
 
     let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType(``type``, converter)            
+
+    let registerEnumLikeUnionTypes (modelBuilder : ModelBuilder) =
+        modelBuilder.RegisterEnumLikeUnionTypes()

@@ -33,9 +33,13 @@ type TestDbContext =
             ()
 
     override this.OnModelCreating(modelBuilder: ModelBuilder) =
-        base.OnModelCreating(modelBuilder)
 
-        modelBuilder.RegisterOptionTypes()
+        modelBuilder
+            |> registerOptionTypes
+            |> registerEnumLikeUnionTypes
+            |> ignore
+
+        base.OnModelCreating modelBuilder
 """
 
 [<Tests>]

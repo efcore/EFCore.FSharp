@@ -45,7 +45,8 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
               "Microsoft.EntityFrameworkCore.Infrastructure"
               "Microsoft.EntityFrameworkCore.Metadata"
               "Microsoft.EntityFrameworkCore.Migrations"
-              "Microsoft.EntityFrameworkCore.Storage.ValueConversion" ]
+              "Microsoft.EntityFrameworkCore.Storage.ValueConversion"
+              "EntityFrameworkCore.FSharp.ValueConverters" ]
             |> Seq.append operationNamespaces
             |> Seq.append [contextType.Namespace]
             |> Seq.filter (isNull >> not)

@@ -167,15 +167,23 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> generateFluentApiForPrecisionAndScale
             |> generateFluentApiForUnicode
             |> appendEmptyLine
-            |> append "."
-            |> append "HasColumnType"
-            |> append "("
-            |> append (columnType p)
-            |> append ")"
+            |> append (sprintf ".HasColumnType(%s)" (columnType p))
             |> removeAnnotation RelationalAnnotationNames.ColumnType
             |> generateFluentApiForDefaultValue p
             |> removeAnnotation RelationalAnnotationNames.DefaultValue
             |> ignore
+
+        if isOptionType p.ClrType then
+            sb
+                |> appendEmptyLine
+                |> append (sprintf ".HasConversion(OptionConverter<%s>())" (p.ClrType |> unwrapOptionType |> code.Reference))
+                |> ignore
+
+        if isEnumUnionType p.ClrType then
+            sb
+                |> appendEmptyLine
+                |> append (sprintf ".HasConversion(EnumLikeUnionConverter<%s>())" (p.ClrType |> code.Reference))
+                |> ignore
 
         annotationCodeGenerator.GenerateFluentApiCalls(p, annotations)
         |> Seq.map code.Fragment

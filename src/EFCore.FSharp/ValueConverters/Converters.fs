@@ -1,4 +1,4 @@
-namespace EntityFrameworkCore.FSharp
+namespace EntityFrameworkCore.FSharp.ValueConverters
 
 module Conversion =
 

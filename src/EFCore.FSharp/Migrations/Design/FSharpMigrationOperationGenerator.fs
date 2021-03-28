@@ -96,7 +96,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 else
                     id
             |> append ")"
-            |> appendIfTrue (op.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (op.ClrType |> unwrapOptionType |> code.Reference))
             |> annotations (op.GetAnnotations())
             |> unindent
 
@@ -314,7 +313,6 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                         id
                 |> unindent
                 |> append ")"
-                |> appendIfTrue (c.ClrType |> isOptionType) (sprintf ".SetValueConverter(OptionConverter<%s> ())" (c.ClrType |> unwrapOptionType |> code.Reference))
                 |> indent
                 |> annotations (c.GetAnnotations())
                 |> unindent

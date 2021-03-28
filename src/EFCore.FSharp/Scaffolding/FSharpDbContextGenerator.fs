@@ -541,7 +541,6 @@ type FSharpDbContextGenerator
 
     let generateOnModelCreating (model:IModel) (useDataAnnotations:bool) (sb:IndentedStringBuilder) =
         sb.AppendLine("override this.OnModelCreating(modelBuilder: ModelBuilder) =")
-            |> appendLineIndent "base.OnModelCreating(modelBuilder)"
             |> ignore
 
         let annotations =
@@ -600,7 +599,14 @@ type FSharpDbContextGenerator
 
         sb
         |> appendEmptyLine
-        |> appendLine "modelBuilder.RegisterOptionTypes()"
+        |> appendLine "modelBuilder"
+        |> indent
+        |> appendLine "|> registerOptionTypes"
+        |> appendLine "|> registerEnumLikeUnionTypes"
+        |> appendLine "|> ignore"
+        |> unindent
+        |> appendEmptyLine
+        |> appendLine "base.OnModelCreating modelBuilder"
         |> unindent
 
     let generateClass model

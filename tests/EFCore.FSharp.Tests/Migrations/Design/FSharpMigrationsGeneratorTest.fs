@@ -623,6 +623,7 @@ namespace MyNamespace
 
 open System.Text.RegularExpressions
 open EntityFrameworkCore.FSharp.Test.Migrations.Design
+open EntityFrameworkCore.FSharp.ValueConverters
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.ChangeTracking
 open Microsoft.EntityFrameworkCore.Infrastructure
