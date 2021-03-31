@@ -375,7 +375,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         let writeConstraints sb =
 
             let hasConstraints =
-                notNull op.PrimaryKey && (op.UniqueConstraints |> Seq.isEmpty |> not) && (op.ForeignKeys |> Seq.isEmpty |> not)
+                notNull op.PrimaryKey || (op.UniqueConstraints |> Seq.isEmpty |> not) || (op.ForeignKeys |> Seq.isEmpty |> not)
 
             if hasConstraints then
 
@@ -398,8 +398,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                         |> unindent
                         |> ignore
 
-                op.UniqueConstraints |> Seq.iter(writeUniqueConstraint)
-                op.ForeignKeys |> Seq.iter(writeForeignKeyConstraint)
+                op.UniqueConstraints |> Seq.iter writeUniqueConstraint
+                op.ForeignKeys |> Seq.iter writeForeignKeyConstraint
 
                 sb
                     |> unindent
