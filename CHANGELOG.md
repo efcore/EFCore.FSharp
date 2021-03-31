@@ -5,10 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.3-alpha4] - 2021-03-31
+## [5.0.3-alpha5] - 2021-03-31
 
 ### Fixed
 - Constraints now correctly generated - https://github.com/efcore/EFCore.FSharp/pull/72
+
+ - Generated Migrations will now always include the System namespace - https://github.com/efcore/EFCore.FSharp/pull/70
+- Removed unneeded dependency
+- Link to NuGet badges in README.md
+- Removed unneeded dependency
+- Link to NuGet badges in README.md
+
+### Added
+- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
+- Initial release
+- F# migrations
+- F# scaffolding
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
+[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
+- Initial release
+- F# migrations
+- F# scaffolding
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha2...HEAD
+[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
+[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
+- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
+- Initial release
+- F# migrations
+- F# scaffolding
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
+[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
+- Initial release
+- F# migrations
+- F# scaffolding
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha3...HEAD
+[5.0.3-alpha3]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha3
+[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
+[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
 
 ## [5.0.3-alpha3] - 2021-03-31
 
@@ -53,7 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 - F# migrations
 - F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha3...HEAD
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha5...HEAD
+[5.0.3-alpha5]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha5
 [5.0.3-alpha3]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha3
 [5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
 [5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
