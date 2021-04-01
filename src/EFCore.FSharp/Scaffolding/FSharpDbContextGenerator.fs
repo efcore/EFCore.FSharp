@@ -60,19 +60,11 @@ type FSharpDbContextGenerator
     let generateDbSet (sb:IndentedStringBuilder) (entityType : IEntityType) =
 
         let dbSetName = entityDbSetName entityType
-        let mutableName = "_" + dbSetName
 
         sb
-            |> appendLine "[<DefaultValue>]"
-            |> appendLine (sprintf "val mutable private %s : DbSet<%s>" mutableName entityType.Name)
-            |> appendLine (sprintf "member this.%s" dbSetName)
-            |> indent
-            |> appendLine (sprintf "with get() = this.%s" mutableName)
-            |> appendLine (sprintf "and set v = this.%s <- v" mutableName)
-            |> unindent
+            |> appendLine (sprintf "member val %s: DbSet<%s> = null with get, set" dbSetName entityType.Name)
+            |> appendEmptyLine
             |> ignore
-
-        sb.AppendLine() |> ignore
 
     let generateDbSets (model:IModel) (sb:IndentedStringBuilder) =
 

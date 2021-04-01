@@ -639,8 +639,7 @@ type MyMigration() =
     inherit Migration()
 
     override this.Up(migrationBuilder:MigrationBuilder) =
-        migrationBuilder.Sql("-- TEST")
-            .Annotation("Some:EnumValue", RegexOptions.Multiline) |> ignore
+        migrationBuilder.Sql("-- TEST").Annotation("Some:EnumValue", RegexOptions.Multiline) |> ignore
 
         migrationBuilder.AlterColumn<Database>(
             name = "C1"

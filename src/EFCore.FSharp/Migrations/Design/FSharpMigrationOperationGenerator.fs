@@ -48,24 +48,19 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
             sb
 
     let annotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
-        annotations
-            |> Seq.iter(fun a ->
-                sb
-                |> appendEmptyLine
-                |> append (sprintf ".Annotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
-                |> ignore
-            )
-        sb
+
+        let lines =
+            annotations
+            |> Seq.map (fun a -> sprintf ".Annotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
+
+        sb |> appendLines lines true
 
     let oldAnnotations (annotations: Annotation seq) (sb:IndentedStringBuilder) =
-        annotations
-            |> Seq.iter(fun a ->
-                sb
-                |> appendEmptyLine
-                |> append (sprintf ".OldAnnotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
-                |> ignore
-            )
-        sb
+        let lines =
+            annotations
+            |> Seq.map (fun a -> sprintf ".OldAnnotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
+
+        sb |> appendLines lines true
 
     let generateMigrationOperation (op:MigrationOperation) (sb:IndentedStringBuilder) :IndentedStringBuilder =
         invalidOp ((op.GetType()) |> DesignStrings.UnknownOperation)
@@ -375,7 +370,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         let writeConstraints sb =
 
             let hasConstraints =
-                notNull op.PrimaryKey || (op.UniqueConstraints |> Seq.isEmpty |> not) || (op.ForeignKeys |> Seq.isEmpty |> not)
+                notNull op.PrimaryKey && (op.UniqueConstraints |> Seq.isEmpty |> not) && (op.ForeignKeys |> Seq.isEmpty |> not)
 
             if hasConstraints then
 
@@ -386,16 +381,14 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 |> ignore
 
                 if notNull op.PrimaryKey then
+
+                    let pkName = op.PrimaryKey.Name |> code.Literal
+                    let pkColumns = op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda
+
                     sb
-                        |> append "table.PrimaryKey("
-                        |> append (op.PrimaryKey.Name |> code.Literal)
-                        |> append ", "
-                        |> append (op.PrimaryKey.Columns |> Seq.map(fun c -> map.[c]) |> Seq.toList |> code.Lambda)
-                        |> append ")"
-                        |> indent
+                        |> append (sprintf "table.PrimaryKey(%s, %s)" pkName pkColumns)
                         |> annotations (op.PrimaryKey.GetAnnotations())
                         |> appendLine " |> ignore"
-                        |> unindent
                         |> ignore
 
                 op.UniqueConstraints |> Seq.iter writeUniqueConstraint
@@ -404,6 +397,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                 sb
                     |> unindent
                     |> appendLine ") "
+                    |> unindent
             else
                 sb
 
