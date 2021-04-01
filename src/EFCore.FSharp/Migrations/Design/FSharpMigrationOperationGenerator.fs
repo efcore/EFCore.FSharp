@@ -370,7 +370,7 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         let writeConstraints sb =
 
             let hasConstraints =
-                notNull op.PrimaryKey && (op.UniqueConstraints |> Seq.isEmpty |> not) && (op.ForeignKeys |> Seq.isEmpty |> not)
+                notNull op.PrimaryKey || (op.UniqueConstraints |> Seq.isEmpty |> not) || (op.ForeignKeys |> Seq.isEmpty |> not)
 
             if hasConstraints then
 
@@ -728,15 +728,21 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
         | _ -> op |> generateMigrationOperation // The failure case
 
     let generate (builderName:string) (operations: MigrationOperation seq) (sb:IndentedStringBuilder) =
-        operations
-            |> Seq.iter(fun op ->
-                sb
-                    |> append builderName
-                    |> generateOperation op
-                    |> appendLine " |> ignore"
-                    |> appendEmptyLine
-                    |> ignore
-            )
+
+        if operations |> Seq.isEmpty then
+            sb
+                |> appendLine "()"
+                |> ignore
+        else
+            operations
+                |> Seq.iter(fun op ->
+                    sb
+                        |> append builderName
+                        |> generateOperation op
+                        |> appendLine " |> ignore"
+                        |> appendEmptyLine
+                        |> ignore
+                )
 
     interface ICSharpMigrationOperationGenerator with
         member this.Generate(builderName, operations, builder) =

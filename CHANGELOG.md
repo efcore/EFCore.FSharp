@@ -5,146 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Simplify scaffolded classes using `member val`
+
+### Fixed
+- Resolved issue with migrations have a missing unit arg to the "Up" method if no changes in model
+- Foreign Key constraints now created correctly
+
 ## [5.0.3-alpha6] - 2021-04-01
 
 ### Fixed
 - Fix indentation issue when table has constraints - https://github.com/efcore/EFCore.FSharp/pull/75
-
-- Constraints now correctly generated - https://github.com/efcore/EFCore.FSharp/pull/72
- - Generated Migrations will now always include the System namespace - https://github.com/efcore/EFCore.FSharp/pull/70
-- Removed unneeded dependency
-- Link to NuGet badges in README.md
-- Removed unneeded dependency
-- Link to NuGet badges in README.md
- - Generated Migrations will now always include the System namespace - https://github.com/efcore/EFCore.FSharp/pull/70
-- Removed unneeded dependency
-- Link to NuGet badges in README.md
-- Removed unneeded dependency
-- Link to NuGet badges in README.md
-
-### Added
-- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha2...HEAD
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha3...HEAD
-[5.0.3-alpha3]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha3
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha2...HEAD
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha5...HEAD
-[5.0.3-alpha5]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha5
-[5.0.3-alpha3]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha3
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
 
 ## [5.0.3-alpha5] - 2021-03-31
 
 ### Fixed
 - Constraints now correctly generated - https://github.com/efcore/EFCore.FSharp/pull/72
 
- - Generated Migrations will now always include the System namespace - https://github.com/efcore/EFCore.FSharp/pull/70
-- Removed unneeded dependency
-- Link to NuGet badges in README.md
-- Removed unneeded dependency
-- Link to NuGet badges in README.md
-
-### Added
-- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha2...HEAD
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha3...HEAD
-[5.0.3-alpha3]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha3
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-
 ## [5.0.3-alpha3] - 2021-03-31
 
 ### Fixed
- - Generated Migrations will now always include the System namespace - https://github.com/efcore/EFCore.FSharp/pull/70
-
-- Removed unneeded dependency
-- Link to NuGet badges in README.md
-
-### Added
-- DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha2...HEAD
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
+- Generated Migrations will now always include the System namespace - https://github.com/efcore/EFCore.FSharp/pull/70
 
 ## [5.0.3-alpha2] - 2021-03-27
 
 ### Added
 - DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-
-- Initial release
-- F# migrations
-- F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha1...HEAD
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
 
 ### Fixed
 - Removed unneeded dependency
@@ -156,9 +44,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 - F# migrations
 - F# scaffolding
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v5.0.3-alpha6...HEAD
-[5.0.3-alpha6]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha6
-[5.0.3-alpha5]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha5
-[5.0.3-alpha3]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha3
-[5.0.3-alpha2]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha2
-[5.0.3-alpha1]: https://github.com/efcore/EFCore.FSharp/releases/tag/v5.0.3-alpha1
