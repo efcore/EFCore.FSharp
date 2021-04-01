@@ -72,6 +72,7 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         |> appendLine "override this.Up(migrationBuilder:MigrationBuilder) ="
         |> indent |> ignore
 
+        // Up operations
         generator.Generate("migrationBuilder", upOperations, sb)
 
         sb
@@ -79,15 +80,8 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies : FSharpMigratio
         |> unindent |> appendLine "override this.Down(migrationBuilder:MigrationBuilder) ="
         |> indent |> ignore
 
-        let sbLengthBeforeDown = sb.Length
-
+        // Down operations
         generator.Generate("migrationBuilder", downOperations, sb)
-
-        // F# requires an explicit close to the function if no down operations are found.
-        if sb.Length = sbLengthBeforeDown then
-            sb
-                |> appendLine "()"
-                |> ignore
 
         sb
         |> unindent
