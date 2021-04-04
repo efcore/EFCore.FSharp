@@ -313,39 +313,26 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
     let processDataItem (props : IProperty list) (sb:IndentedStringBuilder) (data : IDictionary<string, obj>) =
 
-        let writeProperty isFirst (p : IProperty) =
+        let writeProperty (p : IProperty) =
             match data.TryGetValue p.Name with
             | true, value ->
                 if not (isNull value) then
-                    if isFirst then
-                        sb |> appendLine "," |> ignore
-
                     sb
-                    |> append (sprintf "%s = %s" (code.Identifier(p.Name)) (code.UnknownLiteral value) )
+                    |> append (sprintf "%s = %s; " (code.Identifier p.Name) (code.UnknownLiteral value) )
                     |> ignore
                 else
                     ()
             | _ -> ()
 
 
-        sb |> appendLine "({" |> indent |> ignore
+        sb |> append "{ " |> ignore
 
-        props |> Seq.head |> writeProperty true
-        props |> Seq.tail |> Seq.iter(fun p -> writeProperty false p)
+        props |> Seq.iter writeProperty
 
-        sb |> appendLine "} :> obj)" |> unindent |> ignore
-        ()
+        sb |> appendLine "}" |> ignore
 
     let processDataItems (data : IDictionary<string, obj> seq) (propsToOutput : IProperty list) (sb:IndentedStringBuilder) =
-
-        (data |> Seq.head) |> processDataItem propsToOutput sb
-
-        data
-        |> Seq.tail
-        |> Seq.iter(fun d ->
-                sb |> appendLine " |> ignore" |> ignore
-                d |> processDataItem propsToOutput sb
-            )
+        data |> Seq.iter (processDataItem propsToOutput sb)
         sb
 
     let generateSequence (builderName: string) (sequence: ISequence) sb =
@@ -816,7 +803,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> indent
             |> processDataItems data propsToOutput
             |> unindent
-            |> appendLine " |])"
+            |> appendLine " |]) |> ignore"
 
     member private this.generateEntityType (builderName:string) (entityType: IEntityType) (sb:IndentedStringBuilder) =
 
