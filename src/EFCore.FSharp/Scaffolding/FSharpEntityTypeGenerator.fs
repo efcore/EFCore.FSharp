@@ -51,8 +51,10 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
     let writeProperty name typeName func sb =
         sb
+        |> appendLine (sprintf "[<DefaultValue>] val mutable private _%s : %s" name typeName)
+        |> appendEmptyLine
         |> func
-        |> appendLine (sprintf "member val %s : %s = Unchecked.defaultof<%s> with get, set" name typeName typeName)
+        |> appendLine (sprintf "member this.%s with get() = this._%s and set v = this._%s <- v" name name name)
         |> appendEmptyLine
         |> ignore
 
