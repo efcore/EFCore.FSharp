@@ -27,7 +27,9 @@ type Blog = {
 type MyContext () =
     inherit DbContext()
 
-    member val Blogs : DbSet<Blog> = null with get, set
+    [<DefaultValue>]
+    val mutable private _blogs : DbSet<Blog>
+    member this.Blogs with get() = this._blogs and set v = this._blogs <- v
 ```
 
 We can use the helper methods like so
