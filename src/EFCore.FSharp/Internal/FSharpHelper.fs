@@ -142,6 +142,8 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             "yield";
           |]
 
+    let literalAsObj l = if l = "null" then l else l + " :> obj"
+
     member private this.ReferenceFullName (t: Type) useFullName =
 
         match _builtInTypes.TryGetValue t with
@@ -273,9 +275,13 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
     member private this.literalBigInteger(value : BigInteger) =
         sprintf """BigInteger.Parse("%s", NumberFormatInfo.InvariantInfo)""" (value.ToString(NumberFormatInfo.InvariantInfo))
-    member private this.literalList (values: IReadOnlyList<obj>) (vertical: bool) (sb:IndentedStringBuilder) =
+    member private this.literalList (values: IReadOnlyList<obj>) (vertical: bool) (isObjType: bool) (sb:IndentedStringBuilder) =
 
-        let values' = values |> Seq.map this.unknownLiteral
+        let values' =
+            if isObjType then
+                values |> Seq.map this.unknownLiteral |> Seq.map literalAsObj
+            else
+                values |> Seq.map this.unknownLiteral
 
         if not vertical then
             let line = sprintf "[| %s |]" (String.Join("; ", values'))
@@ -301,7 +307,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             [0..rowCount]
             |> Seq.map(fun i ->
                 let row' = values.[i, 0..valuesCount]
-                let entries = row' |> Seq.map this.unknownLiteral
+                let entries = row' |> Seq.map this.unknownLiteral |> Seq.map literalAsObj
                 sprintf "[ %s ]" (String.Join("; ", entries)) )
 
         sprintf "array2D [ %s ]" (String.Join("; ", rowContents))
@@ -452,7 +458,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             this.getSimpleEnumValue t name
 
     member private this.LiteralList (vertical: bool) (sb:IndentedStringBuilder) (values: IReadOnlyList<obj>) =
-        this.literalList values vertical sb
+        this.literalList values vertical true sb
 
 
     member private this.isLetterChar cat =
@@ -698,7 +704,8 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             this.literalUInt64 value
 
         member this.Literal(values: 'T [], vertical: bool): string =
-            this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical (IndentedStringBuilder())
+            let isObjType = typeof<'T> = typeof<obj>
+            this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType (IndentedStringBuilder())
 
         member this.Namespace(name: string []): string =
             let join (ns': string array) = String.Join(".", ns')

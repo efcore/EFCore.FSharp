@@ -585,7 +585,7 @@ module FSharpMigrationsGeneratorTest =
                                 ClrType = typeof<PropertyEntry>
                             )
 
-                            let insertValues: obj[,]  = Array2D.create 1 3 (1 :> obj)
+                            let insertValues: obj[,]  = Array2D.create 2 3 (1 :> obj)
                             insertValues.[0,1] <- null
 
                             InsertDataOperation (
@@ -658,7 +658,7 @@ type MyMigration() =
         migrationBuilder.InsertData(
             table = "T1",
             columns = [| "Id"; "C2"; "C3" |],
-            values = [| 1 :> obj; null; 1:> obj |]
+            values = array2D [ [ 1 :> obj; null; 1 :> obj ]; [ 1 :> obj; 1 :> obj; 1 :> obj ] ]
         ) |> ignore
 
 

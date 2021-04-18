@@ -590,12 +590,8 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
                         sprintf "values = %s" lines
                     else
                         sprintf "values = %s" (op.Values |> code.Literal)
-                // Every item in the array needs to be downcast to obj
-                // Possibly a tidier way of doing this?
-                yield (valuesArray
-                           .Replace(";", " :> obj;")
-                           .Replace(" |]", ":> obj |]")
-                           .Replace("null :> obj", "null"))
+
+                yield valuesArray
             }
 
         sb

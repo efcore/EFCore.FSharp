@@ -325,11 +325,11 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             | _ -> ()
 
 
-        sb |> append "{ " |> ignore
+        sb |> append "{| " |> ignore
 
         props |> Seq.iter writeProperty
 
-        sb |> appendLine "}" |> ignore
+        sb |> appendLine "|}" |> ignore
 
     let processDataItems (data : IDictionary<string, obj> seq) (propsToOutput : IProperty list) (sb:IndentedStringBuilder) =
         data |> Seq.iter (processDataItem propsToOutput sb)
