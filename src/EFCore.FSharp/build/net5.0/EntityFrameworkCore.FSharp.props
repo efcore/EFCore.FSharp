@@ -1,0 +1,7 @@
+﻿<Project>
+    <ItemGroup Condition="'$(Language)' == 'F#'">
+        <Compile Include="$(MSBuildThisFileDirectory)EFCoreFSharp.fs">
+            <Visible>False</Visible>
+        </Compile>
+    </ItemGroup>
+</Project>
