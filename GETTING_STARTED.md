@@ -74,26 +74,6 @@ We will use `Paket` for package management, though you can apply the same princi
 
     `paket install`
 
-## Add Design Time Services interface to our codebase
-
-1. Create a file e.g. `DesignTimeServices.fs` and add this to your project (`.fsproj`) file
-1. Paste in the following content
-
-    ```fsharp
-    module DesignTimeServices
-
-    open Microsoft.Extensions.DependencyInjection
-    open Microsoft.EntityFrameworkCore.Design
-    open EntityFrameworkCore.FSharp
-
-    type DesignTimeServices() =
-        interface IDesignTimeServices with 
-            member __.ConfigureDesignTimeServices(serviceCollection: IServiceCollection) = 
-                let fSharpServices= EFCoreFSharpServices() :> IDesignTimeServices
-                fSharpServices.ConfigureDesignTimeServices serviceCollection
-                ()
-    ```
-
 # Create the database
 
 We will use a very simple structure. Initially, a blog will simply have an ID and a URL. We will then update our model to allow each blog to have multiple blog posts.
@@ -145,7 +125,6 @@ For this example we will use record types, but "normal" classes will also work i
 
     ```xml
     <ItemGroup>
-        <Compile Include="DesignTimeServices.fs" />
         <Compile Include="BloggingModel.fs" />
         <Compile Include="Migrations/BloggingContextModelSnapshot.fs" />
         <Compile Include="Migrations/20200711141125_Initial.fs" />
@@ -179,8 +158,12 @@ Let's update our model so that there is a relationship between blogs and posts.
 
     type BloggingContext() =  
         inherit DbContext()
-        member __.Blogs : DbSet<Blog> = Unchecked.defaultof<DbSet<Blog>>
-        member __.Posts : DbSet<Post> = Unchecked.defaultof<DbSet<Post>>
+
+        [<DefaultValue>] val mutable blogs : DbSet<Blog>
+        member this.Blogs with get() = this.blogs and set v = this.blogs <- v
+
+        [<DefaultValue>] val mutable posts : DbSet<Post>
+        member this.Posts with get() = this.posts and set v = this.posts <- v
 
         override __.OnConfiguring(options: DbContextOptionsBuilder) : unit =
             options.UseSqlite("Data Source=blogging.db") |> ignore
