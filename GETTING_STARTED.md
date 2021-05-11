@@ -11,14 +11,6 @@ This guide assumes:
 
 # Setup
 
-## Build the NuGet package
-
-This package will be published to NuGet at some point. In the meantime, it must be built manually.
-
-1. Clone this repository
-1. From the command line, run `./build.sh` (Linux/Mac) or `.\build.cmd` (Windows)
-1. The built NuGet package will be located in the `dist` folder in the root of the repository, named something like `EntityFrameworkCore.FSharp.5.0.3-alpha1.nupkg`
-
 ## Create a new dotnet project and install dotnet tools
 
 We will use `Paket` for package management, though you can apply the same principles with `NuGet`.
@@ -46,33 +38,18 @@ We will use `Paket` for package management, though you can apply the same princi
 
     `paket convert-from-nuget`
 
-## Add references to our NuGet package and Entity Framework provider-specific NuGet package
+## Installing the package
+paket
 
-1. Create a directory to store the NuGet package we created earlier and copy it in
+```bash
+paket install EntityFrameworkCore.FSharp
+```
 
-    ```
-    md packages-local
-    cp {LocationOfLocalRepo}/dist/EntityFrameworkCore.FSharp.5.0.3-alpha1.nupkg ./packages-local
-    ```
+dotnet CLI
 
-1. In our `paket.dependencies` file, reference this and the NuGet package for our desired Entity Framework provider
-
-    ```
-    source ./packages-local
-    nuget EntityFrameworkCore.FSharp
-    nuget Microsoft.EntityFrameworkCore.Sqlite
-    ```
-
-1. Include these packages by adding the following lines to `paket.references`
-
-    ```
-    EntityFrameworkCore.FSharp
-    Microsoft.EntityFrameworkCore.Sqlite
-    ```
-
-1. Run the `Paket` tool to install dependencies
-
-    `paket install`
+```bash
+dotnet add package EntityFrameworkCore.FSharp
+```
 
 # Create the database
 
@@ -83,7 +60,7 @@ For this example we will use record types, but "normal" classes will also work i
 ## Create the model
 
 1. Create a file for our model e.g. `BloggingModel.fs` and add it to the project (`.fsproj`) file
-1. Paste in the following content. Note that our record type is marked `CLIMutable`, and that we initialise our DbSet using `Unchecked.defaultof`
+1. Paste in the following content. Note that our record type is marked `CLIMutable`, and that our DbSet has a backing field and is initialised with the `DefaultValue` attribute.
 
     ```fsharp
     module BloggingModel
