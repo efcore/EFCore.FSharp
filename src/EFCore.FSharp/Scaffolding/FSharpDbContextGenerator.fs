@@ -62,8 +62,7 @@ type FSharpDbContextGenerator
         let dbSetName = entityDbSetName entityType
 
         sb
-            |> appendLine "[<DefaultValue>]"
-            |> appendLine (sprintf "val mutable private _%s : DbSet<%s>" dbSetName entityType.Name)
+            |> appendLine (sprintf "[<DefaultValue>] val mutable private _%s : DbSet<%s>" dbSetName entityType.Name)
             |> appendLine (sprintf "member this.%s with get() = this._%s and set v = this._%s <- v" dbSetName dbSetName dbSetName)
             |> appendEmptyLine
             |> ignore
@@ -90,21 +89,7 @@ type FSharpDbContextGenerator
         else
             sb
 
-    let generateOnConfiguring (connectionString:string) suppressOnConfiguring suppressConnectionStringWarning (sb:IndentedStringBuilder) =
-
-        let writeWarning suppressWarning connString (isb:IndentedStringBuilder) =
-            if suppressWarning then
-                isb
-                    else
-                isb
-                |> unindent
-                |> unindent
-                |> unindent
-                |> unindent
-                |> appendLine "#warning: To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263."
-                |> indent
-                |> indent
-                |> indent
+    let generateOnConfiguring (connectionString:string) suppressOnConfiguring (sb:IndentedStringBuilder) =
 
         if suppressOnConfiguring then
             sb
@@ -114,8 +99,7 @@ type FSharpDbContextGenerator
             |> indent
             |> appendLine "if not optionsBuilder.IsConfigured then"
             |> indent
-                |> writeWarning suppressConnectionStringWarning connectionString
-                |> appendLine ("optionsBuilder" + (connectionString |> providerCodeGenerator.GenerateUseProvider |> code.Fragment) + " |> ignore")
+            |> appendLine ("optionsBuilder" + (connectionString |> providerCodeGenerator.GenerateUseProvider |> code.Fragment) + " |> ignore")
             |> appendLine "()"
             |> appendEmptyLine
             |> unindent
@@ -201,7 +185,6 @@ type FSharpDbContextGenerator
             sb
             |> appendEmptyLine
             |> appendLine (sprintf "modelBuilder.Entity<%s>(fun %s ->" entityType.Name entityLambdaIdentifier)
-            |> indent
             |> ignore
 
         _entityTypeBuilderInitialized <- true
@@ -586,7 +569,7 @@ type FSharpDbContextGenerator
             |> ignore
 
             if _entityTypeBuilderInitialized then
-                sb |> unindent |> appendLine ") |> ignore" |> ignore
+                sb |> appendLine ") |> ignore" |> ignore
 
         )
 
@@ -602,14 +585,13 @@ type FSharpDbContextGenerator
                       connectionString
                       useDataAnnotations
                       suppressOnConfiguring
-                      suppressConnectionStringWarning
                       sb =
 
         sb
             |> generateType contextName
             |> generateDbSets model
             |> generateEntityTypeErrors model
-            |> generateOnConfiguring connectionString suppressOnConfiguring suppressConnectionStringWarning
+            |> generateOnConfiguring connectionString suppressOnConfiguring
             |> generateOnModelCreating model useDataAnnotations
 
     interface ICSharpDbContextGenerator with
@@ -646,7 +628,6 @@ type FSharpDbContextGenerator
                    connectionString
                    useDataAnnotations
                    suppressOnConfiguring
-                   suppressConnectionStringWarning
 
             |> ignore
 
