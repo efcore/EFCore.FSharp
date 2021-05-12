@@ -357,7 +357,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 |> ignore
 
         let typeName = getTypeName scaffoldNullableColumnsAs p.ClrType
-        sb |> appendLine (sprintf "mutable %s: %s" p.Name typeName) |> ignore
+        sb |> appendLine (sprintf "%s: %s" p.Name typeName) |> ignore
         ()
 
     let writeRecordProperties (properties :IProperty seq) (useDataAnnotations:bool) scaffoldNullableColumnsAs sb =
@@ -378,7 +378,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 sprintf "ICollection<%s>" referencedTypeName
             else
                 referencedTypeName
-        sb |> appendLine (sprintf "mutable %s: %s" n.Name navigationType) |> ignore
+        sb |> appendLine (sprintf "%s: %s" n.Name navigationType) |> ignore
 
     let writeNavigationProperties (nav:INavigation seq) (useDataAnnotations:bool) sb =
         nav |> Seq.iter(fun n -> generateNavigateTypeEntry n useDataAnnotations sb)
