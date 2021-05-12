@@ -39,11 +39,13 @@ Again, we provide options for how these should be scaffolded.
 
 We provide `EntityFramework.FSharp.ScaffoldOptions` to specify how we want to create our scaffolded code.
 
-By default we scaffold record types with nullable columns represented as `option` types, but this can be overridden
+By default we scaffold record types with nullable columns represented as `option` types, but this can be overridden.
 
-When implementing `DesignTimeServices` as referenced in <a href="{{siteBaseUrl}}/Tutorials/Getting_Started.html" class="">Getting Started</a> we can declare a `ScaffoldOptions` object.
+To do this, you'll need your own implementation of `IDesignTimeServices`, where we can declare a `ScaffoldOptions` object.
 
 The `ScaffoldOptions.Default` object is equivalent to `ScaffoldOptions (ScaffoldTypesAs = RecordType, ScaffoldNullableColumnsAs = OptionTypes)`
+
+If you are happy with the default of record-type objects with `option` properties then you will not need to implement this at all, it is already handled automatically for you.
 
 ```fsharp
 module DesignTimeServices =

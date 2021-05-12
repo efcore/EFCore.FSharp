@@ -4,7 +4,7 @@
 This guide assumes:
 
 * You have the .NET 5.0 SDK installed
-* You have created a project and add the `dotnet-ef` tool
+* You have created a project and added the `dotnet-ef` tool
 
 ## Installing the package
 paket
@@ -17,30 +17,15 @@ dotnet CLI
     [lang=bash]
     dotnet add package EntityFrameworkCore.FSharp
 
-## Note
-This guide is for a simple single-project setup rather than a production-ready topology, however it should hopefully assist with the basics.
+## That's it
+Yes, really. Standard EF Core commands such as `dotnet ef migrations add` and `dotnet ef dbcontext scaffold` will now work as usual but the generated code will be in F#
 
-## Configure Design Time Services
+## Advanced Options - Configure Design Time Services
 
-To override the default Design Time services in EF Core, you will need to add the following file to your project
+The necessary design time services are automatically registered by EntityFrameworkCore.FSharp. Unless you have a specific need to do so, you should not need to register your own implementation of `IDesignTimeServices` just to add F# support.
 
-```fsharp
-module DesignTimeServices =
+An example of where you would need to, would be if you were scaffolding a new context from an existing database.
 
-    open Microsoft.Extensions.DependencyInjection
-    open Microsoft.EntityFrameworkCore.Design
-    open EntityFrameworkCore.FSharp
+By default, scaffolded objects will be created as Record types objects where nullable columns of type `'a` are represented as types of `'a option`.
 
-    type DesignTimeServices() =
-        interface IDesignTimeServices with
-            member __.ConfigureDesignTimeServices(serviceCollection: IServiceCollection) =
-                let fSharpServices = EFCoreFSharpServices.Default
-                fSharpServices.ConfigureDesignTimeServices serviceCollection
-                ()
-```
-
-At this point you can create your model, or scaffold one from an existing database as per usual
-
-By default, scaffolded objects will be created as Record types objects where nullable columns of type `'a` are represented as types of `'a option`
-
-To read more about this configuration, check out <a href="{{siteBaseUrl}}/How_Tos/Scaffold_As_Types.html" class="">Scaffolding Types</a>
+If you want to change the deault behaviour to generate nullable columns as properties of type `Nullable<'a>` or to crete your entities as a C#-type class object, check out <a href="{{siteBaseUrl}}/How_Tos/Scaffold_As_Types.html" class="">Scaffolding Types</a>

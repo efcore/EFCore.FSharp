@@ -11,7 +11,7 @@ type ScaffoldTypesAs =
 type ScaffoldNullableColumnsAs =
     /// <summary>A nullable column of type <c>'a</c> should be represented as <c>'a option</c></summary>
     | OptionTypes
-    /// <summary>A nullable column of type <c>'a</c> should be represented as <c>Nullable{'a}</c></summary>
+    /// <summary>A nullable column of type <c>'a</c> should be represented as <c>Nullable&lt;'a&gt;</c></summary>
     | NullableTypes
 
 [<AllowNullLiteral>]
