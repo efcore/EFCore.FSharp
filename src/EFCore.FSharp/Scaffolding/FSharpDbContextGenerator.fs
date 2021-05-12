@@ -62,7 +62,9 @@ type FSharpDbContextGenerator
         let dbSetName = entityDbSetName entityType
 
         sb
-            |> appendLine (sprintf "member val %s: DbSet<%s> = null with get, set" dbSetName entityType.Name)
+            |> appendLine "[<DefaultValue>]"
+            |> appendLine (sprintf "val mutable private _%s : DbSet<%s>" dbSetName entityType.Name)
+            |> appendLine (sprintf "member this.%s with get() = this._%s and set v = this._%s <- v" dbSetName dbSetName dbSetName)
             |> appendEmptyLine
             |> ignore
 

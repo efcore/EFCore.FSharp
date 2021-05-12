@@ -36,10 +36,7 @@ type FSharpModelGenerator
         |> Seq.distinct
         |> Seq.sort
 
-    let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) (domainFileName: string) =
-
-        let ``module`` =
-            domainFileName.Replace("Context", "Domain")
+    let createDomainFileContent (model:IModel) (useDataAnnotations:bool) (``namespace``:string) (moduleName: string) =
 
         let namespaces =
             if useDataAnnotations then
@@ -60,9 +57,9 @@ type FSharpModelGenerator
 
         IndentedStringBuilder()
                 |> writeNamespaces ``namespace``
-                |> append "module rec " |> append ``module`` |> appendLine " ="
+                |> append "module rec " |> append moduleName |> appendLine " ="
                 |> appendEmptyLine
-                |> appendIfTrue (noEntities) "    ()"
+                |> appendIfTrue noEntities "    ()"
 
     override __.Language = "F#"
 
@@ -98,10 +95,11 @@ type FSharpModelGenerator
         let dbContextFileName = options.ContextName
 
         let domainFile = ScaffoldedFile()
-        domainFile.Path <- ("TestDomain" + fileExtension)
+        let domainFileName = dbContextFileName.Replace("Context", "Domain")
+        domainFile.Path <- (domainFileName + fileExtension)
 
         let domainFileBuilder =
-            createDomainFileContent model options.UseDataAnnotations options.ModelNamespace dbContextFileName
+            createDomainFileContent model options.UseDataAnnotations options.ModelNamespace domainFileName
 
         model.GetEntityTypes()
             |> Seq.iter(fun entityType ->
