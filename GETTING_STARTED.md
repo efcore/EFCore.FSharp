@@ -43,12 +43,14 @@ paket
 
 ```bash
 paket install EntityFrameworkCore.FSharp
+paket install Microsoft.EntityFrameworkCore.Design
 ```
 
 dotnet CLI
 
 ```bash
 dotnet add package EntityFrameworkCore.FSharp
+dotnet add package Microsoft.EntityFrameworkCore.Design
 ```
 
 # Create the database
