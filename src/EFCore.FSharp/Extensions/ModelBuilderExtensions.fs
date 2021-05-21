@@ -15,7 +15,7 @@ module Extensions =
             this.UseValueConverterForType(typeof<'a>, converter)
 
         member this.UseValueConverterForType(``type`` : Type, converter : ValueConverter) =
-            
+
             this.Model.GetEntityTypes()
             |> Seq.iter(fun e ->
                 e.ClrType.GetProperties()
@@ -34,17 +34,19 @@ module Extensions =
                 let converterType = genericOptionConverterType.MakeGenericType(underlyingType)
                 let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
                 converter
-            
+
             let converterDetails =
                 this.Model.GetEntityTypes()
-                |> Seq.collect (fun e -> e.GetProperties())
-                |> Seq.filter (fun p -> SharedTypeExtensions.isOptionType p.ClrType)
-                |> Seq.map(fun p -> (p.Name, p.DeclaringType.Name, (makeOptionConverter p.ClrType)) )
-                
-            converterDetails
-            |> Seq.iter(fun (propName, entityName, converter) ->
-                this.Entity(entityName).Property(propName).HasConversion(converter) |> ignore
-            )
+                |> Seq.filter (fun p -> not <| SharedTypeExtensions.isOptionType p.ClrType)
+                |> Seq.collect (fun e -> e.ClrType.GetProperties())
+                |> Seq.filter (fun p -> SharedTypeExtensions.isOptionType p.PropertyType)
+                |> Seq.map(fun p -> (p, (makeOptionConverter p.PropertyType)) )
+
+            for (prop, converter) in converterDetails do
+                    this.Entity(prop.DeclaringType)
+                        .Property(prop.PropertyType,prop.Name)
+                        .HasConversion(converter)
+                    |> ignore
 
     let registerOptionTypes (modelBuilder : ModelBuilder) =
         modelBuilder.RegisterOptionTypes()
@@ -53,4 +55,4 @@ module Extensions =
         modelBuilder.UseValueConverterForType<'a>(converter)
 
     let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
-        modelBuilder.UseValueConverterForType(``type``, converter)            
+        modelBuilder.UseValueConverterForType(``type``, converter)
