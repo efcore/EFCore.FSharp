@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net5.0</TargetFrameworks>
+        <TargetFramework>net5.0</TargetFramework>
         <GenerateProgramFile>false</GenerateProgramFile>
     </PropertyGroup>
     <ItemGroup>
@@ -26,6 +26,7 @@
         <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
         <Compile Include="Scaffolding\Internal\FSharpDbContextGeneratorTest.fs" />
         <Compile Include="ValueConverters\ValueConvertersTest.fs" />
+        <Compile Include="Translations\OptionTranslationTests.fs" />
         <Compile Include="DbContextHelperTests.fs" />
         <Compile Include="Main.fs" />
     </ItemGroup>

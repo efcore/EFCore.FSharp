@@ -270,3 +270,5 @@ coverage.*.xml
 
 .fake
 .ionide
+
+tests/EFCore.FSharp.Tests/*.db
