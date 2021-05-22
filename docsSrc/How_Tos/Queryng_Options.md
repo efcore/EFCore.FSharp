@@ -26,6 +26,9 @@ type MyContext () =
     val mutable private _blogs : DbSet<Blog>
     member this.Blogs with get() = this._blogs and set v = this._blogs <- v
 
+    override _.OnModelCreating builder =
+        builder.RegisterOptionTypes() // enables option values for all entities
+
     override _.OnConfiguring(options: DbContextOptionsBuilder) : unit =
            options.UseSqlite(
               "Data Source=dbName.db",
