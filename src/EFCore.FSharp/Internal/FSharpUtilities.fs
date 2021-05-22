@@ -2,12 +2,15 @@ namespace EntityFrameworkCore.FSharp.Internal
 
 open System
 open System.Globalization
+open System.Linq.Expressions
 open System.Reflection
 open System.Text
 open Microsoft.EntityFrameworkCore.Design
+open Microsoft.FSharp.Quotations
 
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open Microsoft.FSharp.Linq.RuntimeHelpers
 
 module FSharpUtilities =
 
@@ -252,7 +255,7 @@ module FSharpUtilities =
         | :? DateTime as literal' -> generateLiteralDateTime(literal')
         | :? DateTimeOffset as literal' -> generateLiteralDateTimeOffset(literal')
         | :? Guid as literal' -> generateLiteralGuid(literal')
-        | :? string as literal' -> generateLiteralString(literal')        
+        | :? string as literal' -> generateLiteralString(literal')
         | _ -> generateLiteralObject(literal)
 
 
@@ -263,3 +266,15 @@ module FSharpUtilities =
             |> join ", "
 
         sprintf ".%s(%s)" methodCallCodeFragment.Method parameters
+
+    let OptionOfNullableObj v : 'a option =
+        (v : 'a)
+        |> box
+        |> Option.ofObj
+        |> Option.map (fun x -> x :?> 'a)
+
+    let exprToLinq (expr: Expr<'a -> 'b>) =
+      let linq = LeafExpressionConverter.QuotationToExpression expr
+      let call = linq :?> MethodCallExpression
+      let lambda = call.Arguments.[0] :?> LambdaExpression
+      Expression.Lambda<Func<'a, 'b>>(lambda.Body, lambda.Parameters)

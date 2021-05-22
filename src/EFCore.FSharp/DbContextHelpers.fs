@@ -1,10 +1,11 @@
 module EntityFrameworkCore.FSharp.DbContextHelpers
 
+open System.Linq
+open EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore
 open System.Threading.Tasks
 
 let private awaitValueTask (x: ValueTask<_>) = Async.AwaitTask (x.AsTask())
-
 
 let findEntity<'a when 'a : not struct> (ctx: DbContext) (key: obj)=
     ctx.Set<'a>().Find(key)
@@ -78,3 +79,39 @@ let removeEntity (ctx: DbContext) (entity : 'a when 'a : not struct) =
 
 let removeEntityRange (ctx: DbContext) (entities : 'a seq when 'a : not struct) =
     ctx.Set<'a>().RemoveRange(entities)
+
+
+let toListAsync (dbset: #IQueryable<_>) = async {
+    let! list = dbset.ToListAsync() |> Async.AwaitTask
+    return list |> List.ofSeq
+}
+
+let tryFirstAsync (dbset: #IQueryable<_>) = async {
+    let! ret = dbset.FirstOrDefaultAsync() |> Async.AwaitTask
+    return FSharpUtilities.OptionOfNullableObj ret
+}
+
+let tryFirst (dbset: #IQueryable<_>) =
+    dbset.FirstOrDefault() |> FSharpUtilities.OptionOfNullableObj
+
+let tryFilterFirstAsync predicate (dbSet: #IQueryable<_>) = async {
+    let pred = FSharpUtilities.exprToLinq predicate
+    let! ret = dbSet.FirstOrDefaultAsync(predicate = pred) |> Async.AwaitTask
+    return FSharpUtilities.OptionOfNullableObj ret
+}
+
+let tryFilterFirst predicate (dbSet: #IQueryable<_>) =
+    let pred = FSharpUtilities.exprToLinq predicate
+    let ret = dbSet.FirstOrDefault(predicate = pred)
+    FSharpUtilities.OptionOfNullableObj ret
+
+type IQueryable<'T> with
+    member this.TryFirstAsync () = this |> tryFirstAsync
+    member this.TryFirst () = this |> tryFirst
+    member this.TryFirstAsync expr = async {
+        let! ret = this.FirstOrDefaultAsync(predicate = expr) |> Async.AwaitTask
+        return FSharpUtilities.OptionOfNullableObj ret
+    }
+    member this.TryFirst expr =
+        this.FirstOrDefault(predicate = expr)
+         |> FSharpUtilities.OptionOfNullableObj

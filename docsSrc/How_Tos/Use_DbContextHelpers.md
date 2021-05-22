@@ -84,6 +84,45 @@ updateBlog { myBlog with Content = "Updated content" }
 
 ```
 
+We also have methods and functions for `DbSet`/`IQueryiable` to replace usage of `FirstOrDefault` and `FirstOrDefaultAsync`:
+
+
+```fsharp
+
+let queryingContext (ctx:MyContext) =
+    let allPosts = toListAsync ctx.Blogs |> Async.RunSynchronously
+
+    let firstBlog = 
+        match tryFirst ctx.Blogs with
+        | Some b -> b
+        | None -> failwithf "no blogs"
+
+    let filteredBlog = 
+        let maybeBlog = tryFilterFirst <@ fun x -> x.Title = "some title" @> ctx.Blogs
+        match maybeBlog with
+        | Some b -> b
+        | None -> failwithf "no blogs founded with the title"
+
+    let firstBlogLinq = 
+        match ctx.Blogs.TryFirst() with
+        | Some b -> b
+        | None -> failwithf "no blogs"
+
+    let filteredBlogLinq = 
+        match ctx.Blogs.TryFirst(fun x -> x.Title = "some title") with
+        | Some b -> b
+        | None -> failwithf "no blogs founded with the title"
+
+    let advancedQuery = query {
+            for b in ctx.Blogs do
+            where (b.Title = "My title" && b.Content = "Some content")
+            select b.Id
+        }
+        |> tryFirstAsync
+        |> Async.RunSynchronously
+
+```
+
 ## Async methods
 
 All methods in `EntityFrameworkCore.FSharp.DbContextHelpers` also have Async variants with support for `async { ... }` expressions
