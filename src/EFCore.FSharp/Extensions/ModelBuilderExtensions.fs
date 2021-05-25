@@ -1,9 +1,10 @@
 namespace EntityFrameworkCore.FSharp
 
 open System
+open EntityFrameworkCore.FSharp.Translations.OptionTranslation
 open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
-open System.Runtime.CompilerServices
 
 module Extensions =
 
@@ -56,3 +57,14 @@ module Extensions =
 
     let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType(``type``, converter)
+
+    type IRelationalDbContextOptionsBuilderInfrastructure with
+        member this.UseFSharpTypes() =
+            let coreOptionsBuilder = this.OptionsBuilder
+
+            let extension =
+                let finded = coreOptionsBuilder.Options.FindExtension<FsharpTypeOptionsExtension>()
+                if (box finded) <> null then finded else FsharpTypeOptionsExtension()
+
+            (coreOptionsBuilder :> IDbContextOptionsBuilderInfrastructure).AddOrUpdateExtension(extension)
+            this

@@ -80,6 +80,9 @@ For this example we will use record types, but "normal" classes will also work i
         [<DefaultValue>] val mutable blogs : DbSet<Blog>
         member this.Blogs with get() = this.blogs and set v = this.blogs <- v
 
+        override _.OnModelCreating builder =
+            builder.RegisterOptionTypes() // enables option values for all entities
+
         override __.OnConfiguring(options: DbContextOptionsBuilder) : unit =
             options.UseSqlite("Data Source=blogging.db") |> ignore
     ```
@@ -141,6 +144,9 @@ Let's update our model so that there is a relationship between blogs and posts.
 
         [<DefaultValue>] val mutable posts : DbSet<Post>
         member this.Posts with get() = this.posts and set v = this.posts <- v
+
+        override _.OnModelCreating builder =
+            builder.RegisterOptionTypes() // enables option values for all entities
 
         override __.OnConfiguring(options: DbContextOptionsBuilder) : unit =
             options.UseSqlite("Data Source=blogging.db") |> ignore
