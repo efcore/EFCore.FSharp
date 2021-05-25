@@ -40,8 +40,8 @@
     <Compile Include="Migrations\Design\FSharpMigrationsGenerator.fs" />
     <Compile Include="Migrations\Design\FSharpMigrationsScaffolder.fs" />
     <Compile Include="Extensions\ModelBuilderExtensions.fs" />
-    <Compile Include="EFCoreFSharpServices.fs" />
     <Compile Include="DbContextHelpers.fs" />
+    <Compile Include="EFCoreFSharpServices.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="build\**\*">
