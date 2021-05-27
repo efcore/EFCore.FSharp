@@ -84,7 +84,7 @@ updateBlog { myBlog with Content = "Updated content" }
 
 ```
 
-We also have methods and functions for `DbSet`/`IQueryiable` to replace usage of `FirstOrDefault` and `FirstOrDefaultAsync`:
+We also have methods and functions for `DbSet`/`IQueryable` to replace usage of `FirstOrDefault` and `FirstOrDefaultAsync`:
 
 
 ```fsharp
@@ -113,13 +113,16 @@ let queryingContext (ctx:MyContext) =
         | Some b -> b
         | None -> failwithf "no blogs founded with the title"
 
-    let advancedQuery = query {
+    let advancedQuery =
+        query {
             for b in ctx.Blogs do
             where (b.Title = "My title" && b.Content = "Some content")
             select b.Id
         }
         |> tryFirstAsync
         |> Async.RunSynchronously
+
+    ()
 
 ```
 

@@ -1,4 +1,14 @@
-# Queryng option types
+# Querying option types
+
+    [hide]
+    #r "Microsoft.EntityFrameworkCore.Sqlite.dll"
+
+    open System
+    open System.ComponentModel.DataAnnotations
+    open System.Linq
+    open Microsoft.EntityFrameworkCore
+    open EntityFrameworkCore.FSharp
+    open EntityFrameworkCore.FSharp.DbContextHelpers
 
 ## Configuring
 
@@ -34,6 +44,7 @@ type MyContext () =
               "Data Source=dbName.db",
               (fun builder -> builder.UseFSharpTypes() |> ignore))
            |> ignore
+
 ```
 
 Note that the  `builder.UseFSharpTypes()` will exist independent of the database, the `UseSqlite` is just for the example. 
@@ -44,49 +55,60 @@ If you are using an SQL server with `UseSqlServer` or `UsePostgres` for Postgres
 With that, you will be able to query your entity by an optional column.
 
 Querying entities with `Some` content
-
+    
 ```fsharp
-let blogs =
-   query {
-       for blog in ctx.Blogs do
-       where blog.Content.IsSome
-       select blog
-   }
-```
-or using Linq extensions
-```fsharp
-let blog = ctx.Blogs.Where(fun x -> x.Content.IsSome)
-```
+let queryWhereSome (ctx: MyContext) =
 
+    // Querying entities with `Some` content
+    let blogs =
+        query {
+            for blog in ctx.Blogs do
+            where blog.Content.IsSome
+            select blog
+        }
 
-Querying entities with `None` content *
+    // or using Linq extensions
+    let blog =
+        ctx.Blogs.Where(fun x -> x.Content.IsSome)
 
-```fsharp
-let blogs =
-   query {
-       for blog in ctx.Blogs do
-       where blog.Content.IsNone
-       select blog
-   }
-```
-or using Linq extensions
-```fsharp
-let blog = ctx.Blogs.Where(fun x -> x.Content.IsNone)
+    ()
 ```
 
+
+Querying entities with `None` content
+
+```fsharp
+let queryWhereNone (ctx: MyContext) =
+
+    let blogs =
+        query {
+            for blog in ctx.Blogs do
+            where blog.Content.IsNone
+            select blog
+        }
+
+    // or using Linq extensions
+    let blog =
+        ctx.Blogs.Where(fun x -> x.Content.IsNone)
+
+    ()
+```
 
 Querying optional values by value
 
 ```fsharp
-let blogs =
-   query {
-       for blog in ctx.Blogs do
-       where (blog.Content.Value = "Some text")
-       select blog
-   }
-```
-or using Linq extensions
-```fsharp
-let blog = ctx.Blogs.Where(fun x -> x.Content.Value = "Some text")
-```
+let queryWhereValue (ctx: MyContext) =
 
+    let blogs =
+        query {
+            for blog in ctx.Blogs do
+            where (blog.Content.Value = "Some text")
+            select blog
+        }
+
+    // or using Linq extensions
+    let blog =
+        ctx.Blogs.Where(fun x -> x.Content.Value = "Some text")
+
+    ()
+```

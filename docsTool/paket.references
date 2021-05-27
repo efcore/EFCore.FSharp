@@ -6,3 +6,4 @@ Fake.DotNet.Cli
 FSharp.Formatting
 FSharp.Literate
 Fable.React
+Microsoft.EntityFrameworkCore.Sqlite

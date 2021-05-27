@@ -1,0 +1,211 @@
+<!doctype html>
+<html data-reactroot="" lang="en"><head><title>EFCore.FSharp docs / Querying_Options.html-EFCore.FSharp</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="https://efcore.github.io/EFCore.FSharp/content/toggle-bootstrap.min.css?version=637577307493582651" type="text/css" rel="stylesheet" /><link href="https://efcore.github.io/EFCore.FSharp/content/toggle-bootstrap-dark.min.css?version=637577307493582651" type="text/css" rel="stylesheet" /><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" rel="stylesheet" integrity="sha384-KA6wR/X5RY4zFAHpv/CnoG2UW1uogYfdnP67Uv7eULvTveboZJg0qUpmJZb5VqzN" crossorigin="anonymous" /><link href="https://efcore.github.io/EFCore.FSharp/content/style.css?version=637577307493582651" type="text/css" rel="stylesheet" /></head><body><nav class="navbar navbar-expand-md sticky-top navbar-dark bg-dark"><a class="navbar-brand" href="https://efcore.github.io/EFCore.FSharp/index.html"><i class="fa fa-car text-white mr-2"></i>EFCore.FSharp</a><button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button><div class="collapse navbar-collapse" id="navbarNav"><ul class="navbar-nav mr-auto"><li class="nav-item dropdown"><a id="navbarDropdown-Api_Reference" href="#" data-toggle="dropdown" aria-haspopup  class="nav-link dropdown-toggle">Api Reference</a><ul aria-labelledby="dropdownMenu1" class="dropdown-menu border-0 shadow"><li class="dropdown-submenu"><a id="navbarDropdown-EFCore.FSharp" href="#" role="button" data-toggle="dropdown" aria-haspopup  class="dropdown-item dropdown-toggle">EFCore.FSharp</a><ul aria-labelledby="dropdownMenu2" class="dropdown-menu border-0 shadow"><li class="nav-item"><a class="dropdown-item" href="https://efcore.github.io/EFCore.FSharp/\Api_Reference\EFCore.FSharp\EFCore.FSharp.html">EFCore.FSharp</a></li></ul></li></ul></li><li class="nav-item dropdown"><a id="navbarDropdown-Explanations" href="#" data-toggle="dropdown" aria-haspopup  class="nav-link dropdown-toggle">Explanations</a><ul aria-labelledby="dropdownMenu1" class="dropdown-menu border-0 shadow"><li class="nav-item"><a class="dropdown-item" href="https://efcore.github.io/EFCore.FSharp/\Explanations\Background.html">Background</a></li></ul></li><li class="nav-item dropdown"><a id="navbarDropdown-How_Tos" href="#" data-toggle="dropdown" aria-haspopup  class="nav-link dropdown-toggle">How Tos</a><ul aria-labelledby="dropdownMenu1" class="dropdown-menu border-0 shadow"><li class="nav-item"><a class="dropdown-item" href="https://efcore.github.io/EFCore.FSharp/\How_Tos\Querying_Options.html">Querying Options</a></li><li class="nav-item"><a class="dropdown-item" href="https://efcore.github.io/EFCore.FSharp/\How_Tos\Scaffold_As_Types.html">Scaffold As Types</a></li><li class="nav-item"><a class="dropdown-item" href="https://efcore.github.io/EFCore.FSharp/\How_Tos\Use_DbContextHelpers.html">Use DbContextHelpers</a></li></ul></li><li class="nav-item dropdown"><a id="navbarDropdown-Tutorials" href="#" data-toggle="dropdown" aria-haspopup  class="nav-link dropdown-toggle">Tutorials</a><ul aria-labelledby="dropdownMenu1" class="dropdown-menu border-0 shadow"><li class="nav-item"><a class="dropdown-item" href="https://efcore.github.io/EFCore.FSharp/\Tutorials\Getting_Started.html">Getting Started</a></li></ul></li></ul><ul class="navbar-nav"><button id="theme-toggle" class=""></button><li class="nav-item"><a class="nav-link" aria-label="EFCore.FSharp Repository on Github" href="https://github.com/efcore/EFCore.FSharp"><i class="fab fa-github fa-lg fa-fw text-light"></i></a></li></ul></div></nav><div class="wrapper d-flex flex-column justify-content-between min-vh-100"><main class="container main mb-4"><div><h1><a name="Querying-option-types" class="anchor" href="#Querying-option-types">Querying option types</a></h1>
+<h2><a name="Configuring" class="anchor" href="#Configuring">Configuring</a></h2>
+<p>EF Core by default does not know anything about the way of F# deals with nullable values which is the Option type.</p>
+<p>This project has a way to enable query for columns defined as an option, first you need to call <code>.UseFSharpTypes()</code> on the
+context configuration builder</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+<span class="l">25: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, '1', 1)" onmouseover="showTip(event, '1', 1)" class="id">EntityFrameworkCore</span><span class="pn">.</span><span onmouseout="hideTip(event, '2', 2)" onmouseover="showTip(event, '2', 2)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, '3', 3)" onmouseover="showTip(event, '3', 3)" class="id">Extensions</span>
+
+<span class="pn">[&lt;</span><span onmouseout="hideTip(event, '4', 4)" onmouseover="showTip(event, '4', 4)" class="rt">CLIMutable</span><span class="pn">&gt;]</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, '5', 5)" onmouseover="showTip(event, '5', 5)" class="rt">Blog</span> <span class="o">=</span> <span class="pn">{</span>
+    <span class="pn">[&lt;</span><span onmouseout="hideTip(event, '6', 6)" onmouseover="showTip(event, '6', 6)" class="rt">Key</span><span class="pn">&gt;]</span>
+    <span onmouseout="hideTip(event, '7', 7)" onmouseover="showTip(event, '7', 7)" class="id">Id</span> <span class="pn">:</span> <span onmouseout="hideTip(event, '8', 8)" onmouseover="showTip(event, '8', 8)" class="vt">Guid</span>
+    <span onmouseout="hideTip(event, '9', 9)" onmouseover="showTip(event, '9', 9)" class="id">Title</span> <span class="pn">:</span> <span onmouseout="hideTip(event, '10', 10)" onmouseover="showTip(event, '10', 10)" class="rt">string</span>
+    <span onmouseout="hideTip(event, '11', 11)" onmouseover="showTip(event, '11', 11)" class="id">Content</span> <span class="pn">:</span> <span onmouseout="hideTip(event, '10', 12)" onmouseover="showTip(event, '10', 12)" class="rt">string</span> <span onmouseout="hideTip(event, '12', 13)" onmouseover="showTip(event, '12', 13)" class="rt">option</span>
+<span class="pn">}</span>
+
+<span class="k">type</span> <span onmouseout="hideTip(event, '13', 14)" onmouseover="showTip(event, '13', 14)" class="d">MyContext</span> <span class="pn">(</span><span class="pn">)</span> <span class="o">=</span>
+    <span class="k">inherit</span> <span onmouseout="hideTip(event, '14', 15)" onmouseover="showTip(event, '14', 15)" class="d">DbContext</span><span class="pn">(</span><span class="pn">)</span>
+
+    <span class="pn">[&lt;</span><span onmouseout="hideTip(event, '15', 16)" onmouseover="showTip(event, '15', 16)" class="rt">DefaultValue</span><span class="pn">&gt;]</span>
+    <span class="k">val</span> <span class="k">mutable</span> <span class="k">private</span> <span onmouseout="hideTip(event, '16', 17)" onmouseover="showTip(event, '16', 17)" class="mv">_blogs</span> <span class="pn">:</span> <span onmouseout="hideTip(event, '17', 18)" onmouseover="showTip(event, '17', 18)" class="rt">DbSet</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, '5', 19)" onmouseover="showTip(event, '5', 19)" class="rt">Blog</span><span class="pn">&gt;</span>
+    <span class="k">member</span> <span onmouseout="hideTip(event, '18', 20)" onmouseover="showTip(event, '18', 20)" class="id">this</span><span class="pn">.</span><span class="prop">Blogs</span> <span class="k">with</span> <span class="prop">get</span><span class="pn">(</span><span class="pn">)</span> <span class="o">=</span> <span onmouseout="hideTip(event, '18', 21)" onmouseover="showTip(event, '18', 21)" class="mv">this</span><span class="pn">.</span><span onmouseout="hideTip(event, '16', 22)" onmouseover="showTip(event, '16', 22)" class="id">_blogs</span> <span class="k">and</span> <span onmouseout="hideTip(event, '19', 23)" onmouseover="showTip(event, '19', 23)" class="prop">set</span> <span onmouseout="hideTip(event, '20', 24)" onmouseover="showTip(event, '20', 24)" class="id">v</span> <span class="o">=</span> <span onmouseout="hideTip(event, '18', 25)" onmouseover="showTip(event, '18', 25)" class="mv">this</span><span class="pn">.</span><span onmouseout="hideTip(event, '16', 26)" onmouseover="showTip(event, '16', 26)" class="id">_blogs</span> <span class="k">&lt;-</span> <span onmouseout="hideTip(event, '20', 27)" onmouseover="showTip(event, '20', 27)" class="id">v</span>
+
+    <span class="k">override</span> <span class="id">_</span><span class="pn">.</span><span class="fn">OnModelCreating</span> <span onmouseout="hideTip(event, '21', 28)" onmouseover="showTip(event, '21', 28)" class="id">builder</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, '21', 29)" onmouseover="showTip(event, '21', 29)" class="fn">builder</span><span class="pn">.</span><span onmouseout="hideTip(event, '22', 30)" onmouseover="showTip(event, '22', 30)" class="id">RegisterOptionTypes</span><span class="pn">(</span><span class="pn">)</span> <span class="c">// enables option values for all entities</span>
+
+    <span class="k">override</span> <span class="id">_</span><span class="pn">.</span><span class="fn">OnConfiguring</span><span class="pn">(</span><span onmouseout="hideTip(event, '23', 31)" onmouseover="showTip(event, '23', 31)" class="id">options</span><span class="pn">:</span> <span onmouseout="hideTip(event, '24', 32)" onmouseover="showTip(event, '24', 32)" class="rt">DbContextOptionsBuilder</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, '25', 33)" onmouseover="showTip(event, '25', 33)" class="rt">unit</span> <span class="o">=</span>
+           <span onmouseout="hideTip(event, '23', 34)" onmouseover="showTip(event, '23', 34)" class="fn">options</span><span class="pn">.</span><span onmouseout="hideTip(event, '26', 35)" onmouseover="showTip(event, '26', 35)" class="id">UseSqlite</span><span class="pn">(</span>
+              <span class="s">&quot;Data Source=dbName.db&quot;</span><span class="pn">,</span>
+              <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, '27', 36)" onmouseover="showTip(event, '27', 36)" class="id">builder</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, '27', 37)" onmouseover="showTip(event, '27', 37)" class="fn">builder</span><span class="pn">.</span><span onmouseout="hideTip(event, '28', 38)" onmouseover="showTip(event, '28', 38)" class="id">UseFSharpTypes</span><span class="pn">(</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, '29', 39)" onmouseover="showTip(event, '29', 39)" class="fn">ignore</span><span class="pn">)</span><span class="pn">)</span>
+           <span class="o">|&gt;</span> <span onmouseout="hideTip(event, '29', 40)" onmouseover="showTip(event, '29', 40)" class="fn">ignore</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Note that the  <code>builder.UseFSharpTypes()</code> will exist independent of the database, the <code>UseSqlite</code> is just for the example.
+If you are using an SQL server with <code>UseSqlServer</code> or <code>UsePostgres</code> for Postgres, or any other database it will exist.</p>
+<h2><a name="Querying" class="anchor" href="#Querying">Querying</a></h2>
+<p>With that, you will be able to query your entity by an optional column.</p>
+<p>Querying entities with <code>Some</code> content</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, '30', 41)" onmouseover="showTip(event, '30', 41)" class="fn">queryWhereSome</span> <span class="pn">(</span><span onmouseout="hideTip(event, '31', 42)" onmouseover="showTip(event, '31', 42)" class="id">ctx</span><span class="pn">:</span> <span onmouseout="hideTip(event, '13', 43)" onmouseover="showTip(event, '13', 43)" class="d">MyContext</span><span class="pn">)</span> <span class="o">=</span>
+
+    <span class="c">// Querying entities with `Some` content</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, '32', 44)" onmouseover="showTip(event, '32', 44)" class="id">blogs</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, '33', 45)" onmouseover="showTip(event, '33', 45)" class="k">query</span> <span class="pn">{</span>
+            <span class="k">for</span> <span onmouseout="hideTip(event, '34', 46)" onmouseover="showTip(event, '34', 46)" class="id">blog</span> <span class="k">in</span> <span onmouseout="hideTip(event, '31', 47)" onmouseover="showTip(event, '31', 47)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, '35', 48)" onmouseover="showTip(event, '35', 48)" class="id">Blogs</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, '36', 49)" onmouseover="showTip(event, '36', 49)" class="k">where</span> <span onmouseout="hideTip(event, '34', 50)" onmouseover="showTip(event, '34', 50)" class="id">blog</span><span class="pn">.</span><span onmouseout="hideTip(event, '11', 51)" onmouseover="showTip(event, '11', 51)" class="id">Content</span><span class="pn">.</span><span onmouseout="hideTip(event, '37', 52)" onmouseover="showTip(event, '37', 52)" class="id">IsSome</span>
+            <span onmouseout="hideTip(event, '38', 53)" onmouseover="showTip(event, '38', 53)" class="k">select</span> <span onmouseout="hideTip(event, '34', 54)" onmouseover="showTip(event, '34', 54)" class="id">blog</span>
+        <span class="pn">}</span>
+
+    <span class="c">// or using Linq extensions</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, '39', 55)" onmouseover="showTip(event, '39', 55)" class="id">blog</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, '31', 56)" onmouseover="showTip(event, '31', 56)" class="fn">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, '35', 57)" onmouseover="showTip(event, '35', 57)" class="id">Blogs</span><span class="pn">.</span><span onmouseout="hideTip(event, '40', 58)" onmouseover="showTip(event, '40', 58)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, '41', 59)" onmouseover="showTip(event, '41', 59)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, '41', 60)" onmouseover="showTip(event, '41', 60)" class="id">x</span><span class="pn">.</span><span onmouseout="hideTip(event, '11', 61)" onmouseover="showTip(event, '11', 61)" class="id">Content</span><span class="pn">.</span><span onmouseout="hideTip(event, '37', 62)" onmouseover="showTip(event, '37', 62)" class="id">IsSome</span><span class="pn">)</span>
+
+    <span class="pn">(</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Querying entities with <code>None</code> content</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, '42', 63)" onmouseover="showTip(event, '42', 63)" class="fn">queryWhereNone</span> <span class="pn">(</span><span onmouseout="hideTip(event, '31', 64)" onmouseover="showTip(event, '31', 64)" class="id">ctx</span><span class="pn">:</span> <span onmouseout="hideTip(event, '13', 65)" onmouseover="showTip(event, '13', 65)" class="d">MyContext</span><span class="pn">)</span> <span class="o">=</span>
+
+    <span class="k">let</span> <span onmouseout="hideTip(event, '32', 66)" onmouseover="showTip(event, '32', 66)" class="id">blogs</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, '33', 67)" onmouseover="showTip(event, '33', 67)" class="k">query</span> <span class="pn">{</span>
+            <span class="k">for</span> <span onmouseout="hideTip(event, '34', 68)" onmouseover="showTip(event, '34', 68)" class="id">blog</span> <span class="k">in</span> <span onmouseout="hideTip(event, '31', 69)" onmouseover="showTip(event, '31', 69)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, '35', 70)" onmouseover="showTip(event, '35', 70)" class="id">Blogs</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, '36', 71)" onmouseover="showTip(event, '36', 71)" class="k">where</span> <span onmouseout="hideTip(event, '34', 72)" onmouseover="showTip(event, '34', 72)" class="id">blog</span><span class="pn">.</span><span onmouseout="hideTip(event, '11', 73)" onmouseover="showTip(event, '11', 73)" class="id">Content</span><span class="pn">.</span><span onmouseout="hideTip(event, '43', 74)" onmouseover="showTip(event, '43', 74)" class="id">IsNone</span>
+            <span onmouseout="hideTip(event, '38', 75)" onmouseover="showTip(event, '38', 75)" class="k">select</span> <span onmouseout="hideTip(event, '34', 76)" onmouseover="showTip(event, '34', 76)" class="id">blog</span>
+        <span class="pn">}</span>
+
+    <span class="c">// or using Linq extensions</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, '39', 77)" onmouseover="showTip(event, '39', 77)" class="id">blog</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, '31', 78)" onmouseover="showTip(event, '31', 78)" class="fn">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, '35', 79)" onmouseover="showTip(event, '35', 79)" class="id">Blogs</span><span class="pn">.</span><span onmouseout="hideTip(event, '40', 80)" onmouseover="showTip(event, '40', 80)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, '41', 81)" onmouseover="showTip(event, '41', 81)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, '41', 82)" onmouseover="showTip(event, '41', 82)" class="id">x</span><span class="pn">.</span><span onmouseout="hideTip(event, '11', 83)" onmouseover="showTip(event, '11', 83)" class="id">Content</span><span class="pn">.</span><span onmouseout="hideTip(event, '43', 84)" onmouseover="showTip(event, '43', 84)" class="id">IsNone</span><span class="pn">)</span>
+
+    <span class="pn">(</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Querying optional values by value</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, '44', 85)" onmouseover="showTip(event, '44', 85)" class="fn">queryWhereValue</span> <span class="pn">(</span><span onmouseout="hideTip(event, '31', 86)" onmouseover="showTip(event, '31', 86)" class="id">ctx</span><span class="pn">:</span> <span onmouseout="hideTip(event, '13', 87)" onmouseover="showTip(event, '13', 87)" class="d">MyContext</span><span class="pn">)</span> <span class="o">=</span>
+
+    <span class="k">let</span> <span onmouseout="hideTip(event, '32', 88)" onmouseover="showTip(event, '32', 88)" class="id">blogs</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, '33', 89)" onmouseover="showTip(event, '33', 89)" class="k">query</span> <span class="pn">{</span>
+            <span class="k">for</span> <span onmouseout="hideTip(event, '34', 90)" onmouseover="showTip(event, '34', 90)" class="id">blog</span> <span class="k">in</span> <span onmouseout="hideTip(event, '31', 91)" onmouseover="showTip(event, '31', 91)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, '35', 92)" onmouseover="showTip(event, '35', 92)" class="id">Blogs</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, '36', 93)" onmouseover="showTip(event, '36', 93)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, '34', 94)" onmouseover="showTip(event, '34', 94)" class="id">blog</span><span class="pn">.</span><span onmouseout="hideTip(event, '11', 95)" onmouseover="showTip(event, '11', 95)" class="id">Content</span><span class="pn">.</span><span onmouseout="hideTip(event, '45', 96)" onmouseover="showTip(event, '45', 96)" class="id">Value</span> <span class="o">=</span> <span class="s">&quot;Some text&quot;</span><span class="pn">)</span>
+            <span onmouseout="hideTip(event, '38', 97)" onmouseover="showTip(event, '38', 97)" class="k">select</span> <span onmouseout="hideTip(event, '34', 98)" onmouseover="showTip(event, '34', 98)" class="id">blog</span>
+        <span class="pn">}</span>
+
+    <span class="c">// or using Linq extensions</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, '39', 99)" onmouseover="showTip(event, '39', 99)" class="id">blog</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, '31', 100)" onmouseover="showTip(event, '31', 100)" class="fn">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, '35', 101)" onmouseover="showTip(event, '35', 101)" class="id">Blogs</span><span class="pn">.</span><span onmouseout="hideTip(event, '40', 102)" onmouseover="showTip(event, '40', 102)" class="id">Where</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, '41', 103)" onmouseover="showTip(event, '41', 103)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, '41', 104)" onmouseover="showTip(event, '41', 104)" class="id">x</span><span class="pn">.</span><span onmouseout="hideTip(event, '11', 105)" onmouseover="showTip(event, '11', 105)" class="id">Content</span><span class="pn">.</span><span onmouseout="hideTip(event, '45', 106)" onmouseover="showTip(event, '45', 106)" class="id">Value</span> <span class="o">=</span> <span class="s">&quot;Some text&quot;</span><span class="pn">)</span>
+
+    <span class="pn">(</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<div class="tip" id="1">namespace EntityFrameworkCore</div>
+<div class="tip" id="2">namespace EntityFrameworkCore.FSharp</div>
+<div class="tip" id="3">module Extensions<br /><br />from EntityFrameworkCore.FSharp</div>
+<div class="tip" id="4">Multiple items<br />type CLIMutableAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; CLIMutableAttribute<br /><br />--------------------<br />new : unit -&gt; CLIMutableAttribute</div>
+<div class="tip" id="5">type Blog =<br />&#160;&#160;{ Id: Guid<br />&#160;&#160;&#160;&#160;Title: string<br />&#160;&#160;&#160;&#160;Content: string option }</div>
+<div class="tip" id="6">Multiple items<br />type KeyAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; KeyAttribute<br /><br />--------------------<br />KeyAttribute() : KeyAttribute</div>
+<div class="tip" id="7">Blog.Id: Guid</div>
+<div class="tip" id="8">Multiple items<br />type Guid =<br />&#160;&#160;struct<br />&#160;&#160;&#160;&#160;new : b:byte[] -&gt; Guid + 5 overloads<br />&#160;&#160;&#160;&#160;member CompareTo : value:obj -&gt; int + 1 overload<br />&#160;&#160;&#160;&#160;member Equals : o:obj -&gt; bool + 1 overload<br />&#160;&#160;&#160;&#160;member GetHashCode : unit -&gt; int<br />&#160;&#160;&#160;&#160;member ToByteArray : unit -&gt; byte[]<br />&#160;&#160;&#160;&#160;member ToString : unit -&gt; string + 2 overloads<br />&#160;&#160;&#160;&#160;member TryFormat : destination:Span&lt;char&gt; * charsWritten:int * ?format:ReadOnlySpan&lt;char&gt; -&gt; bool<br />&#160;&#160;&#160;&#160;member TryWriteBytes : destination:Span&lt;byte&gt; -&gt; bool<br />&#160;&#160;&#160;&#160;static val Empty : Guid<br />&#160;&#160;&#160;&#160;static member NewGuid : unit -&gt; Guid<br />&#160;&#160;&#160;&#160;...<br />&#160;&#160;end<br /><br />--------------------<br />Guid ()<br />Guid(b: byte []) : Guid<br />Guid(b: ReadOnlySpan&lt;byte&gt;) : Guid<br />Guid(g: string) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte []) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
+<div class="tip" id="9">Blog.Title: string</div>
+<div class="tip" id="10">Multiple items<br />val string : value:&#39;T -&gt; string<br /><br />--------------------<br />type string = String</div>
+<div class="tip" id="11">Blog.Content: string option</div>
+<div class="tip" id="12">type &#39;T option = Option&lt;&#39;T&gt;</div>
+<div class="tip" id="13">Multiple items<br />type MyContext =<br />&#160;&#160;inherit DbContext<br />&#160;&#160;new : unit -&gt; MyContext<br />&#160;&#160;val mutable private _blogs: DbSet&lt;Blog&gt;<br />&#160;&#160;override OnConfiguring : options:DbContextOptionsBuilder -&gt; unit<br />&#160;&#160;override OnModelCreating : builder:ModelBuilder -&gt; unit<br />&#160;&#160;member Blogs : DbSet&lt;Blog&gt;<br />&#160;&#160;member Blogs : DbSet&lt;Blog&gt; with set<br /><br />--------------------<br />new : unit -&gt; MyContext</div>
+<div class="tip" id="14">Multiple items<br />type DbContext =<br />&#160;&#160;new : options:DbContextOptions -&gt; DbContext<br />&#160;&#160;member Add&lt;&#39;TEntity&gt; : entity:&#39;TEntity -&gt; EntityEntry&lt;&#39;TEntity&gt; + 1 overload<br />&#160;&#160;member AddAsync&lt;&#39;TEntity&gt; : entity:&#39;TEntity * ?cancellationToken:CancellationToken -&gt; ValueTask&lt;EntityEntry&lt;&#39;TEntity&gt;&gt; + 1 overload<br />&#160;&#160;member AddRange : [&lt;ParamArray&gt;] entities:obj[] -&gt; unit + 1 overload<br />&#160;&#160;member AddRangeAsync : [&lt;ParamArray&gt;] entities:obj[] -&gt; Task + 1 overload<br />&#160;&#160;member Attach&lt;&#39;TEntity&gt; : entity:&#39;TEntity -&gt; EntityEntry&lt;&#39;TEntity&gt; + 1 overload<br />&#160;&#160;member AttachRange : [&lt;ParamArray&gt;] entities:obj[] -&gt; unit + 1 overload<br />&#160;&#160;member ChangeTracker : ChangeTracker<br />&#160;&#160;member ContextId : DbContextId<br />&#160;&#160;member Database : DatabaseFacade<br />&#160;&#160;...<br /><br />--------------------<br />DbContext() : DbContext<br />DbContext(options: DbContextOptions) : DbContext</div>
+<div class="tip" id="15">Multiple items<br />type DefaultValueAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; DefaultValueAttribute<br />&#160;&#160;new : check:bool -&gt; DefaultValueAttribute<br />&#160;&#160;member Check : bool<br /><br />--------------------<br />new : unit -&gt; DefaultValueAttribute<br />new : check:bool -&gt; DefaultValueAttribute</div>
+<div class="tip" id="16">MyContext._blogs: DbSet&lt;Blog&gt;</div>
+<div class="tip" id="17">type DbSet&lt;&#39;TEntity (requires reference type)&gt; =<br />&#160;&#160;member Add : entity:&#39;TEntity -&gt; EntityEntry&lt;&#39;TEntity&gt;<br />&#160;&#160;member AddAsync : entity:&#39;TEntity * ?cancellationToken:CancellationToken -&gt; ValueTask&lt;EntityEntry&lt;&#39;TEntity&gt;&gt;<br />&#160;&#160;member AddRange : [&lt;ParamArray&gt;] entities:&#39;TEntity[] -&gt; unit + 1 overload<br />&#160;&#160;member AddRangeAsync : [&lt;ParamArray&gt;] entities:&#39;TEntity[] -&gt; Task + 1 overload<br />&#160;&#160;member AsAsyncEnumerable : unit -&gt; IAsyncEnumerable&lt;&#39;TEntity&gt;<br />&#160;&#160;member AsQueryable : unit -&gt; IQueryable&lt;&#39;TEntity&gt;<br />&#160;&#160;member Attach : entity:&#39;TEntity -&gt; EntityEntry&lt;&#39;TEntity&gt;<br />&#160;&#160;member AttachRange : [&lt;ParamArray&gt;] entities:&#39;TEntity[] -&gt; unit + 1 overload<br />&#160;&#160;member EntityType : IEntityType<br />&#160;&#160;member Equals : obj:obj -&gt; bool<br />&#160;&#160;...</div>
+<div class="tip" id="18">val this : MyContext</div>
+<div class="tip" id="19">val set : elements:seq&lt;&#39;T&gt; -&gt; Set&lt;&#39;T&gt; (requires comparison)</div>
+<div class="tip" id="20">val v : DbSet&lt;Blog&gt;</div>
+<div class="tip" id="21">val builder : ModelBuilder</div>
+<div class="tip" id="22">member ModelBuilder.RegisterOptionTypes : unit -&gt; unit</div>
+<div class="tip" id="23">val options : DbContextOptionsBuilder</div>
+<div class="tip" id="24">Multiple items<br />type DbContextOptionsBuilder =<br />&#160;&#160;new : unit -&gt; DbContextOptionsBuilder + 1 overload<br />&#160;&#160;member AddInterceptors : interceptors:IEnumerable&lt;IInterceptor&gt; -&gt; DbContextOptionsBuilder + 1 overload<br />&#160;&#160;member ConfigureWarnings : warningsConfigurationBuilderAction:Action&lt;WarningsConfigurationBuilder&gt; -&gt; DbContextOptionsBuilder<br />&#160;&#160;member EnableDetailedErrors : ?detailedErrorsEnabled:bool -&gt; DbContextOptionsBuilder<br />&#160;&#160;member EnableSensitiveDataLogging : ?sensitiveDataLoggingEnabled:bool -&gt; DbContextOptionsBuilder<br />&#160;&#160;member EnableServiceProviderCaching : ?cacheServiceProvider:bool -&gt; DbContextOptionsBuilder<br />&#160;&#160;member Equals : obj:obj -&gt; bool<br />&#160;&#160;member GetHashCode : unit -&gt; int<br />&#160;&#160;member IsConfigured : bool<br />&#160;&#160;member LogTo : filter:Func&lt;EventId, LogLevel, bool&gt; * logger:Action&lt;EventData&gt; -&gt; DbContextOptionsBuilder + 4 overloads<br />&#160;&#160;...<br /><br />--------------------<br />type DbContextOptionsBuilder&lt;&#39;TContext (requires &#39;TContext :&gt; DbContext)&gt; =<br />&#160;&#160;inherit DbContextOptionsBuilder<br />&#160;&#160;new : unit -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt; + 1 overload<br />&#160;&#160;member AddInterceptors : interceptors:IEnumerable&lt;IInterceptor&gt; -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt; + 1 overload<br />&#160;&#160;member ConfigureWarnings : warningsConfigurationBuilderAction:Action&lt;WarningsConfigurationBuilder&gt; -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt;<br />&#160;&#160;member EnableDetailedErrors : ?detailedErrorsEnabled:bool -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt;<br />&#160;&#160;member EnableSensitiveDataLogging : ?sensitiveDataLoggingEnabled:bool -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt;<br />&#160;&#160;member EnableServiceProviderCaching : ?cacheServiceProvider:bool -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt;<br />&#160;&#160;member LogTo : filter:Func&lt;EventId, LogLevel, bool&gt; * logger:Action&lt;EventData&gt; -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt; + 4 overloads<br />&#160;&#160;member Options : DbContextOptions&lt;&#39;TContext&gt;<br />&#160;&#160;member ReplaceService&lt;&#39;TService, &#39;TImplementation&gt; : unit -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt; + 1 overload<br />&#160;&#160;member UseApplicationServiceProvider : serviceProvider:IServiceProvider -&gt; DbContextOptionsBuilder&lt;&#39;TContext&gt;<br />&#160;&#160;...<br /><br />--------------------<br />DbContextOptionsBuilder() : DbContextOptionsBuilder<br />DbContextOptionsBuilder(options: DbContextOptions) : DbContextOptionsBuilder<br /><br />--------------------<br />DbContextOptionsBuilder() : DbContextOptionsBuilder&lt;&#39;TContext&gt;<br />DbContextOptionsBuilder(options: DbContextOptions&lt;&#39;TContext&gt;) : DbContextOptionsBuilder&lt;&#39;TContext&gt;</div>
+<div class="tip" id="25">type unit = Unit</div>
+<div class="tip" id="26">(extension) DbContextOptionsBuilder.UseSqlite(?sqliteOptionsAction: Action&lt;Infrastructure.SqliteDbContextOptionsBuilder&gt;) : DbContextOptionsBuilder<br />(extension) DbContextOptionsBuilder.UseSqlite(connectionString: string,?sqliteOptionsAction: Action&lt;Infrastructure.SqliteDbContextOptionsBuilder&gt;) : DbContextOptionsBuilder<br />(extension) DbContextOptionsBuilder.UseSqlite(connection: Data.Common.DbConnection,?sqliteOptionsAction: Action&lt;Infrastructure.SqliteDbContextOptionsBuilder&gt;) : DbContextOptionsBuilder</div>
+<div class="tip" id="27">val builder : Infrastructure.SqliteDbContextOptionsBuilder</div>
+<div class="tip" id="28">member Infrastructure.IRelationalDbContextOptionsBuilderInfrastructure.UseFSharpTypes : unit -&gt; Infrastructure.IRelationalDbContextOptionsBuilderInfrastructure</div>
+<div class="tip" id="29">val ignore : value:&#39;T -&gt; unit</div>
+<div class="tip" id="30">val queryWhereSome : ctx:MyContext -&gt; unit</div>
+<div class="tip" id="31">val ctx : MyContext</div>
+<div class="tip" id="32">val blogs : IQueryable&lt;Blog&gt;</div>
+<div class="tip" id="33">val query : Linq.QueryBuilder</div>
+<div class="tip" id="34">val blog : Blog</div>
+<div class="tip" id="35">property MyContext.Blogs: DbSet&lt;Blog&gt; with get, set</div>
+<div class="tip" id="36">custom operation: where (bool)<br /><br />Calls Linq.QueryBuilder.Where</div>
+<div class="tip" id="37">property Option.IsSome: bool with get</div>
+<div class="tip" id="38">custom operation: select (&#39;Result)<br /><br />Calls Linq.QueryBuilder.Select</div>
+<div class="tip" id="39">val blog : IQueryable&lt;Blog&gt;</div>
+<div class="tip" id="40">(extension) Collections.Generic.IEnumerable.Where&lt;&#39;TSource&gt;(predicate: Func&lt;&#39;TSource,bool&gt;) : Collections.Generic.IEnumerable&lt;&#39;TSource&gt;<br />(extension) Collections.Generic.IEnumerable.Where&lt;&#39;TSource&gt;(predicate: Func&lt;&#39;TSource,int,bool&gt;) : Collections.Generic.IEnumerable&lt;&#39;TSource&gt;<br />(extension) IQueryable.Where&lt;&#39;TSource&gt;(predicate: Expressions.Expression&lt;Func&lt;&#39;TSource,bool&gt;&gt;) : IQueryable&lt;&#39;TSource&gt;<br />(extension) IQueryable.Where&lt;&#39;TSource&gt;(predicate: Expressions.Expression&lt;Func&lt;&#39;TSource,int,bool&gt;&gt;) : IQueryable&lt;&#39;TSource&gt;</div>
+<div class="tip" id="41">val x : Blog</div>
+<div class="tip" id="42">val queryWhereNone : ctx:MyContext -&gt; unit</div>
+<div class="tip" id="43">property Option.IsNone: bool with get</div>
+<div class="tip" id="44">val queryWhereValue : ctx:MyContext -&gt; unit</div>
+<div class="tip" id="45">property Option.Value: string with get</div>
+</div></main><footer class="footer font-small m-0 py-4 bg-dark"><div class="container"><div class="row"><div class="col-12 col-md-4 mb-4 mb-md-0"><div class="text-light"><h2 class="h5">Project Resources</h2><ul class="list-group list-group-flush"><li class="list-group-item bg-dark ml-0 pl-0"><a href="https://github.com/efcore/EFCore.FSharp/blob/master/README.md" class="text-white"><i class="fas fa-book-reader fa-fw mr-2"></i>README</a></li><li class="list-group-item bg-dark ml-0 pl-0"><a href="https://github.com/efcore/EFCore.FSharp/blob/master/CHANGELOG.md" class="text-white"><i class="fas fa-sticky-note fa-fw mr-2"></i>Release Notes / Changelog</a></li><li class="list-group-item bg-dark ml-0 pl-0"><a href="https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE.md" class="text-white"><i class="fas fa-id-card fa-fw mr-2"></i>License</a></li></ul></div></div><div class="col-12 col-md-4 mb-4 mb-md-0"><div class="text-light"><h2 class="h5">Other Links</h2><ul class="list-group list-group-flush"><li class="list-group-item bg-dark ml-0 pl-0"><a href="https://docs.microsoft.com/en-us/dotnet/fsharp/" class="text-white"><i class="fab fa-microsoft fa-fw mr-2"></i>F# Documentation</a></li><li class="list-group-item bg-dark ml-0 pl-0"><a href="https://fsharp.org/guides/slack/" class="text-white"><i class="fab fa-slack fa-fw mr-2"></i>F# Slack</a></li><li class="list-group-item bg-dark ml-0 pl-0"><a href="http://foundation.fsharp.org/" class="text-white"><img class="fsharp-footer-logo mr-2" src="https://fsharp.org/img/logo/fsharp.svg" alt="FSharp Logo" />F# Software Foundation</a></li></ul></div></div><div class="col-12 col-md-4 mb-4 mb-md-0"><div class="text-light"><h2 class="h5">Metadata</h2><ul class="list-group list-group-flush"><li class="list-group-item bg-dark ml-0 pl-0">Generated for version <a class="text-white" href="https://github.com/efcore/EFCore.FSharp/releases/tag/5.0.3-beta002">5.0.3-beta002</a> on 2021/05/27</li><li class="list-group-item bg-dark ml-0 pl-0">Found an issue? <a class="text-white" href="https://github.com/efcore/EFCore.FSharp/edit/master/docsSrc/How_Tos/Querying_Options.md">Edit this page.</a></li></ul></div></div></div><div class="row"><div class="col text-center"><small class="text-light"><i class="fas fa-copyright mr-1"></i>2021 EFCore.FSharp, All rights reserved</small></div></div></div></footer></div><script src="https://efcore.github.io/EFCore.FSharp/content/themes.js?version=637577307493582651"></script><script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script><script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script><script src="https://efcore.github.io/EFCore.FSharp/content/tips.js?version=637577307493582651"></script><script src="https://efcore.github.io/EFCore.FSharp/content/submenu.js?version=637577307493582651"></script><script src="https://efcore.github.io/EFCore.FSharp/content/cleanups.js?version=637577307493582651"></script></body></html>

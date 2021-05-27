@@ -51,6 +51,7 @@ group Docs
     nuget FSharp.Literate 4.0.0-rc1
     nuget FSharp.Compiler.Service 34.1
     nuget Fable.React
+    nuget Microsoft.EntityFrameworkCore.Sqlite 5.0.3
 
 group Analyzers
   source https://www.nuget.org/api/v2

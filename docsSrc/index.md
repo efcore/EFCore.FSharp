@@ -35,7 +35,7 @@ This provides support for code-first and database-first use of EF Core in F#, in
       <div class="card-footer text-right border-top-0">
         <a href="{{siteBaseUrl}}/How_Tos/Scaffold_As_Types.html" class="btn btn-primary">Scaffolding &amp; Code Generation</a>
         <a href="{{siteBaseUrl}}/How_Tos/Use_DbContextHelpers.html" class="btn btn-primary">Using DbContext Helpers</a>
-        <a href="{{siteBaseUrl}}/How_Tos/Queryng_Options.html" class="btn btn-primary">Queryng option types</a>
+        <a href="{{siteBaseUrl}}/How_Tos/Querying_Options.html" class="btn btn-primary">Querying option types</a>
       </div>
     </div>
   </div>
