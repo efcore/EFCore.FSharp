@@ -260,7 +260,6 @@ dist/
 .ionide/
 
 # Test coverage files
-coverage/
 coverage.xml
 coverage.*.xml
 
@@ -270,5 +269,3 @@ coverage.*.xml
 
 .fake
 .ionide
-
-tests/EFCore.FSharp.Tests/*.db
