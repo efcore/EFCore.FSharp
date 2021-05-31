@@ -26,7 +26,7 @@ let tryFindEntityAsync<'a when 'a : not struct> (ctx: DbContext) (key: obj) =
     }
 
 /// Helper method for saving an updated record type
-let updateEntity (ctx: DbContext) (key: 'a -> obj) (entity : 'a when 'a : not struct) =
+let updateEntity (ctx: DbContext) (key: 'a -> 'b) (entity : 'a when 'a : not struct) =
     let currentEntity = findEntity<'a> ctx (key entity)
     ctx.Entry(currentEntity).CurrentValues.SetValues(entity :> obj)
     entity
@@ -44,42 +44,64 @@ let updateEntityRangeAsync  (ctx: DbContext) (key: 'a -> obj) (entities : 'a seq
         return updateEntityRange ctx key entities
     }
 
-let saveChanges (ctx: DbContext) =
+let saveChanges (ctx: #DbContext) =
     ctx.SaveChanges()
 
-let saveChangesAsync (ctx: DbContext) =
+let saveChanges' ctx  = saveChanges ctx |> ignore
+
+
+let saveChangesAsync (ctx: #DbContext) =
     async {
         return! ctx.SaveChangesAsync() |> Async.AwaitTask
     }
+let saveChangesAsync' ctx = saveChangesAsync ctx |> Async.Ignore
 
-let addEntity (ctx: DbContext) (entity : 'a when 'a : not struct) =
+
+let addEntity (ctx: #DbContext) (entity : 'a when 'a : not struct) =
     ctx.Set<'a>().Add entity
 
-let addEntityAsync (ctx: DbContext) (entity : 'a when 'a : not struct) =
+let addEntity' ctx entity =addEntity ctx entity |> ignore
+
+
+let addEntityAsync (ctx: #DbContext) (entity : 'a when 'a : not struct) =
     async {
         return! ctx.Set<'a>().AddAsync(entity) |> awaitValueTask
     }
+let addEntityAsync' ctx entity  = addEntityAsync ctx entity |> Async.Ignore
 
-let addEntityRange (ctx: DbContext) (entities : 'a seq when 'a : not struct) =
+
+let addEntityRange (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
     ctx.Set<'a>().AddRange entities
 
-let addEntityRangeAsync (ctx: DbContext) (entities : 'a seq when 'a : not struct) =
+let addEntityRange' (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
+    addEntityRange ctx entities |> ignore
+
+let addEntityRangeAsync (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
     async {
         return! ctx.Set<'a>().AddRangeAsync(entities) |> Async.AwaitTask
     }
+let addEntityRangeAsync' (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
+    addEntityRangeAsync ctx entities |> Async.Ignore
 
-let attachEntity (ctx: DbContext) (entity : 'a when 'a : not struct) =
+let attachEntity (ctx: #DbContext) (entity : 'a when 'a : not struct) =
     ctx.Set<'a>().Attach entity
+let attachEntity' (ctx: #DbContext) (entity : 'a when 'a : not struct) =
+    attachEntity ctx entity |> ignore
 
-let attachEntityRange (ctx: DbContext) (entities : 'a seq when 'a : not struct) =
+let attachEntityRange (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
     ctx.Set<'a>().AttachRange(entities)
+let attachEntityRange' (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
+    attachEntityRange ctx entities |> ignore
 
-let removeEntity (ctx: DbContext) (entity : 'a when 'a : not struct) =
+let removeEntity (ctx: #DbContext) (entity : 'a when 'a : not struct) =
     ctx.Set<'a>().Remove entity
+let removeEntity' (ctx: #DbContext) (entity : 'a when 'a : not struct) =
+    removeEntity ctx entity |> ignore
 
-let removeEntityRange (ctx: DbContext) (entities : 'a seq when 'a : not struct) =
+let removeEntityRange (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
     ctx.Set<'a>().RemoveRange(entities)
-
+let removeEntityRange' (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
+    removeEntityRange ctx entities |> ignore
 
 let toListAsync (dbset: #IQueryable<_>) = async {
     let! list = dbset.ToListAsync() |> Async.AwaitTask

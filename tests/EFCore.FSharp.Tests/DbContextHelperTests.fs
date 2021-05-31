@@ -47,8 +47,8 @@ let DbContextHelperTests =
 
             use ctx = createContext ()
 
-            addEntity ctx original |> ignore
-            saveChanges ctx |> ignore
+            addEntity' ctx original 
+            saveChanges' ctx 
 
             let modified = { original with Title = "My New Title" }
 
@@ -125,8 +125,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity' ctx blog 
+            saveChanges' ctx 
 
             let result = toListAsync ctx.Blogs |> Async.RunSynchronously
 
@@ -142,8 +142,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity' ctx blog 
+            saveChanges' ctx 
 
             let result = tryFirstAsync ctx.Blogs |> Async.RunSynchronously
 
@@ -165,8 +165,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity' ctx blog
+            saveChanges' ctx 
 
             let result = tryFirst ctx.Blogs
 
