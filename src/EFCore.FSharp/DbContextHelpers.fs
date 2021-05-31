@@ -19,11 +19,20 @@ let findEntityAsync<'a when 'a : not struct> (ctx: DbContext) (key: obj) =
         return! ctx.Set<'a>().FindAsync(key) |> awaitValueTask
     }
 
+let findEntityTaskAsync<'a when 'a : not struct> (ctx: DbContext) (key: obj) =
+        ctx.Set<'a>().FindAsync(key)
+    
 let tryFindEntityAsync<'a when 'a : not struct> (ctx: DbContext) (key: obj) =
     async {
         let! result = findEntityAsync<'a> ctx key
         return if isNull (box result) then None else Some result
     }
+
+let tryFindEntityTaskAsync<'a when 'a : not struct> (ctx: DbContext) (key: obj) =
+        let result = findEntityTaskAsync<'a> ctx key
+        result.AsTask().ContinueWith(
+            fun (t: Task<'a>) -> if isNull (box t.Result) then None else Some t.Result)
+        
 
 /// Helper method for saving an updated record type
 let updateEntity (ctx: DbContext) (key: 'a -> 'b) (entity : 'a when 'a : not struct) =
@@ -32,17 +41,13 @@ let updateEntity (ctx: DbContext) (key: 'a -> 'b) (entity : 'a when 'a : not str
     entity
 
 let updateEntityAsync (ctx: DbContext) (key: 'a -> obj) (entity : 'a when 'a : not struct) =
-    async {
-        return updateEntity ctx key entity
-    }
+    async { return updateEntity ctx key entity }
 
 let updateEntityRange  (ctx: DbContext) (key: 'a -> obj) (entities : 'a seq when 'a : not struct) =
     entities |> Seq.map(fun e -> updateEntity ctx key e)
 
 let updateEntityRangeAsync  (ctx: DbContext) (key: 'a -> obj) (entities : 'a seq when 'a : not struct) =
-    async {
-        return updateEntityRange ctx key entities
-    }
+    async { return updateEntityRange ctx key entities }
 
 let saveChanges (ctx: #DbContext) =
     ctx.SaveChanges()
@@ -51,11 +56,11 @@ let saveChanges' ctx  = saveChanges ctx |> ignore
 
 
 let saveChangesAsync (ctx: #DbContext) =
-    async {
-        return! ctx.SaveChangesAsync() |> Async.AwaitTask
-    }
+    async { return! ctx.SaveChangesAsync() |> Async.AwaitTask }
 let saveChangesAsync' ctx = saveChangesAsync ctx |> Async.Ignore
 
+let saveChangesTaskAsync (ctx: #DbContext) = ctx.SaveChangesAsync() 
+let saveChangesTaskAsync' ctx = saveChangesTaskAsync ctx :> Task
 
 let addEntity (ctx: #DbContext) (entity : 'a when 'a : not struct) =
     ctx.Set<'a>().Add entity
@@ -69,6 +74,8 @@ let addEntityAsync (ctx: #DbContext) (entity : 'a when 'a : not struct) =
     }
 let addEntityAsync' ctx entity  = addEntityAsync ctx entity |> Async.Ignore
 
+let addEntityTaskAsync (ctx: #DbContext) (entity : 'a when 'a : not struct) = ctx.Set<'a>().AddAsync(entity).AsTask()
+let addEntityTaskAsync' ctx entity  = (addEntityTaskAsync ctx entity) :> Task
 
 let addEntityRange (ctx: #DbContext) (entities : 'a seq when 'a : not struct) =
     ctx.Set<'a>().AddRange entities
@@ -108,10 +115,16 @@ let toListAsync (dbset: #IQueryable<_>) = async {
     return list |> List.ofSeq
 }
 
+let toListTaskAsync (dbset: #IQueryable<_>) = dbset.ToListAsync() 
+
+
 let tryFirstAsync (dbset: #IQueryable<_>) = async {
     let! ret = dbset.FirstOrDefaultAsync() |> Async.AwaitTask
     return FSharpUtilities.OptionOfNullableObj ret
 }
+
+let tryFirstTaskAsync dbset = tryFirstAsync dbset |> Async.StartAsTask
+
 
 let tryFirst (dbset: #IQueryable<_>) =
     dbset.FirstOrDefault() |> FSharpUtilities.OptionOfNullableObj
@@ -122,6 +135,9 @@ let tryFilterFirstAsync predicate (dbSet: #IQueryable<_>) = async {
     return FSharpUtilities.OptionOfNullableObj ret
 }
 
+let tryFilterFirstTaskAsync predicate (dbSet: #IQueryable<_>) =
+    tryFilterFirstAsync predicate dbSet |> Async.StartAsTask
+
 let tryFilterFirst predicate (dbSet: #IQueryable<_>) =
     let pred = FSharpUtilities.exprToLinq predicate
     let ret = dbSet.FirstOrDefault(predicate = pred)
@@ -129,11 +145,14 @@ let tryFilterFirst predicate (dbSet: #IQueryable<_>) =
 
 type IQueryable<'T> with
     member this.TryFirstAsync () = this |> tryFirstAsync
+    member this.TryFirstTaskAsync () = this |> tryFirstTaskAsync
     member this.TryFirst () = this |> tryFirst
     member this.TryFirstAsync expr = async {
         let! ret = this.FirstOrDefaultAsync(predicate = expr) |> Async.AwaitTask
         return FSharpUtilities.OptionOfNullableObj ret
     }
+    member this.TryFirstTaskAsync expr = this.TryFirstAsync(expr) |> Async.StartAsTask
+
     member this.TryFirst expr =
         this.FirstOrDefault(predicate = expr)
          |> FSharpUtilities.OptionOfNullableObj

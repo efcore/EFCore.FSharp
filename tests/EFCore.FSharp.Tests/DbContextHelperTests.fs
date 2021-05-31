@@ -98,6 +98,39 @@ let DbContextHelperTests =
             Expect.equal actual expected "Record in context should match"
         }
 
+        test "Async Task helpers work as expected" {
+
+            let original = {
+                Id = (Guid.NewGuid())
+                Title = "My Title"
+                Content = "My original content"
+            }
+
+            let expected = {
+                Id = original.Id
+                Title = "My New Title"
+                Content = "My original content"
+            }
+
+            use ctx = createContext ()
+
+            let found =
+                async {
+                    let! _ = addEntityTaskAsync ctx original |> Async.AwaitTask
+                    let! _ = saveChangesTaskAsync ctx |> Async.AwaitTask
+
+                    let modified = { original with Title = "My New Title" }
+
+                    let! _ = updateEntityAsync ctx (fun b -> b.Id :> obj) modified
+
+                    return! tryFindEntityTaskAsync<Blog> ctx original.Id |> Async.AwaitTask
+                } |> Async.RunSynchronously
+
+            let actual = Expect.wantSome found "Should not be None"
+            Expect.equal actual expected "Record in context should match"
+        }
+
+
         test "tryFindEntity returns None if no matching entry found" {
             use ctx = createContext()
             let found = tryFindEntity<Blog> ctx (Guid.NewGuid())
@@ -260,6 +293,31 @@ let DbSetTests =
             Expect.isNone result "should have none"
         }
 
+
+        test "TryFirstTaskAsync extension should return the blog" {
+            use ctx = createContext()
+            let blog = {
+                Id = (Guid.NewGuid())
+                Title = "My Title"
+                Content = "My original content"
+            }
+
+            addEntity ctx blog |> ignore
+            saveChanges ctx |> ignore
+
+            let result = ctx.Blogs.TryFirstTaskAsync() |> Async.AwaitTask |> Async.RunSynchronously
+
+            let actual = Expect.wantSome result "should have one"
+            Expect.equal blog actual "Should be same"
+        }
+
+        test "TryFirstTaskAsync extension should return None" {
+            use ctx = createContext()
+            let result = ctx.Blogs.TryFirstTaskAsync() |> Async.AwaitTask |> Async.RunSynchronously
+            Expect.isNone result "should have none"
+        }
+
+
         test "TryFirst extension should return the blog" {
             use ctx = createContext()
             let blog = {
@@ -301,10 +359,36 @@ let DbSetTests =
             Expect.equal blog actual "Should be same"
         }
 
+
+        test "TryFirstTaskAsync extension with filter should return the blog" {
+            use ctx = createContext()
+            let id = Guid.NewGuid()
+            let blog = {
+                Id = id
+                Title = "My Title"
+                Content = "My original content"
+            }
+
+            addEntity' ctx blog 
+            saveChanges' ctx 
+
+            let result = ctx.Blogs.TryFirstTaskAsync(fun x -> x.Id  = id) |> Async.AwaitTask |> Async.RunSynchronously
+
+            let actual = Expect.wantSome result "should have one"
+            Expect.equal blog actual "Should be same"
+        }
+
         test "TryFirstAsync extension with filter should return None" {
             use ctx = createContext()
             let id = Guid.NewGuid()
             let result = ctx.Blogs.TryFirstAsync(fun x -> x.Id  = id) |> Async.RunSynchronously
+            Expect.isNone result "should have none"
+        }
+
+        test "TryFirstTaskAsync extension with filter should return None" {
+            use ctx = createContext()
+            let id = Guid.NewGuid()
+            let result = ctx.Blogs.TryFirstTaskAsync(fun x -> x.Id  = id)  |> Async.AwaitTask |> Async.RunSynchronously
             Expect.isNone result "should have none"
         }
 
