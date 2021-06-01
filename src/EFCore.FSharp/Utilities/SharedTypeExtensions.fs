@@ -3,6 +3,7 @@ namespace EntityFrameworkCore.FSharp
 open System
 open System.Reflection
 open System.Text
+open Microsoft.FSharp.Reflection
 
 module internal rec SharedTypeExtensions =
 
@@ -165,3 +166,15 @@ module internal rec SharedTypeExtensions =
         let sb = StringBuilder()
         processType t useFullName sb |> ignore
         sb.ToString()
+
+    let isSingleCaseUnion t =
+      FSharpType.IsUnion t
+      && FSharpType.GetUnionCases(t)
+         |> Array.length
+         |> ((=)1)
+
+    let unwrapSingleCaseUnion t =
+      let case = FSharpType.GetUnionCases(t)
+                 |> Array.exactlyOne
+      let field = case.GetFields() |> Array.head
+      field.PropertyType

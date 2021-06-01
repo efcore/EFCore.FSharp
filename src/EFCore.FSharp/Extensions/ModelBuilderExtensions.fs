@@ -1,7 +1,7 @@
 namespace EntityFrameworkCore.FSharp
 
 open System
-open EntityFrameworkCore.FSharp.Translations.OptionTranslation
+open EntityFrameworkCore.FSharp.Translations
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Storage.ValueConversion
@@ -9,6 +9,7 @@ open Microsoft.EntityFrameworkCore.Storage.ValueConversion
 module Extensions =
 
     let private genericOptionConverterType = typedefof<OptionConverter<_>>
+    let private genericSingleCaseUnionConverterType = typedefof<SingleCaseUnionConverter<_,_>>
 
     type ModelBuilder with
 
@@ -49,8 +50,31 @@ module Extensions =
                         .HasConversion(converter)
                     |> ignore
 
+        member this.RegisterSingleUnionCases() =
+            let makeSingleUnionCaseConverter tUnion =
+                let underlyingType = SharedTypeExtensions.unwrapSingleCaseUnion tUnion
+                let converterType = genericSingleCaseUnionConverterType.MakeGenericType(underlyingType, tUnion)
+                let converter = converterType.GetConstructor([||]).Invoke([||]) :?> ValueConverter
+                converter
+
+            let converterDetails =
+                this.Model.GetEntityTypes()
+                |> Seq.filter (fun p -> not <| SharedTypeExtensions.isSingleCaseUnion p.ClrType)
+                |> Seq.collect (fun e -> e.ClrType.GetProperties())
+                |> Seq.filter (fun p -> SharedTypeExtensions.isSingleCaseUnion p.PropertyType)
+                |> Seq.map(fun p -> (p, (makeSingleUnionCaseConverter p.PropertyType)) )
+
+            for (prop, converter) in converterDetails do
+                    this.Entity(prop.DeclaringType)
+                        .Property(prop.PropertyType,prop.Name)
+                        .HasConversion(converter)
+                    |> ignore
+
     let registerOptionTypes (modelBuilder : ModelBuilder) =
         modelBuilder.RegisterOptionTypes()
+
+    let registerSingleCaseUnionTypes (modelBuilder : ModelBuilder) =
+        modelBuilder.RegisterSingleUnionCases()
 
     let useValueConverter<'a> (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType<'a>(converter)
@@ -63,8 +87,8 @@ module Extensions =
             let coreOptionsBuilder = this.OptionsBuilder
 
             let extension =
-                let finded = coreOptionsBuilder.Options.FindExtension<FsharpTypeOptionsExtension>()
-                if (box finded) <> null then finded else FsharpTypeOptionsExtension()
+                let finded = coreOptionsBuilder.Options.FindExtension<FSharpTypeOptionsExtension>()
+                if (box finded) <> null then finded else FSharpTypeOptionsExtension()
 
             (coreOptionsBuilder :> IDbContextOptionsBuilderInfrastructure).AddOrUpdateExtension(extension)
             this

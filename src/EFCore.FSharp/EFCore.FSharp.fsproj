@@ -32,6 +32,8 @@
     <Compile Include="Internal\FSharpUtilities.fs" />
     <Compile Include="ValueConverters\Converters.fs" />
     <Compile Include="Translations\OptionTranslation.fs" />
+    <Compile Include="Translations\SingleCaseUnionTranslation.fs" />
+    <Compile Include="Translations\Translation.fs" />
     <Compile Include="Scaffolding\FSharpDbContextGenerator.fs" />
     <Compile Include="Scaffolding\FSharpEntityTypeGenerator.fs" />
     <Compile Include="Scaffolding\Internal\FSharpModelGenerator.fs" />
