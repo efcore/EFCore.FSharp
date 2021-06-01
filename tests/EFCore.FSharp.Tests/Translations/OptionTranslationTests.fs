@@ -43,8 +43,8 @@ let blogWithoutContent = { Id = Guid.NewGuid(); Title = "My Title"; Content = No
 let saveBlogs ctx =
     [blogWithContent
      blogWithoutContent]
-    |> List.iter (addEntity ctx >> ignore)
-    saveChanges ctx |> ignore
+    |> List.iter (addEntity ctx)
+    saveChanges ctx
 
 [<Tests>]
 let OptionTranslationQueryTests =

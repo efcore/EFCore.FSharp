@@ -47,8 +47,8 @@ let DbContextHelperTests =
 
             use ctx = createContext ()
 
-            addEntity' ctx original 
-            saveChanges' ctx 
+            addEntity ctx original
+            saveChanges ctx
 
             let modified = { original with Title = "My New Title" }
 
@@ -84,8 +84,8 @@ let DbContextHelperTests =
 
             let found =
                 async {
-                    let! _ = addEntityAsync ctx original
-                    let! _ = saveChangesAsync ctx
+                    do! addEntityAsync ctx original
+                    do! saveChangesAsync ctx
 
                     let modified = { original with Title = "My New Title" }
 
@@ -116,8 +116,8 @@ let DbContextHelperTests =
 
             let found =
                 async {
-                    let! _ = addEntityTaskAsync ctx original |> Async.AwaitTask
-                    let! _ = saveChangesTaskAsync ctx |> Async.AwaitTask
+                    do! addEntityTaskAsync ctx original |> Async.AwaitTask
+                    do! saveChangesTaskAsync ctx |> Async.AwaitTask
 
                     let modified = { original with Title = "My New Title" }
 
@@ -158,8 +158,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity' ctx blog 
-            saveChanges' ctx 
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = toListAsync ctx.Blogs |> Async.RunSynchronously
 
@@ -175,8 +175,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity' ctx blog 
-            saveChanges' ctx 
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = tryFirstAsync ctx.Blogs |> Async.RunSynchronously
 
@@ -198,8 +198,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity' ctx blog
-            saveChanges' ctx 
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = tryFirst ctx.Blogs
 
@@ -222,8 +222,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = tryFilterFirstAsync
                              <@ fun x -> x.Id  = id @>
@@ -253,8 +253,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = tryFilterFirst <@ fun x -> x.Id  = id @> ctx.Blogs
 
@@ -278,8 +278,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = ctx.Blogs.TryFirstAsync() |> Async.RunSynchronously
 
@@ -302,8 +302,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = ctx.Blogs.TryFirstTaskAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
@@ -326,8 +326,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = ctx.Blogs.TryFirst()
 
@@ -350,8 +350,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = ctx.Blogs.TryFirstAsync(fun x -> x.Id  = id) |> Async.RunSynchronously
 
@@ -369,8 +369,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity' ctx blog 
-            saveChanges' ctx 
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = ctx.Blogs.TryFirstTaskAsync(fun x -> x.Id  = id) |> Async.AwaitTask |> Async.RunSynchronously
 
@@ -401,8 +401,8 @@ let DbSetTests =
                 Content = "My original content"
             }
 
-            addEntity ctx blog |> ignore
-            saveChanges ctx |> ignore
+            addEntity ctx blog
+            saveChanges ctx
 
             let result = ctx.Blogs.TryFirst(fun x -> x.Id  = id)
 
