@@ -36,18 +36,20 @@ We will use `Paket` for package management, though you can apply the same princi
 
 1. Convert the project to use `Paket`
 
-    `paket convert-from-nuget`
+    `dotnet paket convert-from-nuget`
 
 ## Installing the package
 paket
 
 ```bash
-paket install EntityFrameworkCore.FSharp
+dotnet paket add Microsoft.EntityFrameworkCore.Sqlite
+dotnet paket add EntityFrameworkCore.FSharp
 ```
 
 dotnet CLI
 
 ```bash
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite
 dotnet add package EntityFrameworkCore.FSharp
 ```
 
@@ -67,6 +69,7 @@ For this example we will use record types, but "normal" classes will also work i
 
     open System.ComponentModel.DataAnnotations
     open Microsoft.EntityFrameworkCore
+    open EntityFrameworkCore.FSharp.Extensions
 
     [<CLIMutable>]
     type Blog = {
