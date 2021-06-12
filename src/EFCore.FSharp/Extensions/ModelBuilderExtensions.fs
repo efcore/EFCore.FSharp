@@ -58,13 +58,12 @@ module Extensions =
     let useValueConverterForType (``type`` : Type) (converter : ValueConverter) (modelBuilder : ModelBuilder) =
         modelBuilder.UseValueConverterForType(``type``, converter)
 
-    type IRelationalDbContextOptionsBuilderInfrastructure with
-        member this.UseFSharpTypes() =
-            let coreOptionsBuilder = this.OptionsBuilder
 
+    type DbContextOptionsBuilder with
+        member this.UseFSharpTypes() =
             let extension =
-                let finded = coreOptionsBuilder.Options.FindExtension<FsharpTypeOptionsExtension>()
+                let finded = this.Options.FindExtension<FsharpTypeOptionsExtension>()
                 if (box finded) <> null then finded else FsharpTypeOptionsExtension()
 
-            (coreOptionsBuilder :> IDbContextOptionsBuilderInfrastructure).AddOrUpdateExtension(extension)
+            (this :> IDbContextOptionsBuilderInfrastructure).AddOrUpdateExtension(extension)
             this
