@@ -4,6 +4,8 @@ open System
 open EntityFrameworkCore.FSharp
 open Expecto
 
+type SingleCaseUnion = SingleCaseUnion of string
+
 [<Tests>]
 let ValueConvertersTest =
     testList "ValueConvertersTest" [
@@ -42,6 +44,24 @@ let ValueConvertersTest =
         test "Can create OptionConverter" {
             let oc = OptionConverter<string>()
 
+            Expect.isNotNull (box oc) "Should not be null"
+        }
+
+        test "string -> string SingleCaseUnion" {
+            let c = Conversion.toSingleCaseUnion<string, SingleCaseUnion>
+            let g = "test"
+            Expect.equal (c.Compile().Invoke(g)) (SingleCaseUnion g) "Should be equal"
+        }
+
+
+        test "string SingleCaseUnion -> string" {
+            let c = Conversion.fromFromSingleCase<string, SingleCaseUnion>
+            let g = "test"
+            Expect.equal (c.Compile().Invoke(SingleCaseUnion g)) g "Should be equal"
+        }
+
+        test "Can create SingleCaseUnionConverter" {
+            let oc = SingleCaseUnionConverter<string, SingleCaseUnion>()
             Expect.isNotNull (box oc) "Should not be null"
         }
     ]
