@@ -86,7 +86,7 @@ module Extensions =
     type DbContextOptionsBuilder with
         member this.UseFSharpTypes() =
             let extension =
-                let finded = coreOptionsBuilder.Options.FindExtension<FSharpTypeOptionsExtension>()
+                let finded = this.Options.FindExtension<FSharpTypeOptionsExtension>()
                 if (box finded) <> null then finded else FSharpTypeOptionsExtension()
 
 
