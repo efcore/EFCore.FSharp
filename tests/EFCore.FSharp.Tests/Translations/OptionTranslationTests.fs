@@ -24,9 +24,8 @@ type MyContext () =
     member this.Blogs with get() = this._blogs and set v = this._blogs <- v
 
     override _.OnConfiguring(options: DbContextOptionsBuilder) : unit =
-           options.UseSqlite(
-              $"Data Source={Guid.NewGuid().ToString()}.db",
-              (fun builder -> builder.UseFSharpTypes() |> ignore))
+           options.UseSqlite($"Data Source={Guid.NewGuid().ToString()}.db")
+                  .UseFSharpTypes()
            |> ignore
 
     override _.OnModelCreating builder =
@@ -44,8 +43,8 @@ let blogWithoutContent = { Id = Guid.NewGuid(); Title = "My Title"; Content = No
 let saveBlogs ctx =
     [blogWithContent
      blogWithoutContent]
-    |> List.iter (addEntity ctx >> ignore)
-    saveChanges ctx |> ignore
+    |> List.iter (addEntity ctx)
+    saveChanges ctx
 
 [<Tests>]
 let OptionTranslationQueryTests =

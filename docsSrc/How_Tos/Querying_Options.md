@@ -40,14 +40,13 @@ type MyContext () =
         builder.RegisterOptionTypes() // enables option values for all entities
 
     override _.OnConfiguring(options: DbContextOptionsBuilder) : unit =
-           options.UseSqlite(
-              "Data Source=dbName.db",
-              (fun builder -> builder.UseFSharpTypes() |> ignore))
+           options.UseSqlite("Data Source=dbName.db")
+                  .UseFSharpTypes())
            |> ignore
 
 ```
 
-Note that the  `builder.UseFSharpTypes()` will exist independent of the database, the `UseSqlite` is just for the example. 
+Note that the  `.UseFSharpTypes()` will exist independent of the database, the `UseSqlite` is just for the example. 
 If you are using an SQL server with `UseSqlServer` or `UsePostgres` for Postgres, or any other database it will exist.
 
 ## Querying
