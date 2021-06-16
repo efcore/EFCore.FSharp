@@ -105,7 +105,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
             | None -> ()
 
             match delimitedColumnType with
-            | Some t -> (sprintf "Type = %s" t) |> a.AddParameter
+            | Some t -> (sprintf "TypeName = %s" t) |> a.AddParameter
             | None -> ()
 
             sb |> appendLine (a |> string)

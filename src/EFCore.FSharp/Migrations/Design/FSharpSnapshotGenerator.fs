@@ -293,11 +293,17 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
             generateAnnotations annotations.Values sb
 
+        let indexParams =
+            if isNull idx.Name then
+                String.Join(", ", (idx.Properties |> Seq.map (fun p -> p.Name |> code.Literal)))
+            else
+                sprintf "[| %s |], %s" (String.Join("; ", (idx.Properties |> Seq.map (fun p -> p.Name |> code.Literal)))) (code.Literal idx.Name)
+
         sb
             |> appendEmptyLine
             |> append funcId
             |> append ".HasIndex("
-            |> append (String.Join(", ", (idx.Properties |> Seq.map (fun p -> p.Name |> code.Literal))))
+            |> append indexParams
             |> append ")"
             |> indent
             |> appendLineIfTrue idx.IsUnique ".IsUnique()"
