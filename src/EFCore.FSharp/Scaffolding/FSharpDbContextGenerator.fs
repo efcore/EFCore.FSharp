@@ -275,7 +275,7 @@ type FSharpDbContextGenerator
         let defaultSchema = entityType.Model.GetDefaultSchema()
 
         let explicitSchema = not (isNull schema) && schema <> defaultSchema
-        let explicitTable = explicitSchema || (not (isNull tableName) && tableName <> entityType.GetDbSetName())
+        let explicitTable = explicitSchema || not (isNull tableName) && tableName <> entityType.GetDbSetName()
 
         if explicitTable then
 
@@ -287,21 +287,24 @@ type FSharpDbContextGenerator
 
 
             let lines = ResizeArray<string>()
-            lines.Add(sprintf ".ToTable(%s)" parameterString)
+            lines.Add($".ToTable({parameterString})")
 
-            let viewName = entityType.GetViewName()
-            let viewSchema = entityType.GetViewSchema()
+            appendMultiLineFluentApi entityType lines sb
 
-            let explicitViewSchema = viewSchema |> isNull |> not && viewSchema <> defaultSchema
-            let explicitViewTable = explicitViewSchema || viewName |> isNull |> not
+        let viewName = entityType.GetViewName()
+        let viewSchema = entityType.GetViewSchema()
 
-            if explicitViewTable then
-                let parameterString =
-                    if explicitViewSchema then $"{code.Literal(viewName)}, {code.Literal(viewSchema)}" else code.Literal(viewName)
+        let explicitViewSchema = viewSchema |> isNull |> not && viewSchema <> defaultSchema
+        let explicitViewTable = explicitViewSchema || viewName |> isNull |> not
 
-                lines.Add($".ToView({parameterString})")
+        if explicitViewTable then
+            let parameterString =
+                if explicitViewSchema then $"{code.Literal(viewName)}, {code.Literal(viewSchema)}" else code.Literal(viewName)
 
-                appendMultiLineFluentApi entityType lines sb
+            let lines = ResizeArray<string>()
+            lines.Add($".ToView({parameterString})")
+
+            appendMultiLineFluentApi entityType lines sb
 
     let generateIndex (index : IIndex) sb =
         let annotations =
@@ -484,7 +487,7 @@ type FSharpDbContextGenerator
             annotationCodeGenerator.GenerateDataAnnotationAttributes(entityType, annotations)
             |> ignore
 
-        if not useDataAnnotations || entityType.GetViewName() |> isNull |> not then
+        if (not useDataAnnotations) || not (isNull (entityType.GetViewName())) then
             sb |> generateTableName entityType
 
         sb |> appendMultiLineFluentApi entityType (linesFromAnnotations annotations.Values entityType)
