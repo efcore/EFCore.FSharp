@@ -22,7 +22,7 @@ We have two approaches to deal with single case union types which are a converte
 ```fsharp
 open EntityFrameworkCore.FSharp.Extensions
 
-type PostitiveInteger = PositiveInteger of int
+type PositiveInteger = PositiveInteger of int
 
 [<CLIMutable>]
 type Blog = {
@@ -64,6 +64,8 @@ type MyContext () =
 
 You can query for equality without any problem
 
+    [hide]
+    let ctx = new MyContext()
 
 ```fsharp
 let blog =
@@ -75,14 +77,14 @@ let blog =
    }
    
  // or  
-let blog = ctx.Blogs.Where(fun b -> b.Votes = PositiveInteger 10).FirstOrDefault()
+let blog' = ctx.Blogs.Where(fun b -> b.Votes = PositiveInteger 10).FirstOrDefault()
 ```
 
 
 For querying with other types of operation you will need to unwrap the value inside the query
 
 ```fsharp
-let blog =
+let blogQuery =
    query {
        for blog in ctx.Blogs do
        let (PositiveInteger votes) = blog.Votes

@@ -41,7 +41,7 @@ type MyContext () =
 
     override _.OnConfiguring(options: DbContextOptionsBuilder) : unit =
            options.UseSqlite("Data Source=dbName.db")
-                  .UseFSharpTypes())
+                  .UseFSharpTypes()
            |> ignore
 
 ```
