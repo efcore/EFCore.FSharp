@@ -41,9 +41,9 @@ type FSharpMigrationOperationGenerator (code : ICSharpHelper) =
 
         if nullableParameter.HasValue then
             let value = nullableParameter |> code.UnknownLiteral
-            let fmt = sprintf ", %s = Nullable(%s)" (sanitiseName name) value
+            let fmt = sprintf ",%s = Nullable(%s)" (sanitiseName name) value
 
-            sb |> append fmt
+            sb |> appendLine fmt
         else
             sb
 
