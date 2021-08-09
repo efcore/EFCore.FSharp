@@ -116,9 +116,17 @@ module internal rec SharedTypeExtensions =
         if isNullableType t = nullable then
             t
         else
-            if nullable then
+            if nullable && t.IsValueType then
                 typedefof<Nullable<_>>.MakeGenericType(t)
             else unwrapNullableType t
+
+    let makeOptional (optional : bool) (t : Type) =
+        if isOptionType t = optional then
+            t
+        else
+            if optional then
+                typedefof<Option<_>>.MakeGenericType(t)
+            else unwrapOptionType t
 
     let unwrapEnumType (t:Type) =
         let isNullable = isNullableType t

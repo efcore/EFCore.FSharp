@@ -200,31 +200,35 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
     let generateProperty (funcId:string) (p:IProperty) (sb:IndentedStringBuilder) =
 
-        let isPropertyRequired =
-            let isNullable =
-                not (p.IsPrimaryKey()) ||
-                isOptionType p.ClrType ||
-                isNullableType p.ClrType
-
-            isNullable <> p.IsNullable
-
         let converter = findValueConverter p
         let clrType =
             match converter with
-            | Some c -> c.ProviderClrType
+            | Some c ->
+                if isNullableType p.ClrType then
+                    makeNullable p.IsNullable c.ProviderClrType
+                elif isOptionType p.ClrType then
+                    makeOptional p.IsNullable c.ProviderClrType
+                else
+                    c.ProviderClrType
             | None -> p.ClrType
+
+        let isPropertyRequired =
+            let isNullable =
+                (
+                    not clrType.IsValueType ||
+                    isOptionType clrType ||
+                    isNullableType clrType
+                )
+
+            (p.IsPrimaryKey()) || (isNullable <> p.IsNullable)
 
         sb
             |> appendEmptyLine
             |> append funcId
-            |> append ".Property<"
-            |> append (clrType |> code.Reference)
-            |> append ">("
-            |> append (p.Name |> code.Literal)
-            |> append ")"
+            |> appendLine (sprintf ".Property<%s>(%s)" (code.Reference clrType) (code.Literal p.Name))
             |> indent
             |> appendLineIfTrue p.IsConcurrencyToken ".IsConcurrencyToken()"
-            |> appendLineIfTrue isPropertyRequired ".IsRequired()"
+            |> append (sprintf ".IsRequired(%b)" (clrType.IsValueType || isPropertyRequired))
             |> appendLineIfTrue (p.ValueGenerated <> ValueGenerated.Never)
                    (if p.ValueGenerated = ValueGenerated.OnAdd then ".ValueGeneratedOnAdd()"
                     else if p.ValueGenerated = ValueGenerated.OnUpdate then ".ValueGeneratedOnUpdate()"
