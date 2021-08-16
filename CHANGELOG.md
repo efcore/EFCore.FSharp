@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Removed `DevelopmentDependency=true` as it was setting `IncludeAssets` to undesirable values when restoring package - https://github.com/efcore/EFCore.FSharp/pull/108
+
 ## [5.0.3-beta005] - 2021-08-09
 
 ### Fixed
