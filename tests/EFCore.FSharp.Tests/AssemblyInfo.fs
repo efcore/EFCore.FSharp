@@ -5,19 +5,19 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("EFCore.FSharp.Tests")>]
 [<assembly: AssemblyProductAttribute("EFCore.FSharp")>]
 [<assembly: AssemblyVersionAttribute("5.0.3")>]
-[<assembly: AssemblyMetadataAttribute("ReleaseDate","2021-06-16T00:00:00.0000000+01:00")>]
+[<assembly: AssemblyMetadataAttribute("ReleaseDate","2021-08-17T00:00:00.0000000+01:00")>]
 [<assembly: AssemblyFileVersionAttribute("5.0.3")>]
 [<assembly: AssemblyInformationalVersionAttribute("5.0.3")>]
 [<assembly: AssemblyMetadataAttribute("ReleaseChannel","beta")>]
-[<assembly: AssemblyMetadataAttribute("GitHash","15ea3ede3c195bd5ce1eca4eb0c8569e7374d583")>]
+[<assembly: AssemblyMetadataAttribute("GitHash","640a596f45adf4a9c406461f1422db072ce9bb4b")>]
 do ()
 
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "EFCore.FSharp.Tests"
     let [<Literal>] AssemblyProduct = "EFCore.FSharp"
     let [<Literal>] AssemblyVersion = "5.0.3"
-    let [<Literal>] AssemblyMetadata_ReleaseDate = "2021-06-16T00:00:00.0000000+01:00"
+    let [<Literal>] AssemblyMetadata_ReleaseDate = "2021-08-17T00:00:00.0000000+01:00"
     let [<Literal>] AssemblyFileVersion = "5.0.3"
     let [<Literal>] AssemblyInformationalVersion = "5.0.3"
     let [<Literal>] AssemblyMetadata_ReleaseChannel = "beta"
-    let [<Literal>] AssemblyMetadata_GitHash = "15ea3ede3c195bd5ce1eca4eb0c8569e7374d583"
+    let [<Literal>] AssemblyMetadata_GitHash = "640a596f45adf4a9c406461f1422db072ce9bb4b"
