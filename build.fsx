@@ -76,7 +76,7 @@ let gitRepoName = "EFCore.FSharp"
 
 let gitHubRepoUrl = sprintf "https://github.com/%s/%s" gitOwner gitRepoName
 
-let releaseBranch = "master"
+let releaseBranch = "release/6.0.0"
 
 let tagFromVersionNumber versionNumber = sprintf "v%s" versionNumber
 
