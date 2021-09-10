@@ -97,7 +97,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    modelBuilder.Model,
+                    (modelBuilder.FinalizeModel()),
                     modelBuilderOptions)
 
             let expectedContextFilePath = Path.Combine("..", "TestContextDir", "TestContext.fs")
@@ -116,7 +116,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    modelBuilder.Model,
+                    (modelBuilder.FinalizeModel()),
                     modelBuilderOptions)
 
             let expectedCode =
@@ -155,7 +155,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    modelBuilder.Model,
+                    (modelBuilder.FinalizeModel()),
                     modelBuilderOptions)
 
             let expectedCode =
@@ -201,7 +201,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    modelBuilder.Model,
+                    (modelBuilder.FinalizeModel()),
                     modelBuilderOptions)
 
             let expectedCode =
@@ -261,7 +261,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    modelBuilder.Model,
+                    (modelBuilder.FinalizeModel()),
                     modelBuilderOptions)
 
             let expectedCode =

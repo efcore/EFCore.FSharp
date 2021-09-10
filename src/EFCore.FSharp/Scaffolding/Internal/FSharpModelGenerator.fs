@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp.Scaffolding.Internal
+namespace EntityFrameworkCore.FSharp.Scaffolding.Internal
 
 open System.IO
 open Microsoft.EntityFrameworkCore.Infrastructure
@@ -74,6 +74,7 @@ type FSharpModelGenerator
                 options.ContextNamespace,
                 options.ModelNamespace,
                 options.UseDataAnnotations,
+                options.UseNullableReferenceTypes,
                 options.SuppressConnectionStringWarning,
                 options.SuppressOnConfiguring)
 
@@ -106,7 +107,8 @@ type FSharpModelGenerator
                 domainFileBuilder
                     |> append (entityTypeGenerator.WriteCode(entityType,
                                                                 options.ModelNamespace,
-                                                                options.UseDataAnnotations))
+                                                                options.UseDataAnnotations,
+                                                                options.UseNullableReferenceTypes))
                     |> ignore
             )
         domainFile.Code <- (domainFileBuilder.ToString())

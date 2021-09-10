@@ -318,9 +318,11 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.Unicode
                         CoreAnnotationNames.ProductVersion
                         CoreAnnotationNames.ValueGeneratorFactory
-                        CoreAnnotationNames.OwnedTypes
+                        CoreAnnotationNames.ValueGeneratorFactoryType
                         CoreAnnotationNames.ValueConverter
+                        CoreAnnotationNames.ValueConverterType
                         CoreAnnotationNames.ValueComparer
+                        CoreAnnotationNames.ValueComparerType
                         CoreAnnotationNames.KeyValueComparer
                         CoreAnnotationNames.StructuralValueComparer
                         CoreAnnotationNames.BeforeSaveBehavior
@@ -334,19 +336,33 @@ module FSharpMigrationsGeneratorTest =
                         RelationalAnnotationNames.ViewColumnMappings
                         RelationalAnnotationNames.SqlQueryColumnMappings
                         RelationalAnnotationNames.FunctionColumnMappings
+                        RelationalAnnotationNames.DefaultColumnMappings
+                        RelationalAnnotationNames.TableMappings
+                        RelationalAnnotationNames.ViewMappings
+                        RelationalAnnotationNames.FunctionMappings
+                        RelationalAnnotationNames.SqlQueryMappings
+                        RelationalAnnotationNames.DefaultMappings
+                        RelationalAnnotationNames.ForeignKeyMappings
+                        RelationalAnnotationNames.TableIndexMappings
+                        RelationalAnnotationNames.UniqueConstraintMappings
                         RelationalAnnotationNames.RelationalOverrides
                         RelationalAnnotationNames.DefaultValueSql
                         RelationalAnnotationNames.ComputedColumnSql
                         RelationalAnnotationNames.DefaultValue
                         RelationalAnnotationNames.Name
+                        RelationalAnnotationNames.SequencePrefix
                         RelationalAnnotationNames.Sequences
                         RelationalAnnotationNames.CheckConstraints
                         RelationalAnnotationNames.DefaultSchema
                         RelationalAnnotationNames.Filter
+                        RelationalAnnotationNames.DbFunction
                         RelationalAnnotationNames.DbFunctions
                         RelationalAnnotationNames.MaxIdentifierLength
                         RelationalAnnotationNames.IsFixedLength
                         RelationalAnnotationNames.Collation
+                        RelationalAnnotationNames.IsStored
+                        RelationalAnnotationNames.RelationalModel
+                        RelationalAnnotationNames.ModelDependencies
                     ] |> HashSet
 
                 let toTable = nl + @"modelBuilder.ToTable(""WithAnnotations"") |> ignore" + nl
@@ -426,9 +442,6 @@ module FSharpMigrationsGeneratorTest =
                 let notForProperty =
                     [
                         CoreAnnotationNames.ProductVersion
-                        CoreAnnotationNames.OwnedTypes
-                        CoreAnnotationNames.ConstructorBinding
-                        CoreAnnotationNames.ServiceOnlyConstructorBinding
                         CoreAnnotationNames.NavigationAccessMode
                         CoreAnnotationNames.EagerLoaded
                         CoreAnnotationNames.QueryFilter
@@ -440,20 +453,37 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.AmbiguousNavigations
                         CoreAnnotationNames.DuplicateServiceProperties
                         RelationalAnnotationNames.TableName
+                        RelationalAnnotationNames.IsTableExcludedFromMigrations
                         RelationalAnnotationNames.ViewName
                         RelationalAnnotationNames.Schema
                         RelationalAnnotationNames.ViewSchema
+                        RelationalAnnotationNames.ViewDefinitionSql
+                        RelationalAnnotationNames.FunctionName
+                        RelationalAnnotationNames.SqlQuery
                         RelationalAnnotationNames.DefaultSchema
                         RelationalAnnotationNames.DefaultMappings
+                        RelationalAnnotationNames.TableColumnMappings
+                        RelationalAnnotationNames.ViewColumnMappings
+                        RelationalAnnotationNames.SqlQueryColumnMappings
+                        RelationalAnnotationNames.FunctionColumnMappings
+                        RelationalAnnotationNames.DefaultColumnMappings
                         RelationalAnnotationNames.TableMappings
                         RelationalAnnotationNames.ViewMappings
+                        RelationalAnnotationNames.FunctionMappings
                         RelationalAnnotationNames.SqlQueryMappings
+                        RelationalAnnotationNames.ForeignKeyMappings
+                        RelationalAnnotationNames.TableIndexMappings
+                        RelationalAnnotationNames.UniqueConstraintMappings
                         RelationalAnnotationNames.Name
                         RelationalAnnotationNames.Sequences
+                        RelationalAnnotationNames.SequencePrefix
                         RelationalAnnotationNames.CheckConstraints
                         RelationalAnnotationNames.Filter
+                        RelationalAnnotationNames.DbFunction
                         RelationalAnnotationNames.DbFunctions
                         RelationalAnnotationNames.MaxIdentifierLength
+                        RelationalAnnotationNames.RelationalModel
+                        RelationalAnnotationNames.ModelDependencies
                     ] |> HashSet
 
                 let columnMapping =
@@ -551,14 +581,14 @@ module FSharpMigrationsGeneratorTest =
                         eb.Property<RawEnum>("EnumDiscriminator").HasConversion<int>() |> ignore
                         ) |> ignore
 
-                modelBuilder.FinalizeModel() |> ignore
+                let model = modelBuilder.FinalizeModel()
 
                 let modelSnapshotCode =
                     generator.GenerateSnapshot(
                         "MyNamespace",
                         typeof<MyContext>,
                         "MySnapshot",
-                        modelBuilder.Model)
+                        model)
 
                 let snapshotModel = (compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot").Model
 
@@ -613,6 +643,8 @@ module FSharpMigrationsGeneratorTest =
                                         eb.Property<int>("C3") |> ignore
                                         eb.HasKey("Id")  |> ignore) |> ignore
 
+                let model = modelBuilder.FinalizeModel()
+
 
                 let migrationMetadataCode =
                     generator.GenerateMetadata(
@@ -620,7 +652,7 @@ module FSharpMigrationsGeneratorTest =
                         typeof<MyContext>,
                         "MyMigration",
                         "20150511161616_MyMigration",
-                        modelBuilder.Model)
+                        model)
 
                 let expectedCode =
                     seq {
@@ -728,7 +760,7 @@ module FSharpMigrationsGeneratorTest =
 
             test "Snapshots compile" {
                 let (_, _, generator) = createMigrationsCodeGenerator()
-                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
                 modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
                 modelBuilder.Entity<EntityWithConstructorBinding>(fun x ->
                     x.Property(fun e -> e.Id) |> ignore
@@ -758,14 +790,14 @@ module FSharpMigrationsGeneratorTest =
 
                 entityType.SetPrimaryKey(property2) |> ignore
 
-                modelBuilder.FinalizeModel() |> ignore
+                let finalModel = modelBuilder.FinalizeModel()
 
                 let modelSnapshotCode =
                     generator.GenerateSnapshot(
                         "MyNamespace",
                         typeof<MyContext>,
                         "MySnapshot",
-                        model)
+                        finalModel)
 
                 let expectedCode =
                     seq {
@@ -876,19 +908,19 @@ module FSharpMigrationsGeneratorTest =
                     eb.HasKey(fun e -> e.Boolean :> obj) |> ignore
                     ) |> ignore
 
-                modelBuilder.FinalizeModel() |> ignore
+                let model = modelBuilder.FinalizeModel()
 
                 let modelSnapshotCode =
                     generator.GenerateSnapshot(
                         "MyNamespace",
                         typeof<MyContext>,
                         "MySnapshot",
-                        modelBuilder.Model)
+                        model)
 
                 let snapshot = compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
                 let entityType = snapshot.Model.GetEntityTypes() |> Seq.head
 
-                Expect.equal (entityType |> Microsoft.EntityFrameworkCore.EntityTypeExtensions.DisplayName) typeof<EntityWithEveryPrimitive>.FullName ""
+                Expect.equal (entityType.DisplayName()) typeof<EntityWithEveryPrimitive>.FullName ""
 
                 (modelBuilder.Model.GetEntityTypes() |> Seq.head).GetProperties()
                 |> Seq.iter (fun property ->
@@ -934,8 +966,8 @@ module FSharpMigrationsGeneratorTest =
                         []
                     )
 
-                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
-                modelBuilder.Model.FinalizeModel() |> ignore
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                let model = modelBuilder.Model.FinalizeModel()
 
                 let migration =
                     generator.GenerateMetadata(
@@ -943,7 +975,7 @@ module FSharpMigrationsGeneratorTest =
                         typeof<MyContext>,
                         "MyMigration",
                         "20150511161616_MyMigration",
-                        modelBuilder.Model
+                        model
                     )
 
                 Expect.stringContains migration "open System.Text.RegularExpressions" ""
@@ -968,8 +1000,8 @@ module FSharpMigrationsGeneratorTest =
                         []
                     )
 
-                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
-                modelBuilder.Model.FinalizeModel() |> ignore
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                let model = modelBuilder.Model.FinalizeModel()
 
                 let migration =
                     generator.GenerateMetadata(
@@ -977,7 +1009,7 @@ module FSharpMigrationsGeneratorTest =
                         typeof<MyContext>,
                         "MyMigration",
                         "20150511161616_MyMigration",
-                        modelBuilder.Model
+                        model
                     )
 
                 Expect.stringContains migration "open System.Text.RegularExpressions" ""
@@ -1002,8 +1034,8 @@ module FSharpMigrationsGeneratorTest =
                         []
                     )
 
-                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
-                modelBuilder.Model.FinalizeModel() |> ignore
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                let model = modelBuilder.Model.FinalizeModel()
 
                 let migration =
                     generator.GenerateMetadata(
@@ -1011,7 +1043,7 @@ module FSharpMigrationsGeneratorTest =
                         typeof<MyContext>,
                         "MyMigration",
                         "20150511161616_MyMigration",
-                        modelBuilder.Model
+                        model
                     )
 
                 Expect.stringContains migration "open System.Text.RegularExpressions" ""
@@ -1034,8 +1066,8 @@ module FSharpMigrationsGeneratorTest =
                         []
                     )
 
-                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder(skipValidation = true)
-                modelBuilder.Model.FinalizeModel() |> ignore
+                let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
+                let model = modelBuilder.Model.FinalizeModel()
 
                 let migration =
                     generator.GenerateMetadata(
@@ -1043,7 +1075,7 @@ module FSharpMigrationsGeneratorTest =
                         typeof<MyContext>,
                         "MyMigration",
                         "20150511161616_MyMigration",
-                        modelBuilder.Model
+                        model
                     )
 
                 Expect.stringContains migration "open System.Text.RegularExpressions" ""

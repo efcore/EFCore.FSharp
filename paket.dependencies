@@ -8,11 +8,11 @@ nuget Expecto 9.0.4
 nuget Microsoft.NET.Test.Sdk 16.8.0
 nuget altcover ~> 7
 
-nuget Microsoft.EntityFrameworkCore.Design >= 6.0.0-rc.1
-nuget Microsoft.EntityFrameworkCore.Relational >= 6.0.0-rc.1
-nuget Microsoft.EntityFrameworkCore.Sqlite >= 6.0.0-rc.1
-nuget Microsoft.EntityFrameworkCore.SqlServer >= 6.0.0-rc.1
-nuget Microsoft.EntityFrameworkCore.Specification.Tests >= 6.0.0-rc.1
+nuget Microsoft.EntityFrameworkCore.Design >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.Relational >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.Sqlite >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.SqlServer >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.Specification.Tests >= 6.0.0-rc.2
 nuget FSharp.Compiler.Service 40.0.1-preview.21352.5
 nuget Microsoft.CodeAnalysis >= 3.8.0
 nuget Fantomas

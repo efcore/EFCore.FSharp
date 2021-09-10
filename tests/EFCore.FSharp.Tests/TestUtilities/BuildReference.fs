@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp.Test.TestUtilities
+namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open System
 open System.IO
@@ -6,7 +6,7 @@ open System.Numerics
 open Microsoft.CodeAnalysis
 open Microsoft.Extensions.DependencyModel
 open Fantomas
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 type BuildReference = {
@@ -68,7 +68,7 @@ type BuildSource = {
                 checker.ParseFile("empty.fs", sourceText, options)
                 |> Async.RunSynchronously
 
-            let input = parseResult.ParseTree.Value
+            let input = parseResult.ParseTree
 
             let errors, _, assemblyOpt =
                 checker.CompileToDynamicAssembly([input], projectName, (List.ofArray references), None, noframework = true)

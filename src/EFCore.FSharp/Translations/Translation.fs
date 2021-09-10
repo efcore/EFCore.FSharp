@@ -20,12 +20,14 @@ type ExtensionInfo(extension) =
     inherit DbContextOptionsExtensionInfo(extension)
         override _.IsDatabaseProvider = false
 
-        override _.GetServiceProviderHashCode() = 0L
+        override _.GetServiceProviderHashCode() = 0
 
         override _.PopulateDebugInfo debugInfo =
              debugInfo.["SqlServer: UseFSharp"] <- "1"
 
         override _.LogFragment = "using FSharp types"
+
+        override _.ShouldUseSameServiceProvider other = other.IsDatabaseProvider
 
 type FSharpTypeOptionsExtension() =
      interface IDbContextOptionsExtension with

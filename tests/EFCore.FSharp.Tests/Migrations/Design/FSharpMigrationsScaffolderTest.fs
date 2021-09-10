@@ -157,7 +157,7 @@ module FSharpMigrationsScaffolderTest =
                 historyRepository,
                 reporter,
                 MockProvider(),
-                SnapshotModelProcessor(reporter, services.GetRequiredService<IConventionSetBuilder>()),
+                SnapshotModelProcessor(reporter, services.GetRequiredService<IModelRuntimeInitializer>()),
                 Migrator(
                     migrationAssembly,
                     historyRepository,
@@ -168,9 +168,9 @@ module FSharpMigrationsScaffolderTest =
                     services.GetRequiredService<IRelationalConnection>(),
                     services.GetRequiredService<ISqlGenerationHelper>(),
                     services.GetRequiredService<ICurrentDbContext>(),
-                    services.GetRequiredService<IConventionSetBuilder>(),
+                    services.GetRequiredService<IModelRuntimeInitializer>(),
                     services.GetRequiredService<IDiagnosticsLogger<DbLoggerCategory.Migrations>>(),
-                    services.GetRequiredService<IDiagnosticsLogger<DbLoggerCategory.Database.Command>>(),
+                    services.GetRequiredService<IRelationalCommandDiagnosticsLogger>(),
                     services.GetRequiredService<IDatabaseProvider>())))
 
     [<Tests>]

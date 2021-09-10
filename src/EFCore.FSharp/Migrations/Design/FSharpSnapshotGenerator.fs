@@ -856,7 +856,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |>
                 match ownerNav with
                 | Some _ -> id
-                | None -> generateKeys funcId (entityType |> getDeclaredKeys) (entityType |> findDeclaredPrimaryKey)
+                | None -> generateKeys funcId (entityType |> getDeclaredKeys) (entityType |> findPrimaryKey)
             |> generateIndexes funcId (entityType |> getDeclaredIndexes)
             |> this.generateEntityTypeAnnotations funcId entityType
             |> this.generateCheckConstraints funcId entityType

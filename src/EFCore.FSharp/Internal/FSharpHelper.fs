@@ -621,10 +621,10 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
 
     interface ICSharpHelper with
-        member this.Fragment (fragment: MethodCallCodeFragment) =
+        member this.Fragment (fragment: MethodCallCodeFragment, instanceIdentifer: string, typeQualified: bool) =
             this.buildFragment fragment (StringBuilder()) |> string
 
-        member this.Identifier(name: string, scope: ICollection<string>): string =
+        member this.Identifier(name: string, scope: ICollection<string>, capitalize: Nullable<bool>): string =
             if isNull scope then
                 this.IdentifierWithScope name [||]
             else
@@ -706,6 +706,9 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         member this.Literal(values: 'T [], vertical: bool): string =
             let isObjType = typeof<'T> = typeof<obj>
             this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType (IndentedStringBuilder())
+
+        member this.Literal(t: Type) =
+            this.ReferenceFullName t false
 
         member this.Namespace(name: string []): string =
             let join (ns': string array) = String.Join(".", ns')

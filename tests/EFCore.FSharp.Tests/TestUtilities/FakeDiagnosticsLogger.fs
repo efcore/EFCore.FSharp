@@ -1,14 +1,9 @@
-﻿namespace EntityFrameworkCore.FSharp.Test.TestUtilities
+namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 
-open Microsoft.EntityFrameworkCore.Metadata.Conventions
-open Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal
-open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.Diagnostics
 open System.Diagnostics
-open Microsoft.EntityFrameworkCore
 open Microsoft.Extensions.Logging
-open Microsoft.EntityFrameworkCore.Internal
-open Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure
+open Microsoft.EntityFrameworkCore.Diagnostics.Internal
 
 type FakeDiagnosticsLogger<'a when 'a :> LoggerCategory<'a> and 'a : (new : unit -> 'a)>() =
 

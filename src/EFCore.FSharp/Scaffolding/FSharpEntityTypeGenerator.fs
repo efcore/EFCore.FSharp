@@ -417,7 +417,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
             |> string
 
     interface ICSharpEntityTypeGenerator with
-        member this.WriteCode(entityType, ``namespace``, useDataAnnotations) =
+        member this.WriteCode(entityType, ``namespace``, useDataAnnotations, useNullableReferenceTypes) =
             let scaffoldTypesAs = if notNull config then config.ScaffoldTypesAs else RecordType
             let scaffoldNullableColumnsAs = if notNull config then config.ScaffoldNullableColumnsAs else OptionTypes
             writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs (IndentedStringBuilder())

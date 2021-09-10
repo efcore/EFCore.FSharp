@@ -604,6 +604,7 @@ type FSharpDbContextGenerator
                                 contextNamespace,
                                 modelNamespace,
                                 useDataAnnotations,
+                                useNullableReferenceTypes,
                                 suppressConnectionStringWarning,
                                 suppressOnConfiguring) =
 

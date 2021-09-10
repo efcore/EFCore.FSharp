@@ -27,33 +27,32 @@ module internal EntityFrameworkExtensions =
     let findMapping (p:IProperty) =
         p.FindTypeMapping()
 
-    let getDisplayName =
-        EntityTypeExtensions.DisplayName
+    let getDisplayName (e : IEntityType) =
+        e.DisplayName
 
-    let getDeclaredProperties =
-        EntityTypeExtensions.GetDeclaredProperties
+    let getDeclaredProperties (e : IEntityType) =
+        e.GetDeclaredProperties()
 
-    let getDeclaredKeys =
-        EntityTypeExtensions.GetDeclaredKeys
+    let getDeclaredKeys (e : IEntityType) =
+        e.GetDeclaredKeys()
 
-    let getDeclaredIndexes =
-        EntityTypeExtensions.GetDeclaredIndexes
+    let getDeclaredIndexes (e : IEntityType) =
+        e.GetDeclaredIndexes()
 
     let getData (b:bool) (entityType:IEntityType) =
         entityType.GetSeedData(b)
 
-    let findDeclaredPrimaryKey =
-        EntityTypeExtensions.FindDeclaredPrimaryKey
+    let findPrimaryKey (e : IEntityType) =
+        e.FindPrimaryKey()
 
-    let getDeclaredForeignKeys =
-        EntityTypeExtensions.GetDeclaredForeignKeys
+    let getDeclaredForeignKeys (e : IEntityType) =
+        e.GetDeclaredForeignKeys()
 
-    let getDeclaredReferencingForeignKeys =
-        EntityTypeExtensions.GetDeclaredReferencingForeignKeys
+    let getDeclaredReferencingForeignKeys (e : IEntityType) =
+        e.GetDeclaredReferencingForeignKeys()
 
-    let findOwnership (entityType : IEntityType) =
-        (entityType :?> EntityType)
-            |> EntityTypeExtensions.FindOwnership
+    let findOwnership (e : IEntityType) =
+        e.FindOwnership()
 
     let entityDbSetName (e : IEntityType) =
         e.GetDbSetName()
