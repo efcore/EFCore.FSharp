@@ -25,6 +25,7 @@
     <Compile Include="ScaffoldOptions.fs" />
     <Compile Include="Utilities\SharedTypeExtensions.fs" />
     <Compile Include="Utilities\EntityFrameworkExtensions.fs" />
+    <Compile Include="Utilities\StringBuffer.fs" />
     <Compile Include="Utilities\IndentedStringBuilderUtilities.fs" />
     <Compile Include="Utilities\Multigraph.fs" />
     <Compile Include="Internal\FSharpHelper.fs" />

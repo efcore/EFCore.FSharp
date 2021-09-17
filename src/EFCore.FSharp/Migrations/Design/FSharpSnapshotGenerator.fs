@@ -273,7 +273,7 @@ type FSharpSnapshotGenerator
         sb
         |> appendEmptyLine
         |> append propertyBuilderTypeName
-        |> indent
+        |> incrementIndent
         |> appendLineIfTrue p.IsConcurrencyToken ".IsConcurrencyToken()"
         |> appendLineIfTrue true (sprintf ".IsRequired(%b)" isPropertyRequired)
         |> appendLineIfTrue
@@ -322,7 +322,7 @@ type FSharpSnapshotGenerator
         sb
         |> appendEmptyLine
         |> append keyBuilderName
-        |> indent
+        |> incrementIndent
         |> generateKeyAnnotations keyBuilderName key
 
     let generateKeys (entityTypeBuilderName: string) (keys: IKey seq) (pk: IKey) (sb: IndentedStringBuilder) =
@@ -382,7 +382,7 @@ type FSharpSnapshotGenerator
         sb
         |> appendEmptyLine
         |> append indexBuilderName
-        |> indent
+        |> incrementIndent
         |> appendMethodCall idx.IsUnique ".IsUnique()"
         |> generateIndexAnnotations indexBuilderName idx
         |> ignore
@@ -493,7 +493,7 @@ type FSharpSnapshotGenerator
 
         sb
         |> append ")"
-        |> indent
+        |> incrementIndent
         |> appendStartValue
         |> appendIncrementBy
         |> appendMinValue
@@ -843,7 +843,7 @@ type FSharpSnapshotGenerator
         sb
         |> append ")"
         |> appendEmptyLine
-        |> indent
+        |> incrementIndent
         |> ignore
 
         if fk.IsUnique && (not fk.IsOwnership) then
@@ -1007,7 +1007,7 @@ type FSharpSnapshotGenerator
             sb
             |> appendEmptyLine
             |> appendLine (sprintf "%s.HasData([| " builderName)
-            |> indent
+            |> incrementIndent
             |> processDataItems data propsToOutput
             |> unindent
             |> appendLine " |]) |> ignore"
@@ -1054,7 +1054,7 @@ type FSharpSnapshotGenerator
         |> append ", (fun "
         |> append entityTypeBuilderName
         |> appendLine " ->"
-        |> indent
+        |> incrementIndent
         |> generateBaseType entityTypeBuilderName entityType.BaseType
         |> generateProperties entityTypeBuilderName (entityType |> getDeclaredProperties)
         |> generateKeys
@@ -1088,7 +1088,7 @@ type FSharpSnapshotGenerator
         |> append ".Entity("
         |> append (entityType.Name |> code.Literal)
         |> appendLine (", (fun b ->")
-        |> indent
+        |> incrementIndent
         |> this.generateRelationships "b" entityType
         |> appendLine ")) |> ignore"
         |> ignore
@@ -1105,7 +1105,7 @@ type FSharpSnapshotGenerator
         |> append ".Entity("
         |> append (entityType.Name |> code.Literal)
         |> appendLine (", (fun b ->")
-        |> indent
+        |> incrementIndent
         |> this.generateNavigations
             "b"
             (entityType.GetDeclaredNavigations()

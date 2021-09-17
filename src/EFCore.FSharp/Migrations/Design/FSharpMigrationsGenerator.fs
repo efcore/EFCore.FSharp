@@ -86,11 +86,11 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies: FSharpMigration
         |> appendLine (sprintf "[<DbContext(typeof<%s>)>]" (contextType |> code.Reference))
         |> appendLine (sprintf "[<Migration(%s)>]" (migrationId |> code.Literal))
         |> appendLine (sprintf "type %s() =" (migrationName |> code.Identifier))
-        |> indent
+        |> incrementIndent
         |> appendLine "inherit Migration()"
         |> appendEmptyLine
         |> appendLine "override this.Up(migrationBuilder:MigrationBuilder) ="
-        |> indent
+        |> incrementIndent
         |> ignore
 
         // Up operations
@@ -100,7 +100,7 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies: FSharpMigration
         |> appendEmptyLine
         |> unindent
         |> appendLine "override this.Down(migrationBuilder:MigrationBuilder) ="
-        |> indent
+        |> incrementIndent
         |> ignore
 
         // Down operations
@@ -110,7 +110,7 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies: FSharpMigration
         |> unindent
         |> appendEmptyLine
         |> appendLine "override this.BuildTargetModel(modelBuilder: ModelBuilder) ="
-        |> indent
+        |> incrementIndent
         |> ignore
 
         snapshot.Generate("modelBuilder", model, sb)
@@ -141,11 +141,11 @@ type FSharpMigrationsGenerator(dependencies, fSharpDependencies: FSharpMigration
         |> appendEmptyLine
         |> appendLine (sprintf "[<DbContext(typeof<%s>)>]" (code.Reference contextType))
         |> appendLine (sprintf "type %s() =" (code.Identifier modelSnapshotName))
-        |> indent
+        |> incrementIndent
         |> appendLine "inherit ModelSnapshot()"
         |> appendEmptyLine
         |> appendLine "override this.BuildModel(modelBuilder: ModelBuilder) ="
-        |> indent
+        |> incrementIndent
         |> ignore
 
         snapshot.Generate("modelBuilder", model, sb)

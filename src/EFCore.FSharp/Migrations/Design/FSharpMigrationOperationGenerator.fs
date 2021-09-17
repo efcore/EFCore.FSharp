@@ -71,7 +71,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         else
             sb
             |> appendLine (lines |> Seq.head)
-            |> indent
+            |> incrementIndent
             |> appendLines (lines |> Seq.tail) true
             |> unindent
 
@@ -85,7 +85,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         else
             sb
             |> appendLine (lines |> Seq.head)
-            |> indent
+            |> incrementIndent
             |> appendLines (lines |> Seq.tail) true
             |> unindent
 
@@ -98,7 +98,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         |> append ".AddColumn<"
         |> append (op.ClrType |> unwrapOptionType |> code.Reference)
         |> appendLine ">("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -127,7 +127,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         sb
         |> appendLine ".AddForeignKey("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -147,7 +147,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateAddPrimaryKeyOperation (op: AddPrimaryKeyOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".AddPrimaryKey("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -160,7 +160,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateAddUniqueConstraintOperation (op: AddUniqueConstraintOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".AddUniqueConstraint("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -175,7 +175,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         |> append ".AlterColumn<"
         |> append (op.ClrType |> code.Reference)
         |> appendLine ">("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -224,7 +224,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateAlterDatabaseOperation (op: AlterDatabaseOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".AlterDatabase()"
-        |> indent
+        |> incrementIndent
         |> annotations (op.GetAnnotations())
         |> oldAnnotations (op.OldDatabase.GetAnnotations())
         |> unindent
@@ -232,7 +232,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateAlterSequenceOperation (op: AlterSequenceOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".AlterSequence("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
@@ -251,7 +251,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateAlterTableOperation (op: AlterTableOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".AlterTable("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> append ")"
@@ -262,7 +262,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateCreateIndexOperation (op: CreateIndexOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".CreateIndex("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -277,7 +277,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateEnsureSchemaOperation (op: EnsureSchemaOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".EnsureSchema("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> append ")"
         |> annotations (op.GetAnnotations())
@@ -291,7 +291,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
            else
                id
         |> appendLine "("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameterIfTrue (op.StartValue <> 1L) "startValue" op.StartValue
@@ -314,11 +314,11 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
             sb
             |> appendLine (sprintf "%s =" propertyName)
-            |> indent
+            |> incrementIndent
             |> append "table.Column<"
             |> append (code.Reference c.ClrType)
             |> appendLine ">("
-            |> indent
+            |> incrementIndent
             |> appendLine (sprintf "nullable = %s" (code.Literal c.IsNullable))
             |> writeParameterIfTrue (c.Name <> propertyName) "name" c.Name
             |> writeParameterIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
@@ -338,7 +338,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             |> appendIfTrue
                 (c.ClrType |> isOptionType)
                 (sprintf ".SetValueConverter(OptionConverter<%s> ())" (c.ClrType |> unwrapOptionType |> code.Reference))
-            |> indent
+            |> incrementIndent
             |> annotations (c.GetAnnotations())
             |> unindent
             |> unindent
@@ -350,7 +350,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             sb
             |> appendLine ",columns = (fun table -> "
             |> appendLine "{|"
-            |> indent
+            |> incrementIndent
             |> ignore
 
             op.Columns
@@ -371,7 +371,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 |> code.Lambda
             )
             |> append ")"
-            |> indent
+            |> incrementIndent
             |> annotations (op.PrimaryKey.GetAnnotations())
             |> appendLine " |> ignore"
             |> unindent
@@ -380,7 +380,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         let writeForeignKeyConstraint (fk: AddForeignKeyOperation) =
             sb
             |> appendLine "table.ForeignKey("
-            |> indent
+            |> incrementIndent
 
             |> append "name = "
             |> append (fk.Name |> code.Literal)
@@ -425,9 +425,9 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 sb
                 |> append ","
                 |> appendLine "constraints ="
-                |> indent
+                |> incrementIndent
                 |> appendLine "(fun table -> "
-                |> indent
+                |> incrementIndent
                 |> ignore
 
                 if notNull op.PrimaryKey then
@@ -458,7 +458,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         sb
         |> appendLine ".CreateTable("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeColumns
@@ -470,7 +470,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropColumnOperation (op: DropColumnOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropColumn("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -481,7 +481,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropForeignKeyOperation (op: DropForeignKeyOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropForeignKey("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -492,7 +492,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropIndexOperation (op: DropIndexOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropIndex("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -503,7 +503,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropPrimaryKeyOperation (op: DropPrimaryKeyOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropPrimaryKey("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -514,7 +514,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropSchemaOperation (op: DropSchemaOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropSchema("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> append ")"
         |> annotations (op.GetAnnotations())
@@ -523,7 +523,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropSequenceOperation (op: DropSequenceOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropSequence("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> append ")"
@@ -533,7 +533,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropTableOperation (op: DropTableOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropTable("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> append ")"
@@ -543,7 +543,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateDropUniqueConstraintOperation (op: DropUniqueConstraintOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".DropUniqueConstraint("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -554,7 +554,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateRenameColumnOperation (op: RenameColumnOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".RenameColumn("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -566,7 +566,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateRenameIndexOperation (op: RenameIndexOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".RenameIndex("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "table" op.Table
@@ -578,7 +578,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateRenameSequenceOperation (op: RenameSequenceOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".RenameSequence("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "newName" op.NewName
@@ -590,7 +590,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateRenameTableOperation (op: RenameTableOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".RenameTable("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "newName" op.NewName
@@ -602,7 +602,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateRestartSequenceOperation (op: RestartSequenceOperation) (sb: IndentedStringBuilder) =
         sb
         |> appendLine ".RestartSequence("
-        |> indent
+        |> incrementIndent
         |> writeName op.Name
         |> writeOptionalParameter "schema" op.Schema
         |> writeParameter "startValue" op.StartValue
@@ -613,7 +613,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateSqlOperation (op: SqlOperation) (sb: IndentedStringBuilder) =
         sb
         |> append (sprintf ".Sql(%s)" (op.Sql |> code.Literal))
-        |> indent
+        |> incrementIndent
         |> annotations (op.GetAnnotations())
         |> unindent
 
@@ -655,7 +655,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         sb
         |> appendLine ".InsertData("
-        |> indent
+        |> incrementIndent
         |> appendLines parameters false
         |> unindent
         |> append ")"
@@ -697,7 +697,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         sb
         |> appendLine ".DeleteData("
-        |> indent
+        |> incrementIndent
         |> appendLines parameters false
         |> unindent
         |> appendLine ")"
@@ -763,7 +763,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         sb
         |> appendLine ".UpdateData("
-        |> indent
+        |> incrementIndent
         |> appendLines parameters false
         |> unindent
         |> appendLine ")"

@@ -34,7 +34,7 @@ type FSharpDbContextGenerator
     let generateConstructors (contextName: string) (sb: IndentedStringBuilder) =
         sb
         |> appendLine (sprintf "type %s =" contextName)
-        |> indent
+        |> incrementIndent
         |> appendLine "inherit DbContext"
         |> appendEmptyLine
         |> appendLine "new() = { inherit DbContext() }"
@@ -90,9 +90,9 @@ type FSharpDbContextGenerator
         else
             sb
             |> appendLine "override this.OnConfiguring(optionsBuilder: DbContextOptionsBuilder) ="
-            |> indent
+            |> incrementIndent
             |> appendLine "if not optionsBuilder.IsConfigured then"
-            |> indent
+            |> incrementIndent
             |> appendLine (
                 "optionsBuilder"
                 + (connectionString
@@ -148,7 +148,7 @@ type FSharpDbContextGenerator
 
         sb
         |> appendLine (sprintf "modelBuilder.%s(%s)" methodName parameters)
-        |> indent
+        |> incrementIndent
         |> writeLineIfTrue
             (s.StartValue
              <> (Sequence.DefaultStartValue |> int64))
@@ -200,10 +200,10 @@ type FSharpDbContextGenerator
             initializeEntityTypeBuilder entityType sb
 
             sb
-            |> indent
+            |> incrementIndent
             |> appendEmptyLine
             |> append (entityLambdaIdentifier + (lines |> Seq.head))
-            |> indent
+            |> incrementIndent
             |> appendLines (lines |> Seq.tail) false
             |> appendLine "|> ignore"
             |> unindent
@@ -604,12 +604,12 @@ type FSharpDbContextGenerator
 
         sb
         |> appendEmptyLine
-        |> indent
+        |> incrementIndent
         |> appendLine $"{entityLambdaIdentifier}.HasMany(fun d -> d.{skipNavigation.Name})"
-        |> indent
+        |> incrementIndent
         |> appendLine $".WithMany(fun p -> p.{inverse.Name})"
         |> appendLine $".UsingEntity<{code.Reference(Model.DefaultPropertyBagType)}>("
-        |> indent
+        |> incrementIndent
         |> appendLine $"{code.Literal joinEntityType.Name},"
         |> ignore
 
@@ -620,7 +620,10 @@ type FSharpDbContextGenerator
             skipNavigation.ForeignKey.PrincipalEntityType.Name
             "r"
 
-        sb |> appendLine "fun j ->" |> indent |> ignore
+        sb
+        |> appendLine "fun j ->"
+        |> incrementIndent
+        |> ignore
 
         let key = joinEntityType.FindPrimaryKey()
 
@@ -911,9 +914,9 @@ type FSharpDbContextGenerator
         if lines |> Seq.isEmpty |> not then
             sb
             |> appendEmptyLine
-            |> indent
+            |> incrementIndent
             |> append ("modelBuilder" + (lines |> Seq.head))
-            |> indent
+            |> incrementIndent
             |> appendLines (lines |> Seq.tail) false
             |> appendLine "|> ignore"
             |> appendEmptyLine
@@ -921,7 +924,7 @@ type FSharpDbContextGenerator
             |> unindent
             |> ignore
 
-        sb |> indent |> ignore
+        sb |> incrementIndent |> ignore
 
         let typesToGenerate =
             model.GetEntityTypes()

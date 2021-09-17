@@ -55,7 +55,7 @@ module internal IndentedStringBuilderUtilities =
     let appendLineIndent message (sb: IndentedStringBuilder) =
         using (sb.Indent()) (fun _ -> sb.AppendLine(message))
 
-    let indent (sb: IndentedStringBuilder) = sb.IncrementIndent()
+    let incrementIndent (sb: IndentedStringBuilder) = sb.IncrementIndent()
 
     let unindent (sb: IndentedStringBuilder) = sb.DecrementIndent()
 

@@ -310,7 +310,7 @@ type FSharpEntityTypeGenerator
         else
             sb
             |> appendLine "do"
-            |> indent
+            |> incrementIndent
             |> appendLines
                 (collectionNavigations
                  |> Seq.map
@@ -497,7 +497,7 @@ type FSharpEntityTypeGenerator
            else
                id
         |> appendLine (sprintf "type %s() as this =" entityType.Name)
-        |> indent
+        |> incrementIndent
         |> generateConstructor entityType
         |> generateProperties entityType scaffoldNullableColumnsAs useDataAnnotations
         |> generateNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
@@ -584,7 +584,7 @@ type FSharpEntityTypeGenerator
         sb
         |> appendLine ("CLIMutable" |> createAttributeQuick)
         |> appendLine (sprintf "type %s = {" entityType.Name)
-        |> indent
+        |> incrementIndent
         |> writeRecordProperties properties useDataAnnotations scaffoldNullableColumnsAs
         |> writeNavigationProperties navProperties useDataAnnotations
         |> writeSkipNavigationProperties skipNavigations useDataAnnotations
@@ -601,7 +601,7 @@ type FSharpEntityTypeGenerator
             | RecordType -> generateRecord
 
         sb
-        |> indent
+        |> incrementIndent
         |> generate entityType useDataAnnotation scaffoldNullableColumnsAs
         |> string
 

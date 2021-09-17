@@ -295,7 +295,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
             sb |> append line
         else
-            sb |> append "[|" |> indent |> ignore
+            sb |> append "[|" |> incrementIndent |> ignore
 
             values'
             |> Seq.iter (fun line -> sb |> appendLine line |> ignore)
@@ -638,7 +638,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 if notNull current.ChainedCall then
                     builder
                     |> appendEmptyLine
-                    |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
+                    |> incrementIndent
                     |> ignore
 
             while notNull current do
@@ -671,7 +671,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         builder
         |> appendEmptyLine
-        |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
+        |> incrementIndent
         |> appendLine (sprintf "(fun %s ->" n.Parameter)
         |> ignore
 
@@ -679,9 +679,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             n.MethodCalls
             |> Seq.map (fun mc -> this.buildFragment (mc, false, n.Parameter, indent + 1))
 
-        builder
-        |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
-        |> ignore
+        builder |> incrementIndent |> ignore
 
         for l in lines do
             builder
