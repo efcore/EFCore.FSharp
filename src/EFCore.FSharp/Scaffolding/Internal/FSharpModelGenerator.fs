@@ -6,6 +6,7 @@ open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
+open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
 open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 
@@ -64,7 +65,6 @@ type FSharpModelGenerator
     override __.Language = "F#"
 
     override __.GenerateModel(model: IModel, options: ModelCodeGenerationOptions) =
-        let resultingFiles = ScaffoldedModel()
 
         let generatedCode =
             contextGenerator.WriteCode(
@@ -91,7 +91,7 @@ type FSharpModelGenerator
                 Code = generatedCode,
                 Path = path)
 
-        resultingFiles.ContextFile <- contextFile
+        let resultingFiles = ScaffoldedModel(ContextFile = contextFile)
 
         let dbContextFileName = options.ContextName
 
@@ -103,6 +103,7 @@ type FSharpModelGenerator
             createDomainFileContent model options.UseDataAnnotations options.ModelNamespace domainFileName
 
         model.GetEntityTypes()
+            |> Seq.filter(isManyToManyJoinEntityType >> not)
             |> Seq.iter(fun entityType ->
                 domainFileBuilder
                     |> append (entityTypeGenerator.WriteCode(entityType,

@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp.Test.TestUtilities
+namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open System
 open System.Collections.Generic
@@ -37,7 +37,7 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
 
     
 
-    let _string = StringTypeMapping("just_string(2000)") :> RelationalTypeMapping
+    let _string = StringTypeMapping("just_string(2000)", Nullable()) :> RelationalTypeMapping
 
     let _binary = ByteArrayTypeMapping("just_binary(max)", dbType = Nullable<DbType>(DbType.Binary)) :> RelationalTypeMapping
 

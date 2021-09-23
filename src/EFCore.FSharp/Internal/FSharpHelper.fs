@@ -549,17 +549,73 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
         else
             identifier
 
-    member private this.buildFragment (f: MethodCallCodeFragment) (b: StringBuilder) : StringBuilder =
-        let args = f.Arguments |> Seq.map this.unknownLiteral |> join ", "
+    member private this.buildFragment (fragment: MethodCallCodeFragment, typeQualified, instanceIdentifier, (indent: int)) =
+        let builder = IndentedStringBuilder()
+        let mutable current = fragment
 
-        let result = sprintf ".%s(%s)" f.Method args
+        let processArg (arg: obj) sb =
+            match arg with
+            | :? NestedClosureCodeFragment as n ->
+                let f = this.buildNestedFragment(n, indent)
+                sb |> append f
+            | _ ->
+                sb |> append (this.unknownLiteral arg)
 
-        b.Append(result) |> ignore
+        if typeQualified then
+            if isNull instanceIdentifier || isNull fragment.MethodInfo || notNull fragment.ChainedCall then
+                raise (ArgumentException DesignStrings.CannotGenerateTypeQualifiedMethodCall)
 
-        if isNull f.ChainedCall then
-            b
+            builder |> append (sprintf "%s.%s(%s" fragment.DeclaringType fragment.Method instanceIdentifier) |> ignore
+
+            for a in fragment.Arguments do
+                builder |> append ", " |> processArg a |> ignore
+
+            builder |> append ")" |> ignore
+
         else
-            this.buildFragment f.ChainedCall b
+            if notNull instanceIdentifier then
+                builder |> append instanceIdentifier |> ignore
+
+                if notNull current.ChainedCall then
+                    builder |> appendEmptyLine |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent |> ignore
+
+            while notNull current do
+                builder |> append (sprintf ".%s(" current.Method)|> ignore
+
+                for i in [0 .. current.Arguments.Count - 1] do
+                    if i <> 0 then
+                        builder |> append ", " |> ignore
+
+                    builder |> processArg current.Arguments.[i] |> ignore
+
+                builder |> append ")" |> ignore
+
+                if notNull current.ChainedCall then
+                    builder |> appendEmptyLine |> ignore
+
+                current <- current.ChainedCall
+
+        builder |> string
+
+    member private this.buildNestedFragment (n: NestedClosureCodeFragment, indent: int) =
+        if n.MethodCalls.Count = 1 then
+            sprintf "(fun %s -> %s)" n.Parameter (this.buildFragment(n.MethodCalls.[0], false, n.Parameter, indent))
+        else
+            let builder = IndentedStringBuilder()
+
+            builder |> appendLine (sprintf "(fun %s ->" n.Parameter) |> ignore
+            for i in [-1 .. indent] do
+                builder.IncrementIndent() |> ignore
+
+            let lines =
+                n.MethodCalls
+                |> Seq.map(fun mc -> this.buildFragment(mc, false, n.Parameter, indent + 1))
+
+            builder
+            |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
+            |> appendLines lines true
+            |> append ")"
+            |> string
 
 
     member private this.unknownLiteral (value: obj) =
@@ -591,6 +647,8 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             | :? BigInteger as e -> this.literalBigInteger e
             | :? (string[]) as e -> this.literalStringArray e
             | :? Array as e -> this.literalArray e
+            | :? Type as t -> this.ReferenceFullName t false
+            | :? NestedClosureCodeFragment as n -> this.buildNestedFragment(n, 0)
             | _ ->
 
                 let literalType = value.GetType()
@@ -622,7 +680,7 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
     interface ICSharpHelper with
         member this.Fragment (fragment: MethodCallCodeFragment, instanceIdentifer: string, typeQualified: bool) =
-            this.buildFragment fragment (StringBuilder()) |> string
+            this.buildFragment(fragment, typeQualified, instanceIdentifer, 0)
 
         member this.Identifier(name: string, scope: ICollection<string>, capitalize: Nullable<bool>): string =
             if isNull scope then
@@ -707,8 +765,8 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
             let isObjType = typeof<'T> = typeof<obj>
             this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType (IndentedStringBuilder())
 
-        member this.Literal(t: Type) =
-            this.ReferenceFullName t false
+        member this.Literal(t: Type, fullName: Nullable<bool>) =
+            this.ReferenceFullName t (fullName.GetValueOrDefault())
 
         member this.Namespace(name: string []): string =
             let join (ns': string array) = String.Join(".", ns')
@@ -723,8 +781,8 @@ type FSharpHelper(relationalTypeMappingSource : IRelationalTypeMappingSource) =
 
             if String.IsNullOrEmpty ns then "_" else ns
 
-        member this.Reference(t: Type): string =
-            this.ReferenceFullName t false
+        member this.Reference(t: Type, fullName): string =
+            this.ReferenceFullName t (fullName.GetValueOrDefault())
 
         member this.UnknownLiteral(value: obj): string =
             this.unknownLiteral value

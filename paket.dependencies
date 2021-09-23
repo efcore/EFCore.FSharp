@@ -9,6 +9,7 @@ nuget Microsoft.NET.Test.Sdk 16.8.0
 nuget altcover ~> 7
 
 nuget Microsoft.EntityFrameworkCore.Design >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.InMemory >= 6.0.0-rc.2
 nuget Microsoft.EntityFrameworkCore.Relational >= 6.0.0-rc.2
 nuget Microsoft.EntityFrameworkCore.Sqlite >= 6.0.0-rc.2
 nuget Microsoft.EntityFrameworkCore.SqlServer >= 6.0.0-rc.2

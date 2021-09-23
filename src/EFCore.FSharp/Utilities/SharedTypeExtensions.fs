@@ -186,3 +186,10 @@ module internal rec SharedTypeExtensions =
                  |> Array.exactlyOne
       let field = case.GetFields() |> Array.head
       field.PropertyType
+
+    let getRequiredRuntimeMethod(t:Type, name:string, parameters:Type[]) =
+        let result = t.GetTypeInfo().GetRuntimeMethod(name, parameters)
+        if isNull result then
+            invalidOp $"Could not find method '{name}' on type '{t}'"
+        else
+            result

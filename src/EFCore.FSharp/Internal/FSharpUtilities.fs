@@ -242,21 +242,24 @@ module FSharpUtilities =
             | _ -> t.Name
 
     let generateLiteral(literal:obj) =
-        match literal with
-        | :? (byte array) as literal' -> generateLiteralByteArray(literal')
-        | :? (string array) as literal' -> generateLiteralStringArray(literal')
-        | :? bool as literal' -> generateLiteralBool(literal')
-        | :? int as literal' -> generateLiteralInt32(literal')
-        | :? Int64 as literal' -> generateLiteralInt64(literal')
-        | :? decimal as literal' -> generateLiteralDecimal(literal')
-        | :? float32 as literal' -> generateLiteralFloat32(literal')
-        | :? double as literal' -> generateLiteralDouble(literal')
-        | :? TimeSpan as literal' -> generateLiteralTimeSpan(literal')
-        | :? DateTime as literal' -> generateLiteralDateTime(literal')
-        | :? DateTimeOffset as literal' -> generateLiteralDateTimeOffset(literal')
-        | :? Guid as literal' -> generateLiteralGuid(literal')
-        | :? string as literal' -> generateLiteralString(literal')
-        | _ -> generateLiteralObject(literal)
+        if isNull literal then
+            "null"
+        else
+            match literal with
+            | :? (byte array) as literal' -> generateLiteralByteArray(literal')
+            | :? (string array) as literal' -> generateLiteralStringArray(literal')
+            | :? bool as literal' -> generateLiteralBool(literal')
+            | :? int as literal' -> generateLiteralInt32(literal')
+            | :? Int64 as literal' -> generateLiteralInt64(literal')
+            | :? decimal as literal' -> generateLiteralDecimal(literal')
+            | :? float32 as literal' -> generateLiteralFloat32(literal')
+            | :? double as literal' -> generateLiteralDouble(literal')
+            | :? TimeSpan as literal' -> generateLiteralTimeSpan(literal')
+            | :? DateTime as literal' -> generateLiteralDateTime(literal')
+            | :? DateTimeOffset as literal' -> generateLiteralDateTimeOffset(literal')
+            | :? Guid as literal' -> generateLiteralGuid(literal')
+            | :? string as literal' -> generateLiteralString(literal')
+            | _ -> generateLiteralObject(literal)
 
 
     let generate (methodCallCodeFragment: MethodCallCodeFragment) =

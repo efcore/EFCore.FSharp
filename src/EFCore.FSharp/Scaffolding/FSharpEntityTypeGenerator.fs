@@ -287,7 +287,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         let props =
             entityType.GetProperties()
-            |> Seq.sortBy ScaffoldingPropertyExtensions.GetColumnOrdinal
+            |> Seq.sortBy (fun p -> p.GetColumnOrder().GetValueOrDefault(-1))
 
         props
         |> Seq.iter(fun p ->
@@ -307,8 +307,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
 
         let sortedNavigations =
             entityType.GetNavigations()
-            |> Seq.sortBy(fun n -> if n.IsOnDependent then 0 else 1)
-            |> Seq.sortBy(fun n -> if n.IsCollection then 1 else 0)
+                |> Seq.sortBy(fun n -> ((if n.IsOnDependent then 0 else 1), (if n.IsCollection then 1 else 0)))
 
         if not(sortedNavigations |> Seq.isEmpty) then
             sb |> appendEmptyLine |> ignore
@@ -322,11 +321,7 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
                 else
                     (fun s -> s)
 
-            let typeName =
-                if isNull p.TargetEntityType.ClrType then
-                    p.TargetEntityType.Name
-                else
-                    getTypeName scaffoldNullableColumnsAs p.TargetEntityType.ClrType
+            let typeName = p.TargetEntityType.Name
             let navigationType = if p.IsCollection then $"ICollection<{typeName}>" else typeName
 
             sb |> writeProperty p.Name navigationType func
@@ -389,9 +384,8 @@ type FSharpEntityTypeGenerator(annotationCodeGenerator : IAnnotationCodeGenerato
             entityType.GetProperties()
 
         let navProperties =
-            entityType
-                    |> EntityTypeExtensions.GetNavigations
-                    |> Seq.sortBy(fun n -> ((if n.IsOnDependent then 0 else 1), (if n.IsCollection then 1 else 0)))
+            entityType.GetNavigations()
+                |> Seq.sortBy(fun n -> ((if n.IsOnDependent then 0 else 1), (if n.IsCollection then 1 else 0)))
 
         sb
             |> appendLine ("CLIMutable" |> createAttributeQuick)

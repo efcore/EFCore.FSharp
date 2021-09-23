@@ -27,6 +27,17 @@ let delimitStringTestCases = [
     ("Contains\r\nNewlinesAnd\"Quotes", "@\"Contains\r\nNewlinesAnd\"\"Quotes\"")
 ]
 
+let TestFunc (builder: obj, o1:obj, o2:obj, o3:obj) =
+    failwith "NotSupported"
+
+let _testFuncMethodInfo =
+
+    let a = System.Reflection.Assembly.GetExecutingAssembly()
+    let modu = a.GetType("EntityFrameworkCore.FSharp.Test.Internal")
+    let methodInfo = modu.GetMethod("TestFunc")
+
+    methodInfo
+
 [<Tests>]
 let FSharpUtilitiesTest =
 
@@ -51,15 +62,15 @@ let FSharpUtilitiesTest =
 
         testList "MethodCallCodeFragment" [
             test "MethodCallCodeFragment with parameters" {
-                let method = MethodCallCodeFragment("Test", true, 42)
+                let method = MethodCallCodeFragment(_testFuncMethodInfo, true, 42)
                 let actual = method |> FSharpUtilities.generate
-                Expect.equal actual ".Test(true, 42)" "Should be equal"
+                Expect.equal actual ".TestFunc(true, 42)" "Should be equal"
             }
 
             test "MethodCallCodeFragment when niladic" {
-                let method = MethodCallCodeFragment("Test")
+                let method = MethodCallCodeFragment(_testFuncMethodInfo)
                 let actual = method |> FSharpUtilities.generate
-                Expect.equal actual ".Test()" "Should be equal"
+                Expect.equal actual ".TestFunc()" "Should be equal"
             }
         ]
     ]

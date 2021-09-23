@@ -6,6 +6,7 @@ open Microsoft.EntityFrameworkCore.Infrastructure
 module internal IndentedStringBuilderUtilities =
 
     let notNull o = o |> isNull |> not
+    let (?=) (a: #obj) (b: #obj) = if isNull a then b else a
 
     let join (separator : string) (strings : string seq) =
         if Seq.isEmpty strings then
@@ -30,7 +31,7 @@ module internal IndentedStringBuilderUtilities =
 
     let appendLineIfTrue truth value b =
         if truth then
-            b |> appendLine value
+            b |> appendEmptyLine |> append value
         else
             b
 

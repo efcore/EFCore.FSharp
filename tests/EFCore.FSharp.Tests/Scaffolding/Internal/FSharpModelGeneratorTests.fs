@@ -9,6 +9,8 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.Test.TestUtilities
 open Expecto
+open EntityFrameworkCore.FSharp.Test.Migrations.Design
+open Microsoft.EntityFrameworkCore.Design.Internal
 
 let _eol = System.Environment.NewLine
 
@@ -16,12 +18,12 @@ let join separator (lines: string seq) = System.String.Join(separator, lines)
 
 let createGenerator options =
 
+    let testAssembly = (typeof<ModelCodeGeneratorTestBase.ModelCodeGeneratorTestBase>).Assembly
+    let reporter = TestOperationReporter()
     let services =
-        ServiceCollection()
-            .AddEntityFrameworkSqlServer()
-            .AddEntityFrameworkDesignTimeServices()
+        DesignTimeServicesBuilder(testAssembly, testAssembly, reporter, [||])
+            .CreateServiceCollection("Microsoft.EntityFrameworkCore.SqlServer")
             .AddSingleton<IAnnotationCodeGenerator, AnnotationCodeGenerator>()
-            .AddSingleton<ProviderCodeGenerator, TestProviderCodeGenerator>()
             .AddSingleton<IProviderConfigurationCodeGenerator, TestProviderCodeGenerator>()
 
     let designTimeServices = EFCoreFSharpServices.WithScaffoldOptions options
@@ -29,7 +31,7 @@ let createGenerator options =
     designTimeServices.ConfigureDesignTimeServices(services)
 
     services
-        .BuildServiceProvider()
+        .BuildServiceProvider(validateScopes = true)
         .GetRequiredService<IModelCodeGenerator>()
 
 let getModelBuilder () =
@@ -37,29 +39,24 @@ let getModelBuilder () =
 
     modelBuilder
         .Entity("BlogPost")
-        .Property<int>("Id")
-        .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 0) |> ignore
+        .Property<int>("Id") |> ignore
 
     modelBuilder
         .Entity("BlogPost")
-        .Property<string>("Title")
-        .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 1) |> ignore
+        .Property<string>("Title") |> ignore
 
     modelBuilder
         .Entity("Comment")
-        .Property<int>("Id")
-        .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 0) |> ignore
+        .Property<int>("Id") |> ignore
 
     modelBuilder
         .Entity("Comment")
-        .Property<int>("BlogPostId")
-        .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 1) |> ignore
+        .Property<int>("BlogPostId") |> ignore
 
     modelBuilder
         .Entity("Comment")
         .Property<Nullable<Guid>>("OptionalGuid")
-        .IsRequired(false)
-        .HasAnnotation(ScaffoldingAnnotationNames.ColumnOrdinal, 2) |> ignore
+        .IsRequired(false) |> ignore
 
     modelBuilder
         .Entity("BlogPost")
@@ -97,7 +94,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    (modelBuilder.FinalizeModel()),
+                    (modelBuilder.FinalizeModel(designTime = true)),
                     modelBuilderOptions)
 
             let expectedContextFilePath = Path.Combine("..", "TestContextDir", "TestContext.fs")
@@ -116,7 +113,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    (modelBuilder.FinalizeModel()),
+                    (modelBuilder.FinalizeModel(designTime = true)),
                     modelBuilderOptions)
 
             let expectedCode =
@@ -155,7 +152,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    (modelBuilder.FinalizeModel()),
+                    (modelBuilder.FinalizeModel(designTime = true)),
                     modelBuilderOptions)
 
             let expectedCode =
@@ -201,7 +198,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    (modelBuilder.FinalizeModel()),
+                    (modelBuilder.FinalizeModel(designTime = true)),
                     modelBuilderOptions)
 
             let expectedCode =
@@ -261,7 +258,7 @@ let FSharpModelGeneratorTests =
 
             let result =
                 generator.GenerateModel(
-                    (modelBuilder.FinalizeModel()),
+                    (modelBuilder.FinalizeModel(designTime = true)),
                     modelBuilderOptions)
 
             let expectedCode =

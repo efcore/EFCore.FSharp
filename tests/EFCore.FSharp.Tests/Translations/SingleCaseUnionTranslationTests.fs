@@ -26,18 +26,16 @@ type MyContext () =
     member this.Blogs with get() = this._blogs and set v = this._blogs <- v
 
     override _.OnConfiguring(options: DbContextOptionsBuilder) : unit =
-           options
-               .UseSqlite($"Data Source={Guid.NewGuid().ToString()}.db")
-               .UseFSharpTypes()
-           |> ignore
+        options
+            .UseInMemoryDatabase("MyContext")
+            .UseFSharpTypes()
+            |> ignore
 
     override _.OnModelCreating builder =
         builder.RegisterSingleUnionCases()
 
 let createContext () =
     let ctx = new MyContext()
-    ctx.Database.EnsureDeleted() |> ignore
-    ctx.Database.EnsureCreated() |> ignore
     ctx
 
 let blogWithVotes = { Id = Guid.NewGuid(); Title = "My Title"; Votes = PositiveInteger 10 }

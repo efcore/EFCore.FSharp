@@ -7,6 +7,8 @@ open System.Linq.Expressions
 open System.Text
 open System.Text.RegularExpressions
 
+open Microsoft.Extensions.DependencyInjection
+
 open Microsoft.EntityFrameworkCore
 open Microsoft.EntityFrameworkCore.ChangeTracking
 open Microsoft.EntityFrameworkCore.Metadata.Internal
@@ -28,6 +30,8 @@ open EntityFrameworkCore.FSharp.Migrations.Design
 open EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Expecto
+open Microsoft.EntityFrameworkCore.Design.Internal
+open EntityFrameworkCore.FSharp
 
 type TestFSharpSnapshotGenerator (dependencies,
                                   mappingSource: IRelationalTypeMappingSource,
@@ -132,44 +136,40 @@ module FSharpMigrationsGeneratorTest =
         let build = { Sources = sources; TargetDir = null }
         let assembly = build.BuildInMemory references
 
-        let snapshotType = assembly.GetType(modelSnapshotTypeName, throwOnError = true, ignoreCase = false)
+        try
+            let snapshotType = assembly.GetType(modelSnapshotTypeName, throwOnError = true, ignoreCase = false)
 
-        let contextTypeAttribute =
-            System.Reflection.CustomAttributeExtensions.GetCustomAttribute<DbContextAttribute>(snapshotType)
+            let contextTypeAttribute =
+                System.Reflection.CustomAttributeExtensions.GetCustomAttribute<DbContextAttribute>(snapshotType)
 
-        Expect.isNotNull contextTypeAttribute "Should not be null"
-        Expect.equal contextTypeAttribute.ContextType.FullName typeof<MyContext>.FullName "Should be equal"
+            Expect.isNotNull contextTypeAttribute "Should not be null"
+            Expect.equal contextTypeAttribute.ContextType.FullName typeof<MyContext>.FullName "Should be equal"
 
-        Activator.CreateInstance(snapshotType) :?> ModelSnapshot
+            Activator.CreateInstance(snapshotType) :?> ModelSnapshot
+        with
+            | exn ->
+                let msg = sprintf "Could not build the following code {%s}:\n {%s}" modelSnapshotTypeName modelSnapshotCode
+                raise (System.Exception(msg, exn))
 
 
-    let nl = Environment.NewLine
+    let _nl = Environment.NewLine
 
     let createMigrationsCodeGenerator() =
 
-        let serverTypeMappingSource =
-            SqlServerTypeMappingSource(
-                TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
-                TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>())
+        let testAssembly = (typeof<BuildReference>).Assembly
+        let reporter = TestOperationReporter()
 
-        let sqlServerAnnotationCodeGenerator =
-            SqlServerAnnotationCodeGenerator(
-                AnnotationCodeGeneratorDependencies(serverTypeMappingSource));
+        let services =
+            DesignTimeServicesBuilder(testAssembly, testAssembly, reporter, [||])
+                .CreateServiceCollection(SqlServerTestHelpers.Instance.CreateContext())
 
-        let annotationCodeGenerator =
-            AnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(serverTypeMappingSource))
+        let designTimeServices = EFCoreFSharpServices.Default
 
-        let codeHelper = FSharpHelper(serverTypeMappingSource)
+        designTimeServices.ConfigureDesignTimeServices(services)
 
-        let generator =
-            FSharpMigrationsGenerator(
-                MigrationsCodeGeneratorDependencies(serverTypeMappingSource, sqlServerAnnotationCodeGenerator),
-                FSharpMigrationsGeneratorDependencies(
-                    codeHelper,
-                    FSharpMigrationOperationGenerator(codeHelper),
-                    FSharpSnapshotGenerator(codeHelper, serverTypeMappingSource, annotationCodeGenerator)))
-
-        (serverTypeMappingSource, codeHelper, generator)
+        services
+            .BuildServiceProvider(validateScopes = true)
+            .GetRequiredService<IMigrationsCodeGenerator>()
 
     let missingAnnotationCheck (createMetadataItem: ModelBuilder -> IMutableAnnotatable)
                                (invalidAnnotations:HashSet<string>)
@@ -222,7 +222,7 @@ module FSharpMigrationsGeneratorTest =
 
                 metadataItem.SetAnnotation(annotationName, annotation)
 
-                modelBuilder.FinalizeModel() |> ignore
+                modelBuilder.FinalizeModel(designTime = true) |> ignore
 
                 let sb = IndentedStringBuilder()
 
@@ -241,7 +241,7 @@ module FSharpMigrationsGeneratorTest =
                     else
                         generationDefault
 
-                Expect.equal actual expected "Should be equal"
+                Expect.equal (actual.Trim()) (expected.Trim()) $"Should be equal, but failed on {annotationName}"
             )
 
         ()
@@ -331,6 +331,7 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.EagerLoaded
                         CoreAnnotationNames.DuplicateServiceProperties
                         RelationalAnnotationNames.ColumnName
+                        RelationalAnnotationNames.ColumnOrder
                         RelationalAnnotationNames.ColumnType
                         RelationalAnnotationNames.TableColumnMappings
                         RelationalAnnotationNames.ViewColumnMappings
@@ -365,68 +366,48 @@ module FSharpMigrationsGeneratorTest =
                         RelationalAnnotationNames.ModelDependencies
                     ] |> HashSet
 
-                let toTable = nl + @"modelBuilder.ToTable(""WithAnnotations"") |> ignore" + nl
+                let _toTable = _nl + @"entityTypeBuilder.ToTable(""WithAnnotations"") |> ignore" + _nl
 
                 let forEntityType =
                     [
                         (
-                            RelationalAnnotationNames.TableName, ("MyTable" :> obj,
-                                nl + "modelBuilder.ToTable" + @"(""MyTable"") |> ignore" + nl)
+                            RelationalAnnotationNames.TableName,
+                            (box "MyTable", _nl + @"entityTypeBuilder.ToTable(""MyTable"") |> ignore")
                         )
                         (
-                            RelationalAnnotationNames.Schema, ("MySchema" :> obj,
-                                nl
-                                + "modelBuilder."
-                                + "ToTable"
-                                + @"(""WithAnnotations"",""MySchema"") |> ignore"
-                                + nl)
+                            RelationalAnnotationNames.Schema, (box "MySchema",
+                                _nl + @"entityTypeBuilder.ToTable(""WithAnnotations"", ""MySchema"") |> ignore")
                         )
                         (
-                            CoreAnnotationNames.DiscriminatorProperty, ("Id" :> obj,
-                                toTable
-                                + nl
-                                + "modelBuilder.HasDiscriminator"
-                                + @"<int>(""Id"") |> ignore"
-                                + nl)
+                            CoreAnnotationNames.DiscriminatorProperty, (box "Id",
+                                _toTable
+                                + @"entityTypeBuilder.HasDiscriminator<int>(""Id"") |> ignore")
                         )
                         (
-                            CoreAnnotationNames.DiscriminatorValue, ("MyDiscriminatorValue" :> obj,
-                                toTable
-                                + nl
-                                + "modelBuilder.HasDiscriminator"
-                                + "()."
-                                + "HasValue"
-                                + @"(""MyDiscriminatorValue"") |> ignore"
-                                + nl)
+                            CoreAnnotationNames.DiscriminatorValue, (box "MyDiscriminatorValue",
+                                _toTable
+                                + @"entityTypeBuilder.HasDiscriminator().HasValue(""MyDiscriminatorValue"") |> ignore")
                         )
                         (
-                            RelationalAnnotationNames.Comment, ("My Comment" :> obj,
-                                toTable
-                                + nl
-                                + "modelBuilder"
-                                + nl
-                                + @"    .HasComment(""My Comment"") |> ignore"
-                                + nl)
+                            RelationalAnnotationNames.Comment, (box "My Comment",
+                                _toTable
+                                + @"entityTypeBuilder.HasComment(""My Comment"") |> ignore")
                         )
                         (
                             CoreAnnotationNames.DefiningQuery,
-                            (Expression.Lambda(Expression.Constant(null)) :> obj, "")
+                            (box (Expression.Lambda(Expression.Constant(null))), "")
                         )
                         (
-                            RelationalAnnotationNames.ViewName, ("MyView" :> obj,
-                                nl
-                                + "modelBuilder."
-                                + "ToView"
-                                + @"(""MyView"") |> ignore"
-                                + nl)
+                            RelationalAnnotationNames.ViewName,
+                            (box "MyView", _nl + @"entityTypeBuilder.ToView(""MyView"") |> ignore")
                         )
                         (
                             RelationalAnnotationNames.FunctionName,
-                            (null, "")
+                            (box null, _nl + "entityTypeBuilder.ToFunction(null) |> ignore")
                         )
                         (
                             RelationalAnnotationNames.SqlQuery,
-                            (null, "")
+                            (box null, _nl + "entityTypeBuilder.ToSqlQuery(null) |> ignore")
                         )
                     ] |> dict
 
@@ -434,8 +415,8 @@ module FSharpMigrationsGeneratorTest =
                         (fun b -> (b.Entity<WithAnnotations>().Metadata :> IMutableAnnotatable))
                         notForEntityType
                         forEntityType
-                        toTable
-                        (fun g m b -> g.generateEntityTypeAnnotations "modelBuilder" (m :> obj :?> _) b |> ignore)
+                        _toTable
+                        (fun g m b -> g.generateEntityTypeAnnotations "entityTypeBuilder" (m :> obj :?> _) b |> ignore)
             }
 
             test "Test new annotations handled for properties" {
@@ -487,52 +468,64 @@ module FSharpMigrationsGeneratorTest =
                     ] |> HashSet
 
                 let columnMapping =
-                    @$"{nl}.HasColumnType(""default_int_mapping"")"
+                    @$"{_nl}.HasColumnType(""default_int_mapping""){_nl}"
+
+                let columnMappingWithDefaultValue =
+                    $"{columnMapping}.HasDefaultValue(0)"
 
                 let forProperty =
                     [
-                        ( CoreAnnotationNames.MaxLength, (256 :> obj, $"{nl}.HasMaxLength(256){columnMapping} |> ignore"))
-                        ( CoreAnnotationNames.Precision, (4 :> obj, $"{nl}.HasPrecision(4){columnMapping} |> ignore") )
-                        ( CoreAnnotationNames.Unicode, (false :> obj, $"{nl}.IsUnicode(false){columnMapping} |> ignore"))
+                        ( CoreAnnotationNames.MaxLength, (box 256, $"{_nl}.HasMaxLength(256){columnMappingWithDefaultValue} |> ignore"))
+                        ( CoreAnnotationNames.Precision, (box 4, $"{_nl}.HasPrecision(4){columnMappingWithDefaultValue} |> ignore") )
+                        ( CoreAnnotationNames.Scale, (box null, $"{columnMappingWithDefaultValue} |> ignore") )
+                        ( CoreAnnotationNames.Unicode, (box false, $"{_nl}.IsUnicode(false){columnMappingWithDefaultValue} |> ignore"))
                         (
-                            CoreAnnotationNames.ValueConverter, (ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null) :> obj,
-                                nl+ @".HasColumnType(""default_long_mapping"") |> ignore")
+                            CoreAnnotationNames.ValueConverter, (box (ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null)),
+                                _nl+ $".HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L) |> ignore")
                         )
                         (
                             CoreAnnotationNames.ProviderClrType,
-                            (typeof<int64> :> obj, nl + @".HasColumnType(""default_long_mapping"") |> ignore")
+                            (box typeof<int64>, $"{_nl}.HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L) |> ignore")
                         )
                         (
                             RelationalAnnotationNames.ColumnName,
-                            ("MyColumn" :> obj, columnMapping + nl + @".HasColumnName(""MyColumn"") |> ignore")
+                            (box "MyColumn", columnMappingWithDefaultValue + _nl + ".HasColumnName(\"MyColumn\") |> ignore")
                         )
                         (
                             RelationalAnnotationNames.ColumnType,
-                            ("int" :> obj, nl + @".HasColumnType(""int"") |> ignore")
+                            (box "int", _nl + $".HasColumnType(\"int\"){_nl}.HasDefaultValue(0) |> ignore")
                         )
                         (
                             RelationalAnnotationNames.DefaultValueSql,
-                            ("some SQL" :> obj, columnMapping + nl + @".HasDefaultValueSql(""some SQL"") |> ignore")
+                            (box "some SQL", columnMappingWithDefaultValue + _nl + ".HasDefaultValueSql(\"some SQL\") |> ignore")
                         )
                         (
                             RelationalAnnotationNames.ComputedColumnSql,
-                            ("some SQL" :> obj, columnMapping + nl + @".HasComputedColumnSql(""some SQL"") |> ignore")
+                            (box "some SQL", columnMappingWithDefaultValue + _nl + ".HasComputedColumnSql(\"some SQL\") |> ignore")
                         )
                         (
                             RelationalAnnotationNames.DefaultValue,
-                            ("1" :> obj, columnMapping + nl + @".HasDefaultValue(""1"") |> ignore")
+                            (box "1", columnMapping + ".HasDefaultValue(\"1\") |> ignore")
+                        )
+                        (
+                            RelationalAnnotationNames.DefaultValue,
+                            (box 0, columnMapping + ".HasDefaultValue(0) |> ignore")
                         )
                         (
                             RelationalAnnotationNames.IsFixedLength,
-                            (true :> obj, columnMapping + nl + @".IsFixedLength(true) |> ignore")
+                            (box true, columnMappingWithDefaultValue + _nl + ".IsFixedLength() |> ignore")
                         )
                         (
                             RelationalAnnotationNames.Comment,
-                            ("My Comment" :> obj, columnMapping + nl + @".HasComment(""My Comment"") |> ignore")
+                            (box "My Comment", columnMappingWithDefaultValue + _nl + ".HasComment(\"My Comment\") |> ignore")
                         )
                         (
                             RelationalAnnotationNames.Collation,
-                            ("Some Collation" :> obj, $@"{columnMapping}{nl}.UseCollation(""Some Collation"") |> ignore")
+                            (box "Some Collation", $"{columnMappingWithDefaultValue}{_nl}.UseCollation(\"Some Collation\") |> ignore")
+                        )
+                        (
+                            RelationalAnnotationNames.IsStored,
+                            (box null, $"{columnMappingWithDefaultValue}{_nl}.HasAnnotation(\"{RelationalAnnotationNames.IsStored}\", null) |> ignore")
                         )
                     ] |> dict
 
@@ -540,8 +533,8 @@ module FSharpMigrationsGeneratorTest =
                     (fun b -> (b.Entity<WithAnnotations>().Property(fun e -> e.Id).Metadata :> IMutableAnnotatable))
                     notForProperty
                     forProperty
-                    (columnMapping + " |> ignore")
-                    (fun g m b -> g.generatePropertyAnnotations (m :> obj :?> _) b |> ignore)
+                    (columnMappingWithDefaultValue + " |> ignore")
+                    (fun g m b -> g.generatePropertyAnnotations "propertyBuilder" (m :> obj :?> _) b |> ignore)
             }
 
             test "Snapshot with enum discriminator uses converted values" {
@@ -581,7 +574,7 @@ module FSharpMigrationsGeneratorTest =
                         eb.Property<RawEnum>("EnumDiscriminator").HasConversion<int>() |> ignore
                         ) |> ignore
 
-                let model = modelBuilder.FinalizeModel()
+                let model = modelBuilder.FinalizeModel(designTime = true)
 
                 let modelSnapshotCode =
                     generator.GenerateSnapshot(
@@ -597,16 +590,16 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Migrations compile" {
-                let (_, _, generator) = createMigrationsCodeGenerator()
+                let generator = createMigrationsCodeGenerator()
+
+                let sqlOperation = SqlOperation(Sql = "-- TEST")
+                sqlOperation.["Some:EnumValue"] <- RegexOptions.Multiline
 
                 let migrationCode =
                     generator.GenerateMigration(
                         "MyNamespace",
                         "MyMigration",
                         [
-                            let sqlOperation =
-                                SqlOperation(Sql = "-- TEST")
-                            sqlOperation.["Some:EnumValue"] <- RegexOptions.Multiline
                             sqlOperation
                             AlterColumnOperation (
                                 Name = "C1",
@@ -633,17 +626,17 @@ module FSharpMigrationsGeneratorTest =
 
                 Expect.equal migrationCode "// intentionally empty" "No support for partial class. Code is built in GenerateMetadata"
 
-                let modelBuilder = ModelBuilder()
+                let modelBuilder = SqlServerTestHelpers.Instance.CreateConventionBuilder(configure = (fun c -> c.RemoveAllConventions()))
 
                 modelBuilder.HasAnnotation("Some:EnumValue", RegexOptions.Multiline) |> ignore
-                modelBuilder.HasAnnotation(RelationalAnnotationNames.DbFunctions, obj()) |> ignore
+                modelBuilder.HasAnnotation(RelationalAnnotationNames.DbFunctions, SortedDictionary<string, IDbFunction>()) |> ignore
                 modelBuilder.Entity("T1", fun eb ->
                                         eb.Property<int>("Id") |> ignore
                                         eb.Property<string>("C2").IsRequired() |> ignore
                                         eb.Property<int>("C3") |> ignore
                                         eb.HasKey("Id")  |> ignore) |> ignore
-
-                let model = modelBuilder.FinalizeModel()
+                modelBuilder.HasAnnotation(CoreAnnotationNames.ProductVersion, null) |> ignore
+                let model = modelBuilder.FinalizeModel(designTime = true)
 
 
                 let migrationMetadataCode =
@@ -704,26 +697,27 @@ module FSharpMigrationsGeneratorTest =
                         "        ()"
                         ""
                         "    override this.BuildTargetModel(modelBuilder: ModelBuilder) ="
-                        "        modelBuilder"
-                        "            .HasAnnotation(\"Some:EnumValue\", RegexOptions.Multiline)"
-                        "            |> ignore"
+                        "        modelBuilder.HasAnnotation(\"Some:EnumValue\", RegexOptions.Multiline) |> ignore"
                         ""
                         "        modelBuilder.Entity(\"T1\", (fun b ->"
                         ""
                         "            b.Property<int>(\"Id\")"
                         "                .IsRequired(true)"
-                        "                .HasColumnType(\"int\") |> ignore"
+                        "                .HasColumnType(\"int\")"
+                        "                .HasDefaultValue(0) |> ignore"
+                        ""
                         "            b.Property<string>(\"C2\")"
                         "                .IsRequired(true)"
                         "                .HasColumnType(\"nvarchar(max)\") |> ignore"
+                        ""
                         "            b.Property<int>(\"C3\")"
                         "                .IsRequired(true)"
-                        "                .HasColumnType(\"int\") |> ignore"
+                        "                .HasColumnType(\"int\")"
+                        "                .HasDefaultValue(0) |> ignore"
                         ""
                         "            b.HasKey(\"Id\") |> ignore"
                         ""
                         "            b.ToTable(\"T1\") |> ignore"
-                        ""
                         "        )) |> ignore"
                     } |> join _eol
 
@@ -759,7 +753,7 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Snapshots compile" {
-                let (_, _, generator) = createMigrationsCodeGenerator()
+                let generator = createMigrationsCodeGenerator()
                 let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder()
                 modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion) |> ignore
                 modelBuilder.Entity<EntityWithConstructorBinding>(fun x ->
@@ -790,7 +784,7 @@ module FSharpMigrationsGeneratorTest =
 
                 entityType.SetPrimaryKey(property2) |> ignore
 
-                let finalModel = modelBuilder.FinalizeModel()
+                let finalModel = modelBuilder.FinalizeModel(designTime = true)
 
                 let modelSnapshotCode =
                     generator.GenerateSnapshot(
@@ -818,15 +812,15 @@ module FSharpMigrationsGeneratorTest =
                         "    inherit ModelSnapshot()"
                         ""
                         "    override this.BuildModel(modelBuilder: ModelBuilder) ="
-                        "        modelBuilder"
-                        "            .HasAnnotation(\"Some:EnumValue\", RegexOptions.Multiline)"
-                        "            |> ignore"
+                        "        modelBuilder.HasAnnotation(\"Some:EnumValue\", RegexOptions.Multiline) |> ignore"
                         ""
                         "        modelBuilder.Entity(\"Cheese\", (fun b ->"
                         ""
                         "            b.Property<string>(\"Ham\")"
                         "                .IsRequired(true)"
-                        "                .HasColumnType(\"just_string(10)\") |> ignore"
+                        "                .HasColumnType(\"just_string(10)\")"
+                        "                .HasDefaultValue(\"A\") |> ignore"
+                        ""
                         "            b.Property<string>(\"Pickle\")"
                         "                .IsRequired(false)"
                         "                .HasColumnType(\"just_string(10)\") |> ignore"
@@ -834,7 +828,6 @@ module FSharpMigrationsGeneratorTest =
                         "            b.HasKey(\"Ham\") |> ignore"
                         ""
                         "            b.ToTable(\"Cheese\") |> ignore"
-                        ""
                         "        )) |> ignore"
                         ""
                         "        modelBuilder.Entity(\"EntityFrameworkCore.FSharp.Test.Migrations.Design.FSharpMigrationsGeneratorTest+EntityWithConstructorBinding\", (fun b ->"
@@ -842,15 +835,17 @@ module FSharpMigrationsGeneratorTest =
                         "            b.Property<int>(\"Id\")"
                         "                .IsRequired(true)"
                         "                .ValueGeneratedOnAdd()"
-                        "                .HasColumnType(\"default_int_mapping\") |> ignore"
+                        "                .HasColumnType(\"default_int_mapping\")"
+                        "                .HasDefaultValue(0) |> ignore"
+                        ""
                         "            b.Property<Guid>(\"PropertyWithValueGenerator\")"
                         "                .IsRequired(true)"
-                        "                .HasColumnType(\"default_guid_mapping\") |> ignore"
+                        "                .HasColumnType(\"default_guid_mapping\")"
+                        "                .HasDefaultValue(Guid(\"00000000-0000-0000-0000-000000000000\")) |> ignore"
                         ""
                         "            b.HasKey(\"Id\") |> ignore"
                         ""
                         "            b.ToTable(\"EntityWithConstructorBinding\") |> ignore"
-                        ""
                         "        )) |> ignore"
                     } |> join _eol
 
@@ -861,7 +856,7 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Snapshot with default values are round tripped" {
-                let (_, _, generator) = createMigrationsCodeGenerator()
+                let generator = createMigrationsCodeGenerator()
                 let modelBuilder = RelationalTestHelpers.Instance.CreateConventionBuilder();
                 modelBuilder.Entity<EntityWithEveryPrimitive>(fun eb ->
                     eb.Property(fun e -> e.Boolean).HasDefaultValue(false) |> ignore
@@ -908,7 +903,7 @@ module FSharpMigrationsGeneratorTest =
                     eb.HasKey(fun e -> e.Boolean :> obj) |> ignore
                     ) |> ignore
 
-                let model = modelBuilder.FinalizeModel()
+                let model = modelBuilder.FinalizeModel(designTime = true)
 
                 let modelSnapshotCode =
                     generator.GenerateSnapshot(
@@ -920,7 +915,7 @@ module FSharpMigrationsGeneratorTest =
                 let snapshot = compileModelSnapshot modelSnapshotCode "MyNamespace.MySnapshot"
                 let entityType = snapshot.Model.GetEntityTypes() |> Seq.head
 
-                Expect.equal (entityType.DisplayName()) typeof<EntityWithEveryPrimitive>.FullName ""
+                Expect.equal (entityType.DisplayName()) (typeof<EntityWithEveryPrimitive>.FullName + " (Dictionary<string, object>)") ""
 
                 (modelBuilder.Model.GetEntityTypes() |> Seq.head).GetProperties()
                 |> Seq.iter (fun property ->
@@ -946,7 +941,7 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Namespaces imported for insert data" {
-                let (_, _, generator) = createMigrationsCodeGenerator()
+                let generator = createMigrationsCodeGenerator()
 
                 let _ =
                     generator.GenerateMigration(
@@ -982,7 +977,7 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Namespaces imported for update data values" {
-                let (_, _, generator) = createMigrationsCodeGenerator()
+                let generator = createMigrationsCodeGenerator()
 
                 let _ =
                     generator.GenerateMigration(
@@ -1016,7 +1011,7 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Namespaces imported for update data KeyValues" {
-                let (_, _, generator) = createMigrationsCodeGenerator()
+                let generator = createMigrationsCodeGenerator()
 
                 let _ =
                     generator.GenerateMigration(
@@ -1050,7 +1045,7 @@ module FSharpMigrationsGeneratorTest =
             }
 
             test "Namespaces imported for delete data" {
-                let (_, _, generator) = createMigrationsCodeGenerator()
+                let generator = createMigrationsCodeGenerator()
 
                 let _ =
                     generator.GenerateMigration(

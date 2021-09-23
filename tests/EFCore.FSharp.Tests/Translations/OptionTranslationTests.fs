@@ -24,17 +24,17 @@ type MyContext () =
     member this.Blogs with get() = this._blogs and set v = this._blogs <- v
 
     override _.OnConfiguring(options: DbContextOptionsBuilder) : unit =
-           options.UseSqlite($"Data Source={Guid.NewGuid().ToString()}.db")
-                  .UseFSharpTypes()
-           |> ignore
+        options
+            //.EnableServiceProviderCaching(false)
+            .UseInMemoryDatabase("MyContext")
+            .UseFSharpTypes()
+        |> ignore
 
     override _.OnModelCreating builder =
         builder.RegisterOptionTypes()
 
 let createContext () =
     let ctx = new MyContext()
-    ctx.Database.EnsureDeleted() |> ignore
-    ctx.Database.EnsureCreated() |> ignore
     ctx
 
 let blogWithContent = { Id = Guid.NewGuid(); Title = "My Title"; Content = Some "Some text" }

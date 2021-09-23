@@ -33,11 +33,8 @@ type FSharpTypeOptionsExtension() =
      interface IDbContextOptionsExtension with
          member this.ApplyServices(services) =
              EntityFrameworkRelationalServicesBuilder(services)
-                 .TryAddProviderSpecificServices(
-                     fun x ->
-                         x.TryAddSingletonEnumerable<IMemberTranslatorPlugin, FSharpMemberTranslatorPlugin>()
-                          .TryAddSingletonEnumerable<IMethodCallTranslatorPlugin, FSharpMethodCallTranslatorPlugin>()
-                         |> ignore)
+                .TryAdd<IMemberTranslatorPlugin, FSharpMemberTranslatorPlugin>()
+                .TryAdd<IMethodCallTranslatorPlugin, FSharpMethodCallTranslatorPlugin>()
              |> ignore
 
          member this.Info = ExtensionInfo(this :> IDbContextOptionsExtension) :> _
