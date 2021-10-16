@@ -30,6 +30,7 @@
     <Compile Include="Internal\FSharpHelper.fs" />
     <Compile Include="Internal\FSharpUtilities.fs" />
     <Compile Include="ValueConverters\Converters.fs" />
+    <Compile Include="Translations\IsNullTranslation.fs" />
     <Compile Include="Translations\OptionTranslation.fs" />
     <Compile Include="Translations\SingleCaseUnionTranslation.fs" />
     <Compile Include="Translations\Translation.fs" />
