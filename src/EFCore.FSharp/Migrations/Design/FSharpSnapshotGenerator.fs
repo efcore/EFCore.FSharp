@@ -426,7 +426,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
 
         let getAnnotationValue (annotation: IAnnotation) (defaultValue: unit -> string) =
             if annotationAndValueNotNull annotation then
-                annotation.Value :?> string
+                string annotation.Value
             else
                 defaultValue()
 
@@ -473,7 +473,7 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                 let schema = getAnnotationValue schemaAnnotation entityType.GetSchema
 
                 if isNull tableName && (isNull schemaAnnotation || isNull schema) then
-                    sb |> append (sprintf "(%s :?> string)" (code.UnknownLiteral tableName)) |> ignore
+                    sb |> append (sprintf "(string %s)" (code.UnknownLiteral tableName)) |> ignore
                 else
                     sb |> append (code.UnknownLiteral tableName) |> ignore
 
@@ -484,9 +484,9 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                     tryGetAnnotationByName RelationalAnnotationNames.IsTableExcludedFromMigrations
 
                 if notNull schema || (notNull schemaAnnotation && notNull tableName) then
-                    if isNull schema && (notNull isExcludedAnnotation && (isExcludedAnnotation.Value :?> Nullable<bool>) <> Nullable(true)) then
-                        sb |> append (sprintf ", (%s :?> string)" (code.UnknownLiteral schema)) |> ignore
-                    else
+                    if isNull schema && (notNull isExcludedAnnotation && (isExcludedAnnotation.Value :?> Nullable<bool>).GetValueOrDefault() <> true) then
+                        sb |> append (sprintf ", (string %s)" (code.UnknownLiteral schema)) |> ignore
+                    elif notNull schema then
                         sb |> append (sprintf ", %s" (code.UnknownLiteral schema)) |> ignore
 
                 if notNull isExcludedAnnotation then
@@ -624,14 +624,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             annotationCodeGenerator.FilterIgnoredAnnotations(fk.GetAnnotations())
             |> annotationsToDictionary
 
-        annotationCodeGenerator.GenerateFluentApiCalls(fk, annotations)
-        |> Seq.map code.Fragment
-        |> Seq.iter (fun m ->
-            sb
-                |> appendEmptyLine
-                |> append m
-                |> ignore)
-
         sb
         |> generateAnnotations entityTypeBuilderName fk annotations true false
 
@@ -691,8 +683,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> append ")"
             |> ignore
 
-            this.generateForeignKeyAnnotations entityTypeBuilderName fk sb |> ignore
-
             if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
                 sb
                 |> appendEmptyLine
@@ -725,8 +715,6 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
             |> append ")"
             |> ignore
 
-            this.generateForeignKeyAnnotations entityTypeBuilderName fk sb |> ignore
-
             if fk.PrincipalKey <> fk.PrincipalEntityType.FindPrimaryKey() then
                 sb
                 |> appendEmptyLine
@@ -751,13 +739,13 @@ type FSharpSnapshotGenerator (code : ICSharpHelper,
                 |> ignore
 
         sb
-        |> appendLine " |> ignore"
+        |> this.generateForeignKeyAnnotations entityTypeBuilderName fk
         |> unindent
 
     member private this.generateForeignKeys entityTypeBuilderName (foreignKeys: IForeignKey seq) sb =
         foreignKeys
         |> Seq.iter (fun fk -> this.generateForeignKey entityTypeBuilderName fk sb |> ignore)
-        sb
+        sb |> unindent
 
     member private this.generateOwnedType entityTypeBuilderName (ownership: IForeignKey) (sb:IndentedStringBuilder) =
         this.generateEntityType entityTypeBuilderName ownership.DeclaringEntityType sb
