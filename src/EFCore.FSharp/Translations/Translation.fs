@@ -14,6 +14,7 @@ type FSharpMethodCallTranslatorPlugin(sqlExpressionFactory) =
     interface IMethodCallTranslatorPlugin with
         member _.Translators = seq {
             OptionTranslation.optionMethodCallTranslator sqlExpressionFactory
+            IsNullTranslation.isNullMethodTranslator sqlExpressionFactory
         }
 
 type ExtensionInfo(extension) =
