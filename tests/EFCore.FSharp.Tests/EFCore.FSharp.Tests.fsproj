@@ -26,6 +26,7 @@
         <Compile Include="Scaffolding\Internal\FSharpModelGeneratorTests.fs" />
         <Compile Include="Scaffolding\Internal\FSharpDbContextGeneratorTest.fs" />
         <Compile Include="ValueConverters\ValueConvertersTest.fs" />
+        <Compile Include="Translations\IsNullTranslationTests.fs" />
         <Compile Include="Translations\OptionTranslationTests.fs" />
         <Compile Include="Translations\SingleCaseUnionTranslationTests.fs" />
         <Compile Include="DbContextHelperTests.fs" />
