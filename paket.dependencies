@@ -20,6 +20,7 @@ nuget Fantomas
 nuget NetTopologySuite.IO.SqlServerBytes 2.0.0
 nuget System.Runtime.Numerics
 
+nuget YoloDev.Expecto.TestSdk 0.12.10
 // [ FAKE GROUP ]
 group Build
     storage: none

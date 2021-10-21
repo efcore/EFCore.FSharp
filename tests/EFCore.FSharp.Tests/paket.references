@@ -12,3 +12,4 @@ FSharp.Compiler.Service
 Microsoft.CodeAnalysis
 Fantomas
 Microsoft.EntityFrameworkCore.InMemory
+YoloDev.Expecto.TestSdk
