@@ -160,18 +160,20 @@ module FSharpMigrationsScaffolderTest =
             }
 
             test "ScaffoldMigration save works as expected" {
-                let outputDir =  Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+                let projectDir =  Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+
+                Directory.CreateDirectory(projectDir) |> ignore
 
                 let scaffolder = createMigrationScaffolder<ContextWithSnapshot>()
                 let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
 
-                let saveResult = scaffolder.Save(null, migration, outputDir)
+                let saveResult = scaffolder.Save(projectDir, migration, null)
 
                 Expect.isTrue (File.Exists saveResult.MigrationFile) "MigrationFile should exist"
                 Expect.isTrue (File.Exists saveResult.MetadataFile) "MetadataFile should exist"
                 Expect.isTrue (File.Exists saveResult.SnapshotFile) "SnapshotFile should exist"
 
-                Directory.Delete(outputDir, true)
+                Directory.Delete(projectDir, true)
             }
 
     ]
