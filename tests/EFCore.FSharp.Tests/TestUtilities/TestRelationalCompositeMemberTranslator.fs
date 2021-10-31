@@ -3,16 +3,16 @@
 open Microsoft.EntityFrameworkCore.Query.ExpressionTranslators
 open Microsoft.EntityFrameworkCore.Query.Sql
 
-type TestRelationalCompositeMemberTranslator (dependencies) =
+type TestRelationalCompositeMemberTranslator(dependencies) =
     inherit RelationalCompositeMemberTranslator(dependencies)
 
-type TestRelationalCompositeMethodCallTranslator (dependencies) =
+type TestRelationalCompositeMethodCallTranslator(dependencies) =
     inherit RelationalCompositeMethodCallTranslator(dependencies)
 
-type TestQuerySqlGenerator (dependencies, selectExpression) =
+type TestQuerySqlGenerator(dependencies, selectExpression) =
     inherit DefaultQuerySqlGenerator(dependencies, selectExpression)
 
-type TestQuerySqlGeneratorFactory (dependencies) =
+type TestQuerySqlGeneratorFactory(dependencies) =
     inherit QuerySqlGeneratorFactoryBase(dependencies)
 
     override this.CreateDefault selectExpression =

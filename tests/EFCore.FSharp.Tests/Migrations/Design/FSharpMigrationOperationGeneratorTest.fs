@@ -36,7 +36,6 @@ type GeometryValueCoverter<'geometry when 'geometry :> Geometry>(reader : SqlSer
     )
 
 module Helpers =
-
     let createConverter (geometryServices:NtsGeometryServices) (storeType: string) =
         let isGeography =
             String.Equals(storeType, "geography", StringComparison.OrdinalIgnoreCase)
@@ -139,7 +138,6 @@ type SqlServerNetTopologySuiteTypeMappingSourcePlugin (geometryServices) =
     let notNull a = not (isNull a)
 
     interface IRelationalTypeMappingSourcePlugin with
-
         member __.FindMapping(mappingInfo) =
             let clrType = mappingInfo.ClrType
             let storeTypeName = mappingInfo.StoreTypeName
@@ -165,12 +163,22 @@ module FSharpMigrationOperationGeneratorTest =
     let join separator (lines : string seq) =
         String.Join(separator, lines)
 
-    let createGenerator () =
+    let createGenerator () : ICSharpMigrationOperationGenerator =
+
+        let typeMappingSourceDependencies =
+            TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>()
+
+        let relationalTypeMappingSourceDependencies =
+            TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()
+
+
+
         FSharpMigrationOperationGenerator(
             FSharpHelper(
                 SqlServerTypeMappingSource(
-                    TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
-                    TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()))) :> ICSharpMigrationOperationGenerator
+                    typeMappingSourceDependencies,
+                    relationalTypeMappingSourceDependencies
+                    )))
 
     let Test<'a when 'a :> MigrationOperation> (operation:'a) (expectedCode:string) (``assert``:('a -> unit)) =
 

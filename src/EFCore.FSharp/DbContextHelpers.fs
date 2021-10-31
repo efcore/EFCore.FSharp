@@ -11,7 +11,11 @@ let findEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) = ctx.Set<'a>
 
 let tryFindEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
     let result = findEntity<'a> ctx key
-    if isNull (box result) then None else Some result
+
+    if isNull (box result) then
+        None
+    else
+        Some result
 
 let findEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
     async { return! ctx.Set<'a>().FindAsync(key) |> awaitValueTask }
@@ -21,7 +25,12 @@ let findEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) = ct
 let tryFindEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
     async {
         let! result = findEntityAsync<'a> ctx key
-        return if isNull (box result) then None else Some result
+
+        return
+            if isNull (box result) then
+                None
+            else
+                Some result
     }
 
 let tryFindEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
@@ -29,7 +38,11 @@ let tryFindEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
 
     result
         .AsTask()
-        .ContinueWith(fun (t: Task<'a>) -> if isNull (box t.Result) then None else Some t.Result)
+        .ContinueWith(fun (t: Task<'a>) ->
+            if isNull (box t.Result) then
+                None
+            else
+                Some t.Result)
 
 
 /// Helper method for saving an updated record type
@@ -76,7 +89,9 @@ let addEntityAsync ctx entity =
     addEntityAsync' ctx entity |> Async.Ignore
 
 let addEntityTaskAsync' (ctx: #DbContext) (entity: 'a when 'a: not struct) = ctx.Set<'a>().AddAsync(entity).AsTask()
-let addEntityTaskAsync ctx entity = (addEntityTaskAsync' ctx entity) :> Task
+
+let addEntityTaskAsync ctx entity =
+    (addEntityTaskAsync' ctx entity) :> Task
 
 let addEntityRange' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) = ctx.Set<'a>().AddRange entities
 
@@ -123,7 +138,8 @@ let tryFirstAsync (dbset: #IQueryable<_>) =
         return FSharpUtilities.OptionOfNullableObj ret
     }
 
-let tryFirstTaskAsync dbset = tryFirstAsync dbset |> Async.StartAsTask
+let tryFirstTaskAsync dbset =
+    tryFirstAsync dbset |> Async.StartAsTask
 
 
 let tryFirst (dbset: #IQueryable<_>) =

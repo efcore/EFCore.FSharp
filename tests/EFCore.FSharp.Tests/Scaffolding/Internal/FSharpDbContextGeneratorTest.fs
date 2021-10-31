@@ -17,7 +17,8 @@ open Microsoft.EntityFrameworkCore.SqlServer.Design.Internal
 let normaliseLineEndings (str: string) =
     str.Replace("\r\n", "\n").Replace("\r", "\n")
 
-let emptyModelDbContext = """namespace TestNamespace
+let emptyModelDbContext =
+    """namespace TestNamespace
 
 open System
 open System.Collections.Generic
@@ -49,8 +50,12 @@ let TestFluentApiCall (modelBuilder: ModelBuilder) =
 
 
 let _testFluentApiCallMethodInfo =
-    let a = System.Reflection.Assembly.GetExecutingAssembly()
-    let modu = a.GetType("EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest")
+    let a =
+        System.Reflection.Assembly.GetExecutingAssembly()
+
+    let modu =
+        a.GetType("EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest")
+
     let methodInfo = modu.GetMethod("TestFluentApiCall")
     methodInfo
 
@@ -60,11 +65,14 @@ type TestModelAnnotationProvider(dependencies) =
 
     override _.For(database: IRelationalModel, designTime: bool) =
         let baseResult = base.For(database, designTime)
+
         seq {
             yield! baseResult
 
             if database.["Test:TestModelAnnotation"] :? string then
-                let annotationValue = database.["Test:TestModelAnnotation"] :?> string
+                let annotationValue =
+                    database.["Test:TestModelAnnotation"] :?> string
+
                 yield (Annotation("Test:TestModelAnnotation", annotationValue)) :> IAnnotation
         }
 
@@ -80,27 +88,37 @@ type TestModelAnnotationCodeGenerator(dependencies) =
 [<Tests>]
 let FSharpDbContextGeneratorTest =
 
-    let testBase = { new ModelCodeGeneratorTestBase() with
-        override _.AddModelServices = fun (services) ->
-            services.Replace(ServiceDescriptor.Singleton<IRelationalAnnotationProvider, TestModelAnnotationProvider>()) |> ignore
+    let testBase =
+        { new ModelCodeGeneratorTestBase() with
+            override _.AddModelServices =
+                fun (services) ->
+                    services.Replace(
+                        ServiceDescriptor.Singleton<IRelationalAnnotationProvider, TestModelAnnotationProvider>()
+                    )
+                    |> ignore
 
-        override _.AddScaffoldingServices = fun (services) ->
-            services.Replace(ServiceDescriptor.Singleton<IAnnotationCodeGenerator, TestModelAnnotationCodeGenerator>()) |> ignore
-    }
+            override _.AddScaffoldingServices =
+                fun (services) ->
+                    services.Replace(
+                        ServiceDescriptor.Singleton<IAnnotationCodeGenerator, TestModelAnnotationCodeGenerator>()
+                    )
+                    |> ignore }
 
-    testList "FSharpDbContextGeneratorTest" [
-        test "Empty Model" {
+    testList
+        "FSharpDbContextGeneratorTest"
+        [ test "Empty Model" {
 
-            let buildModel (m: ModelBuilder) = ()
-            let options = ModelCodeGenerationOptions()
+              let buildModel (m: ModelBuilder) = ()
+              let options = ModelCodeGenerationOptions()
 
-            let assertScaffold (code: ScaffoldedModel) =
-                Expect.equal (normaliseLineEndings code.ContextFile.Code) (normaliseLineEndings emptyModelDbContext) "Should be equal"
+              let assertScaffold (code: ScaffoldedModel) =
+                  Expect.equal
+                      (normaliseLineEndings code.ContextFile.Code)
+                      (normaliseLineEndings emptyModelDbContext)
+                      "Should be equal"
 
-            let assertModel (model: IModel) =
-                Expect.isEmpty (model.GetEntityTypes()) "Should be empty"
+              let assertModel (model: IModel) =
+                  Expect.isEmpty (model.GetEntityTypes()) "Should be empty"
 
-            testBase.Test buildModel options assertScaffold assertModel
-        }
-    ]
-
+              testBase.Test buildModel options assertScaffold assertModel
+          } ]

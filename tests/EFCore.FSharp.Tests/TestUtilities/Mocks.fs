@@ -6,7 +6,7 @@ open Microsoft.EntityFrameworkCore.Design.Internal
 open Microsoft.EntityFrameworkCore.Migrations
 open Microsoft.EntityFrameworkCore.Storage
 
-type MockHistoryRepository () =
+type MockHistoryRepository() =
     interface IHistoryRepository with
 
         member __.GetBeginIfExistsScript(migrationId) = null
@@ -25,20 +25,21 @@ type MockHistoryRepository () =
 
         member __.GetAppliedMigrations() = null
 
-        member __.GetAppliedMigrationsAsync(cancellationToken) = Task.FromResult<IReadOnlyList<HistoryRow>>(null)
+        member __.GetAppliedMigrationsAsync(cancellationToken) =
+            Task.FromResult<IReadOnlyList<HistoryRow>>(null)
 
         member __.GetDeleteScript(migrationId) = null
 
         member __.GetInsertScript(row) = null
 
-type MockProvider () =
+type MockProvider() =
     interface IDatabaseProvider with
         member __.Name = "Mock.Provider"
-        member __.IsConfigured (options) = true
+        member __.IsConfigured(options) = true
 
-type TestOperationReporter  () =
+type TestOperationReporter() =
 
-    let messages = ResizeArray<string>();
+    let messages = ResizeArray<string>()
 
     member __.Messages = messages
 

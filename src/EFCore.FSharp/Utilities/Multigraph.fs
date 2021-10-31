@@ -4,11 +4,14 @@ open System.Collections.Generic
 
 type Multigraph<'TVertex, 'TEdge when 'TVertex: equality>() =
     let vertexSet = HashSet<'TVertex>()
-    let successorMap = Dictionary<'TVertex, Dictionary<'TVertex, List<'TEdge>>>()
-    let predecessorMap = Dictionary<'TVertex, HashSet<'TVertex>>()
 
-    member this.AddVertices(vertices: 'TVertex seq) =
-        vertexSet.UnionWith(vertices)
+    let successorMap =
+        Dictionary<'TVertex, Dictionary<'TVertex, List<'TEdge>>>()
+
+    let predecessorMap =
+        Dictionary<'TVertex, HashSet<'TVertex>>()
+
+    member this.AddVertices(vertices: 'TVertex seq) = vertexSet.UnionWith(vertices)
 
     member this.AddEdge(from: 'TVertex, to': 'TVertex, edge: 'TEdge) =
         let successorEdges =
@@ -47,9 +50,9 @@ type Multigraph<'TVertex, 'TEdge when 'TVertex: equality>() =
 
         invalidOp $"Circular dependency {cycleString}"
 
-    member this.TopologicalSort(): 'TVertex seq =
+    member this.TopologicalSort() : 'TVertex seq =
         let sortedQueue = List()
-        let predecessorCounts = Dictionary<_,_>()
+        let predecessorCounts = Dictionary<_, _>()
 
         let getOutgoingNeighbour (from: 'TVertex) =
             match successorMap.TryGetValue from with
@@ -62,15 +65,15 @@ type Multigraph<'TVertex, 'TEdge when 'TVertex: equality>() =
             | _ -> Seq.empty
 
         vertexSet
-        |> Seq.iter (fun v ->
-            getOutgoingNeighbour v
-            |> Seq.iter (fun n ->
-                if predecessorCounts.ContainsKey(n) then
-                    predecessorCounts.[n] <- predecessorCounts.[n] + 1
-                else
-                    predecessorCounts.[n] <- 1
-                )
-            )
+        |> Seq.iter
+            (fun v ->
+                getOutgoingNeighbour v
+                |> Seq.iter
+                    (fun n ->
+                        if predecessorCounts.ContainsKey(n) then
+                            predecessorCounts.[n] <- predecessorCounts.[n] + 1
+                        else
+                            predecessorCounts.[n] <- 1))
 
         vertexSet
         |> Seq.filter (predecessorCounts.ContainsKey >> not)
@@ -82,17 +85,21 @@ type Multigraph<'TVertex, 'TEdge when 'TVertex: equality>() =
             while index < sortedQueue.Count do
                 getOutgoingNeighbour (sortedQueue.[index])
                 |> Seq.filter predecessorCounts.ContainsKey
-                |> Seq.iter (fun n ->
-                    predecessorCounts.[n] <- predecessorCounts.[n] - 1
-                    if predecessorCounts.[n] = 0 then
-                        sortedQueue.Add(n)
-                        predecessorCounts.Remove(n) |> ignore
-                    )
+                |> Seq.iter
+                    (fun n ->
+                        predecessorCounts.[n] <- predecessorCounts.[n] - 1
+
+                        if predecessorCounts.[n] = 0 then
+                            sortedQueue.Add(n)
+                            predecessorCounts.Remove(n) |> ignore)
 
                 index <- index + 1
 
             if sortedQueue.Capacity < vertexSet.Count then
-                let mutable currentCycleVertex = vertexSet |> Seq.find predecessorCounts.ContainsKey
+                let mutable currentCycleVertex =
+                    vertexSet
+                    |> Seq.find predecessorCounts.ContainsKey
+
                 let cycle = [ currentCycleVertex ] |> ResizeArray
                 let mutable finished = false
 
@@ -104,7 +111,8 @@ type Multigraph<'TVertex, 'TEdge when 'TVertex: equality>() =
                             currentCycleVertex <- v
                             cycle.Add currentCycleVertex
                             finished <- predecessorCounts.[v] = -1
-                        else loop rest
+                        else
+                            loop rest
                     | _ -> ()
 
                 while not finished do

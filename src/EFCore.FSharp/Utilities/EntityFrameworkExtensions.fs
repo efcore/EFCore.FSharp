@@ -14,54 +14,41 @@ module internal EntityFrameworkExtensions =
     let getConfiguredColumnType =
         RelationalPropertyExtensions.GetConfiguredColumnType
 
-    let getPrimaryKey (p: IProperty) =
-        (p :?> Property).PrimaryKey
+    let getPrimaryKey (p: IProperty) = (p :?> Property).PrimaryKey
 
     let sortNamespaces ns =
         let namespaceComparer = NamespaceComparer()
-        ns |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
 
-    let getId =
-        MigrationExtensions.GetId
+        ns
+        |> List.sortWith (fun x y -> namespaceComparer.Compare(x, y))
 
-    let findMapping (p:IProperty) =
-        p.FindTypeMapping()
+    let getId = MigrationExtensions.GetId
 
-    let getDisplayName (e : IEntityType) =
-        e.DisplayName
+    let findMapping (p: IProperty) = p.FindTypeMapping()
 
-    let getDeclaredProperties (e : IEntityType) =
-        e.GetDeclaredProperties()
+    let getDisplayName (e: IEntityType) = e.DisplayName
 
-    let getDeclaredKeys (e : IEntityType) =
-        e.GetDeclaredKeys()
+    let getDeclaredProperties (e: IEntityType) = e.GetDeclaredProperties()
 
-    let getDeclaredIndexes (e : IEntityType) =
-        e.GetDeclaredIndexes()
+    let getDeclaredKeys (e: IEntityType) = e.GetDeclaredKeys()
 
-    let getData (b:bool) (entityType:IEntityType) =
-        entityType.GetSeedData(b)
+    let getDeclaredIndexes (e: IEntityType) = e.GetDeclaredIndexes()
 
-    let findPrimaryKey (e : IEntityType) =
-        e.FindPrimaryKey()
+    let getData (b: bool) (entityType: IEntityType) = entityType.GetSeedData(b)
 
-    let getDeclaredForeignKeys (e : IEntityType) =
-        e.GetDeclaredForeignKeys()
+    let findPrimaryKey (e: IEntityType) = e.FindPrimaryKey()
 
-    let getDeclaredReferencingForeignKeys (e : IEntityType) =
-        e.GetDeclaredReferencingForeignKeys()
+    let getDeclaredForeignKeys (e: IEntityType) = e.GetDeclaredForeignKeys()
 
-    let findOwnership (e : IEntityType) =
-        e.FindOwnership()
+    let getDeclaredReferencingForeignKeys (e: IEntityType) = e.GetDeclaredReferencingForeignKeys()
 
-    let entityDbSetName (e : IEntityType) =
-        e.GetDbSetName()
+    let findOwnership (e: IEntityType) = e.FindOwnership()
 
-    let modelEntityTypeErrors (m : IModel) =
-        m.GetEntityTypeErrors()
+    let entityDbSetName (e: IEntityType) = e.GetDbSetName()
 
-    let toAnnotatable (a : IAnnotatable) =
-        a
+    let modelEntityTypeErrors (m: IModel) = m.GetEntityTypeErrors()
+
+    let toAnnotatable (a: IAnnotatable) = a
 
     let annotationsToDictionary (annotations: IAnnotation seq) =
         annotations
@@ -71,21 +58,24 @@ module internal EntityFrameworkExtensions =
 
     let isManyToManyJoinEntityType (e: IEntityType) =
 
-        if (e.GetNavigations() |> Seq.isEmpty && e.GetSkipNavigations() |> Seq.isEmpty) then
+        if (e.GetNavigations() |> Seq.isEmpty
+            && e.GetSkipNavigations() |> Seq.isEmpty) then
             false
         else
             let primaryKey = e.FindPrimaryKey()
             let properties = e.GetProperties() |> Seq.toList
             let foreignKeys = e.GetForeignKeys() |> Seq.toList
 
-            (not (isNull primaryKey)) &&
-            primaryKey.Properties.Count > 1 &&
-            foreignKeys.Length = 2 &&
-            primaryKey.Properties.Count = properties.Length &&
-            (foreignKeys.[0].Properties.Count + foreignKeys.[1].Properties.Count) = properties.Length &&
-            foreignKeys.[0].Properties.Intersect(foreignKeys.[1].Properties) |> Seq.isEmpty &&
-            foreignKeys.[0].IsRequired &&
-            foreignKeys.[1].IsRequired &&
-            not foreignKeys.[0].IsUnique &&
-            not foreignKeys.[1].IsUnique
-
+            (not (isNull primaryKey))
+            && primaryKey.Properties.Count > 1
+            && foreignKeys.Length = 2
+            && primaryKey.Properties.Count = properties.Length
+            && (foreignKeys.[0].Properties.Count
+                + foreignKeys.[1].Properties.Count) = properties.Length
+            && foreignKeys.[0]
+                .Properties.Intersect(foreignKeys.[1].Properties)
+               |> Seq.isEmpty
+            && foreignKeys.[0].IsRequired
+            && foreignKeys.[1].IsRequired
+            && not foreignKeys.[0].IsUnique
+            && not foreignKeys.[1].IsUnique

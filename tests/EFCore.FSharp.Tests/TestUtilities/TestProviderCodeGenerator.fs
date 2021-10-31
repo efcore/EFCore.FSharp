@@ -9,25 +9,31 @@ open Microsoft.EntityFrameworkCore
 type TestProviderCodeGenerator(dependencies) =
     inherit ProviderCodeGenerator(dependencies)
 
-    let getRequiredRuntimeMethod(t:Type, name:string, parameters:Type[]) =
-        let result = t.GetTypeInfo().GetRuntimeMethod(name, parameters)
+    let getRequiredRuntimeMethod (t: Type, name: string, parameters: Type []) =
+        let result =
+            t.GetTypeInfo().GetRuntimeMethod(name, parameters)
+
         if isNull result then
             invalidOp $"Could not find method '{name}' on type '{t}'"
         else
             result
 
-    let _useTestProviderMethodInfo : MethodInfo =
+    let _useTestProviderMethodInfo: MethodInfo =
         let t = typeof<TestProviderCodeGenerator>
 
-        let parameters = [|
-            typeof<DbContextOptionsBuilder>
-            typeof<string>
-            typeof<Action<obj>>
-        |]
+        let parameters =
+            [| typeof<DbContextOptionsBuilder>
+               typeof<string>
+               typeof<Action<obj>> |]
 
-        getRequiredRuntimeMethod(t, "UseTestProvider", parameters)
+        getRequiredRuntimeMethod (t, "UseTestProvider", parameters)
 
-    static member UseTestProvider(optionsBuilder: DbContextOptionsBuilder, connectionString: string, optionsAction : Action<obj>) =
+    static member UseTestProvider
+        (
+            optionsBuilder: DbContextOptionsBuilder,
+            connectionString: string,
+            optionsAction: Action<obj>
+        ) =
         raise (NotSupportedException())
 
     override this.GenerateUseProvider(connectionString, providerOptions) =
@@ -36,7 +42,7 @@ type TestProviderCodeGenerator(dependencies) =
             if isNull providerOptions then
                 [| (connectionString :> obj) |]
             else
-                [| (connectionString :> obj); (NestedClosureCodeFragment("x", providerOptions) :> obj) |]
+                [| (connectionString :> obj)
+                   (NestedClosureCodeFragment("x", providerOptions) :> obj) |]
 
         MethodCallCodeFragment(_useTestProviderMethodInfo, options)
-
