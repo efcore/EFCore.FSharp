@@ -5,7 +5,6 @@ open System.IO
 open System.Numerics
 open Microsoft.CodeAnalysis
 open Microsoft.Extensions.DependencyModel
-open Fantomas
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 

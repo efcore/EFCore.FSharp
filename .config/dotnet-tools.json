@@ -14,14 +14,8 @@
         "reportgenerator"
       ]
     },
-    "fake-cli": {
-      "version": "5.20.4",
-      "commands": [
-        "fake"
-      ]
-    },
     "paket": {
-      "version": "6.2.1",
+      "version": "6.0.13",
       "commands": [
         "paket"
       ]
@@ -36,6 +30,12 @@
       "version": "0.9.0",
       "commands": [
         "fsharp-analyzers"
+      ]
+    },
+    "fantomas-tool": {
+      "version": "4.5.4",
+      "commands": [
+          "fantomas"
       ]
     }
   }

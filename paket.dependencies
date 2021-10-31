@@ -1,26 +1,28 @@
 source https://www.nuget.org/api/v2
 source https://api.nuget.org/v3/index.json
-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json
 storage: none
-nuget FSharp.Core 5.0.3-beta.21352.5
+
+nuget System.Collections.Immutable >= 6.0.0-rc.2
+
+nuget FSharp.Core 6.0.1
 nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
-nuget Expecto 9.0.4
+nuget Expecto 9.0.2
+nuget YoloDev.Expecto.TestSdk 0.12.10
 nuget Microsoft.NET.Test.Sdk 16.8.0
 nuget altcover ~> 7
 
-nuget Microsoft.EntityFrameworkCore.Design >= 6.0.0-rtm
-nuget Microsoft.EntityFrameworkCore.InMemory >= 6.0.0-rtm
-nuget Microsoft.EntityFrameworkCore.Relational >= 6.0.0-rtm
-nuget Microsoft.EntityFrameworkCore.Sqlite >= 6.0.0-rtm
-nuget Microsoft.EntityFrameworkCore.SqlServer >= 6.0.0-rtm
-nuget Microsoft.EntityFrameworkCore.Specification.Tests >= 6.0.0-rtm
-nuget FSharp.Compiler.Service 40.0.1-preview.21352.5
+nuget Microsoft.EntityFrameworkCore.Design >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.InMemory >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.Relational >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.Sqlite >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.SqlServer >= 6.0.0-rc.2
+nuget Microsoft.EntityFrameworkCore.Specification.Tests >= 6.0.0-rc.2
+nuget FSharp.Compiler.Service 41.0.1
 nuget Microsoft.CodeAnalysis >= 3.8.0
-nuget Fantomas
 nuget NetTopologySuite.IO.SqlServerBytes 2.0.0
 nuget System.Runtime.Numerics
+nuget System.ComponentModel.Primitives
 
-nuget YoloDev.Expecto.TestSdk 0.12.10
 // [ FAKE GROUP ]
 group Build
     storage: none
@@ -37,7 +39,6 @@ group Build
     nuget Fake.DotNet.Paket 5.20.4
     nuget Fake.Api.GitHub 5.20.4
     nuget Fake.BuildServer.GitHubActions 5.20.4
-    nuget Fantomas 3.2
     nuget Argu
     nuget Octokit 0.48
 

@@ -3,6 +3,7 @@ FSharp.Core
 Microsoft.NET.Test.Sdk
 altcover
 System.Runtime.Numerics
+System.ComponentModel.Primitives
 Microsoft.EntityFrameworkCore.Relational
 Microsoft.EntityFrameworkCore.Sqlite
 Microsoft.EntityFrameworkCore.SqlServer
@@ -10,6 +11,5 @@ Microsoft.EntityFrameworkCore.Specification.Tests
 NetTopologySuite.IO.SqlServerBytes
 FSharp.Compiler.Service
 Microsoft.CodeAnalysis
-Fantomas
 Microsoft.EntityFrameworkCore.InMemory
 YoloDev.Expecto.TestSdk
