@@ -38,8 +38,7 @@ type FSharpDbContextGenerator
         |> appendLine "inherit DbContext"
         |> appendEmptyLine
         |> appendLine "new() = { inherit DbContext() }"
-        |> appendLine (sprintf "new(options : DbContextOptions<%s>) =" contextName)
-        |> appendLineIndent "{ inherit DbContext(options) }"
+        |> appendLine (sprintf "new(options : DbContextOptions<%s>) = { inherit DbContext(options) }" contextName)
         |> appendEmptyLine
 
     let generateDbSet (sb: IndentedStringBuilder) (entityType: IEntityType) =
@@ -48,9 +47,9 @@ type FSharpDbContextGenerator
 
         sb
         |> appendLine (sprintf "[<DefaultValue>] val mutable private _%s : DbSet<%s>" dbSetName entityType.Name)
-        |> appendLine (
-            sprintf "member this.%s with get() = this._%s and set v = this._%s <- v" dbSetName dbSetName dbSetName
-        )
+        |> appendLine (sprintf "member this.%s" dbSetName)
+        |> appendLineIndent (sprintf "with get() = this._%s"dbSetName)
+        |> appendLineIndent (sprintf "and set v = this._%s <- v" dbSetName)
         |> appendEmptyLine
         |> ignore
 
@@ -101,9 +100,9 @@ type FSharpDbContextGenerator
                    |> code.Fragment)
                 + " |> ignore"
             )
+            |> unindent
             |> appendLine "()"
             |> appendEmptyLine
-            |> unindent
             |> unindent
 
     let generateAnnotations

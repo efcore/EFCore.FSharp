@@ -66,14 +66,28 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             annotations
             |> Seq.map (fun a -> sprintf ".Annotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
 
-        sb |> appendLines lines true
+        if lines |> Seq.isEmpty then
+            sb
+        else
+            sb
+            |> appendLine (lines |> Seq.head)
+            |> indent
+            |> appendLines (lines |> Seq.tail) true
+            |> unindent
 
     let oldAnnotations (annotations: Annotation seq) (sb: IndentedStringBuilder) =
         let lines =
             annotations
             |> Seq.map (fun a -> sprintf ".OldAnnotation(%s, %s)" (code.Literal a.Name) (code.UnknownLiteral a.Value))
 
-        sb |> appendLines lines true
+        if lines |> Seq.isEmpty then
+            sb
+        else
+            sb
+            |> appendLine (lines |> Seq.head)
+            |> indent
+            |> appendLines (lines |> Seq.tail) true
+            |> unindent
 
     let generateMigrationOperation (op: MigrationOperation) (sb: IndentedStringBuilder) : IndentedStringBuilder =
         invalidOp ((op.GetType()) |> DesignStrings.UnknownOperation)

@@ -92,10 +92,11 @@ type ModelCodeGeneratorTestBase() =
     abstract member AddScaffoldingServices : (IServiceCollection -> unit)
 
     member this.Test
-        (buildModel: ModelBuilder -> unit)
+        (buildModel: ModelBuilder -> 'a)
         (options: ModelCodeGenerationOptions)
         (assertScaffold: ScaffoldedModel -> unit)
         (assertModel: IModel -> unit)
+        (additionalSources: string list)
         =
 
         let designServices =
@@ -112,7 +113,7 @@ type ModelCodeGeneratorTestBase() =
         modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion)
         |> ignore
 
-        buildModel (modelBuilder)
+        let _ = buildModel (modelBuilder)
 
         let _ = modelBuilder.Model.GetEntityTypeErrors()
 
@@ -145,6 +146,7 @@ type ModelCodeGeneratorTestBase() =
             :: (scaffoldedModel.AdditionalFiles
                 |> Seq.map (fun f -> f.Code)
                 |> Seq.toList)
+            @ additionalSources
             |> List.rev
 
         let build = { TargetDir = null; Sources = sources }

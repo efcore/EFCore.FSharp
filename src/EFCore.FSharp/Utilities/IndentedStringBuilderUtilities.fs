@@ -49,6 +49,9 @@ module internal IndentedStringBuilderUtilities =
         else
             sb |> appendEmptyLine
 
+    let appendMultipleLines (lines: string) skipFinalNewLine (sb: IndentedStringBuilder) =
+        sb.AppendLines(lines, skipFinalNewLine)
+
     let appendLineIndent message (sb: IndentedStringBuilder) =
         using (sb.Indent()) (fun _ -> sb.AppendLine(message))
 

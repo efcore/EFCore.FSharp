@@ -669,12 +669,14 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         else
             let builder = IndentedStringBuilder()
 
+            for i in [ -1 .. (indent + 1) ] do
+                builder.IncrementIndent() |> ignore
+
             builder
+            |> appendEmptyLine
+            |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
             |> appendLine (sprintf "(fun %s ->" n.Parameter)
             |> ignore
-
-            for i in [ -1 .. indent ] do
-                builder.IncrementIndent() |> ignore
 
             let lines =
                 n.MethodCalls
@@ -682,8 +684,14 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
             builder
             |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
-            |> appendLines lines true
+            |> ignore
+
+            for l in lines do
+                builder |> appendMultipleLines l false |> ignore
+
+            builder
             |> append ")"
+            |> unindent
             |> string
 
 
