@@ -102,14 +102,22 @@ type TestDbContext =
         modelBuilder.RegisterOptionTypes()
 """
 
+let vistaSource =
+    """namespace TestNamespace
+
+open System
+
+[<CLIMutable>]
+type Vista = {
+    Id : Int32
+    Name : string
+}
+"""
+
 let customerSource =
     """namespace TestNamespace
 
 open System
-open System.Collections.Generic
-open Microsoft.EntityFrameworkCore
-open Microsoft.EntityFrameworkCore.Metadata
-open EntityFrameworkCore.FSharp.Extensions
 
 [<CLIMutable>]
 type Customer = {
@@ -197,26 +205,26 @@ let FSharpDbContextGeneratorTest =
               testBase.Test buildModel options assertScaffold assertModel []
           }
 
-        //   test "Views work" {
+          test "Views work" {
 
-        //       let buildModel (m: ModelBuilder) = m.Entity("Vista").ToView("Vista")
-        //       let options = ModelCodeGenerationOptions(UseDataAnnotations = true)
+              let buildModel (m: ModelBuilder) = m.Entity("Vista").ToView("Vista")
+              let options = ModelCodeGenerationOptions(UseDataAnnotations = true)
 
-        //       let assertScaffold (code: ScaffoldedModel) =
-        //           Expect.stringContains code.ContextFile.Code "entity.ToView(\"Vista\")" "Should contain view"
+              let assertScaffold (code: ScaffoldedModel) =
+                  Expect.stringContains code.ContextFile.Code "entity.ToView(\"Vista\")" "Should contain view"
 
-        //       let assertModel (model: IModel) =
-        //           let entityType = model.FindEntityType("TestNamespace.Vista")
+              let assertModel (model: IModel) =
+                  let entityType = model.FindEntityType("TestNamespace.Vista")
 
-        //           Expect.isNotNull (entityType.FindAnnotation(RelationalAnnotationNames.ViewDefinitionSql)) "Should not be null"
-        //           Expect.equal (entityType.GetViewName()) "Vista" "Should be equal"
-        //           Expect.isNull (entityType.GetViewSchema()) "Should be null"
-        //           Expect.isNull (entityType.GetTableName()) "Should be null"
-        //           Expect.isNull (entityType.GetSchema()) "Should be null"
+                  Expect.isNotNull (entityType.FindAnnotation(RelationalAnnotationNames.ViewDefinitionSql)) "Should not be null"
+                  Expect.equal (entityType.GetViewName()) "Vista" "Should be equal"
+                  Expect.isNull (entityType.GetViewSchema()) "Should be null"
+                  Expect.isNull (entityType.GetTableName()) "Should be null"
+                  Expect.isNull (entityType.GetSchema()) "Should be null"
 
-        //       testBase.Test buildModel options assertScaffold assertModel
+              testBase.Test buildModel options assertScaffold assertModel
 
-        //   }
+          }
 
           test "Temporal Tables work" {
 
