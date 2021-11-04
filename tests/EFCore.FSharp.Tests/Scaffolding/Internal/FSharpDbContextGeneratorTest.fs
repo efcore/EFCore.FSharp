@@ -74,16 +74,18 @@ type TestDbContext =
 
         modelBuilder.Entity<Customer>(fun entity ->
 
-            entity.ToTable((fun tb -> tb.IsTemporal(
-                (fun ttb ->
-                    ttb
-                        .HasPeriodStart("PeriodStart")
-                        .HasColumnName("PeriodStart")
-                    ttb
-                        .HasPeriodEnd("PeriodEnd")
-                        .HasColumnName("PeriodEnd")
-                    ))))
-                |> ignore
+            entity.ToTable((fun tb ->
+                tb.IsTemporal(
+                    (fun ttb ->
+                        ttb
+                            .HasPeriodStart("PeriodStart")
+                            .HasColumnName("PeriodStart") |> ignore
+                        ttb
+                            .HasPeriodEnd("PeriodEnd")
+                            .HasColumnName("PeriodEnd") |> ignore
+                    )
+                ) |> ignore
+            )) |> ignore
 
             entity.Property(fun e -> e.Id).HasValue(0)
                 .UseIdentityColumn(1L, 1)
@@ -132,8 +134,7 @@ let TestFluentApiCall (modelBuilder: ModelBuilder) =
 
 
 let _testFluentApiCallMethodInfo =
-    let a =
-        System.Reflection.Assembly.GetExecutingAssembly()
+    let a = Reflection.Assembly.GetExecutingAssembly()
 
     let modu =
         a.GetType("EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest")

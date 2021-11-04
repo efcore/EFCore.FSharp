@@ -613,7 +613,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             match arg with
             | :? NestedClosureCodeFragment as n ->
                 let f = this.buildNestedFragment (n, indent)
-                sb |> append f
+                sb |> appendLine f
             | _ -> sb |> append (this.unknownLiteral arg)
 
         if typeQualified then
@@ -664,35 +664,32 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         builder |> string
 
     member private this.buildNestedFragment(n: NestedClosureCodeFragment, indent: int) =
-        if n.MethodCalls.Count = 1 then
-            sprintf "(fun %s -> %s)" n.Parameter (this.buildFragment (n.MethodCalls.[0], false, n.Parameter, indent))
-        else
-            let builder = IndentedStringBuilder()
+        let builder = IndentedStringBuilder()
 
-            for i in [ -1 .. (indent + 1) ] do
-                builder.IncrementIndent() |> ignore
+        for i in [ -1 .. (indent + 1) ] do
+            builder.IncrementIndent() |> ignore
 
-            builder
-            |> appendEmptyLine
-            |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
-            |> appendLine (sprintf "(fun %s ->" n.Parameter)
-            |> ignore
+        builder
+        |> appendEmptyLine
+        |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
+        |> appendLine (sprintf "(fun %s ->" n.Parameter)
+        |> ignore
 
-            let lines =
-                n.MethodCalls
-                |> Seq.map (fun mc -> this.buildFragment (mc, false, n.Parameter, indent + 1))
+        let lines =
+            n.MethodCalls
+            |> Seq.map (fun mc -> this.buildFragment (mc, false, n.Parameter, indent + 1))
 
-            builder
-            |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
-            |> ignore
+        builder
+        |> EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities.indent
+        |> ignore
 
-            for l in lines do
-                builder |> appendMultipleLines l false |> ignore
+        for l in lines do
+            builder |> appendMultipleLines (l + " |> ignore") false |> ignore
 
-            builder
-            |> append ")"
-            |> unindent
-            |> string
+        builder
+        |> append ")"
+        |> unindent
+        |> string
 
 
     member private this.unknownLiteral(value: obj) =
