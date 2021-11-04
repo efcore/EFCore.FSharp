@@ -684,12 +684,11 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         |> ignore
 
         for l in lines do
-            builder |> appendMultipleLines (l + " |> ignore") false |> ignore
+            builder
+            |> appendMultipleLines (l + " |> ignore") false
+            |> ignore
 
-        builder
-        |> append ")"
-        |> unindent
-        |> string
+        builder |> append ")" |> unindent |> string
 
 
     member private this.unknownLiteral(value: obj) =

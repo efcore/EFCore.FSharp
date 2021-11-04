@@ -49,7 +49,7 @@ type ContextWithSnapshotModelSnapshot() =
 
 module FSharpMigrationsScaffolderTest =
 
-    let createMigrationScaffolder<'context when 'context :> DbContext and 'context: (new : unit -> 'context)> () =
+    let createMigrationScaffolder<'context when 'context :> DbContext and 'context: (new: unit -> 'context)> () =
         let currentContext = CurrentDbContext(new 'context ())
         let idGenerator = MigrationsIdGenerator()
 

@@ -111,7 +111,8 @@ let generateTypeDocs (model: TypeInfo) (props) =
                   ]
 
               match comment.Sections
-                    |> Seq.tryFind (fun kvp -> kvp.Key = g.GroupKey) with
+                    |> Seq.tryFind (fun kvp -> kvp.Key = g.GroupKey)
+                  with
               | Some info ->
                   yield
                       div [ Class "xmldoc" ] [

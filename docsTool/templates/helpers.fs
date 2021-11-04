@@ -27,10 +27,10 @@ let renderNamespace (ns: Namespace) =
     [ h3 [] [ str "Namespace" ]
       str ns.Name ]
 
-let inline isObsolete< ^t when ^t: (member IsObsolete : bool)> t = (^t: (member IsObsolete : bool) (t))
+let inline isObsolete< ^t when ^t: (member IsObsolete: bool)> t = (^t: (member IsObsolete: bool) (t))
 
-let inline obsoleteMessage< ^t when ^t: (member ObsoleteMessage : string)> t =
-    (^t: (member ObsoleteMessage : string) (t))
+let inline obsoleteMessage< ^t when ^t: (member ObsoleteMessage: string)> t =
+    (^t: (member ObsoleteMessage: string) (t))
 
 let inline renderObsoleteMessage item =
     if isObsolete item then

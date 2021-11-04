@@ -590,7 +590,8 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
 
         serviceCollection
 
-    override this.Info = System.NotImplementedException() |> raise
+    override this.Info =
+        System.NotImplementedException() |> raise
 
 
     override this.Clone() =

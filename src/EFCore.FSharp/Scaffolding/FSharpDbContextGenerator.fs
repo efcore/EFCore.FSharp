@@ -48,7 +48,7 @@ type FSharpDbContextGenerator
         sb
         |> appendLine (sprintf "[<DefaultValue>] val mutable private _%s : DbSet<%s>" dbSetName entityType.Name)
         |> appendLine (sprintf "member this.%s" dbSetName)
-        |> appendLineIndent (sprintf "with get() = this._%s"dbSetName)
+        |> appendLineIndent (sprintf "with get() = this._%s" dbSetName)
         |> appendLineIndent (sprintf "and set v = this._%s <- v" dbSetName)
         |> appendEmptyLine
         |> ignore
@@ -378,7 +378,8 @@ type FSharpDbContextGenerator
 
         match property.GetConfiguredColumnType()
               |> isNull
-              |> not with
+              |> not
+            with
         | true ->
             lines.Add($".HasColumnType({code.Literal(property.GetConfiguredColumnType())})")
 
@@ -417,7 +418,8 @@ type FSharpDbContextGenerator
         match property with
         | :? IConventionProperty as cp ->
             match cp.GetValueGeneratedConfigurationSource()
-                  |> Option.ofNullable with
+                  |> Option.ofNullable
+                with
             | Some valueGeneratedConfigurationSource when
                 valueGeneratedConfigurationSource
                 <> ConfigurationSource.Convention

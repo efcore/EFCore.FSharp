@@ -33,7 +33,7 @@
       ]
     },
     "fantomas-tool": {
-      "version": "4.5.5",
+      "version": "4.5.6",
       "commands": [
           "fantomas"
       ]

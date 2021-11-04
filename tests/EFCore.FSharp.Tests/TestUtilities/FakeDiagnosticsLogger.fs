@@ -5,7 +5,7 @@ open System.Diagnostics
 open Microsoft.Extensions.Logging
 open Microsoft.EntityFrameworkCore.Diagnostics.Internal
 
-type FakeDiagnosticsLogger<'a when 'a :> LoggerCategory<'a> and 'a: (new : unit -> 'a)>() =
+type FakeDiagnosticsLogger<'a when 'a :> LoggerCategory<'a> and 'a: (new: unit -> 'a)>() =
 
     interface ILogger with
         member this.BeginScope<'state>(state: 'state) = null

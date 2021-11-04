@@ -88,8 +88,8 @@ type ModelCodeGeneratorTestBase() =
 
         runtimeRefs @ localRefs |> List.toArray
 
-    abstract member AddModelServices : (IServiceCollection -> unit)
-    abstract member AddScaffoldingServices : (IServiceCollection -> unit)
+    abstract member AddModelServices: (IServiceCollection -> unit)
+    abstract member AddScaffoldingServices: (IServiceCollection -> unit)
 
     member this.Test
         (buildModel: ModelBuilder -> 'a)
