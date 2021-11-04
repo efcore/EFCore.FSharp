@@ -914,7 +914,7 @@ module FSharpMigrationsGeneratorTest =
                           "                .HasDefaultValue(\"A\") |> ignore"
                           ""
                           "            b.Property<string>(\"Pickle\")"
-                          "                .IsRequired(false)"
+                          "                .IsRequired(true)"
                           "                .HasColumnType(\"just_string(10)\") |> ignore"
                           ""
                           "            b.HasKey(\"Ham\") |> ignore"

@@ -11,14 +11,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Use .NET Core 2.1 SDK
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '2.1.x'
-    - name: Use .NET Core 3.1 SDK
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.x'
     # Not specifying a version will attempt to install via global.json
     - name: Use .NET Core global.json
       uses: actions/setup-dotnet@v1

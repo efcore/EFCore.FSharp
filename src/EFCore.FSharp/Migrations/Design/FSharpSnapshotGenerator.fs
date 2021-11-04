@@ -260,11 +260,9 @@ type FSharpSnapshotGenerator
 
         let isPropertyRequired =
             let isNullable =
-                (not clrType.IsValueType
-                 || isOptionType clrType
-                 || isNullableType clrType)
+                (isOptionType clrType || isNullableType clrType)
 
-            (p.IsPrimaryKey()) || (isNullable <> p.IsNullable)
+            (p.IsPrimaryKey()) || (not isNullable)
 
         sb
         |> appendEmptyLine
@@ -272,7 +270,7 @@ type FSharpSnapshotGenerator
         |> append (sprintf ".Property<%s>(%s)" (code.Reference clrType) (code.Literal p.Name))
         |> indent
         |> appendLineIfTrue p.IsConcurrencyToken ".IsConcurrencyToken()"
-        |> appendLineIfTrue true (sprintf ".IsRequired(%b)" (clrType.IsValueType || isPropertyRequired))
+        |> appendLineIfTrue true (sprintf ".IsRequired(%b)" isPropertyRequired)
         |> appendLineIfTrue
             (p.ValueGenerated <> ValueGenerated.Never)
             (if p.ValueGenerated = ValueGenerated.OnAdd then
