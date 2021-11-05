@@ -1,3 +1,4 @@
+group Tests
 Expecto
 FSharp.Core
 Microsoft.NET.Test.Sdk
