@@ -12,7 +12,7 @@ group Tests
     source https://api.nuget.org/v3/index.json
     storage: none
 
-    nuget System.Collections.Immutable >= 6.0.0-rc.2
+    nuget System.Collections.Immutable >= 6.0.0
 
     nuget FSharp.Core 6.0.1
     nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
