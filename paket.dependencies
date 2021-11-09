@@ -1,41 +1,54 @@
-source https://www.nuget.org/api/v2
-source https://api.nuget.org/v3/index.json
-storage: none
-nuget FSharp.Core 5.0
-nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
-nuget Expecto 9.0.2
-nuget YoloDev.Expecto.TestSdk 0.11.1
-nuget Microsoft.NET.Test.Sdk 16.8.0
-nuget altcover ~> 7
+group Src
+    source https://www.nuget.org/api/v2
+    source https://api.nuget.org/v3/index.json
+    storage: none
 
-nuget Microsoft.EntityFrameworkCore.Design 5.0.3
-nuget Microsoft.EntityFrameworkCore.Relational 5.0.3
-nuget Microsoft.EntityFrameworkCore.Sqlite 5.0.3
-nuget Microsoft.EntityFrameworkCore.SqlServer 5.0.3
-nuget Microsoft.EntityFrameworkCore.Specification.Tests 5.0.3
-nuget FSharp.Compiler.Service 38.0.2
-nuget Microsoft.CodeAnalysis >= 3.8.0
-nuget Fantomas
-nuget NetTopologySuite.IO.SqlServerBytes 2.0.0
-nuget System.Runtime.Numerics
+    nuget FSharp.Core 6.0.1
+    nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
+    nuget Microsoft.EntityFrameworkCore.Design ~> 6.0.0
+
+group Tests
+    source https://www.nuget.org/api/v2
+    source https://api.nuget.org/v3/index.json
+    storage: none
+
+    nuget System.Collections.Immutable >= 6.0.0-rc.2
+
+    nuget FSharp.Core 6.0.1
+    nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
+    nuget Expecto 9.0.2
+    nuget YoloDev.Expecto.TestSdk 0.12.10
+    nuget Microsoft.NET.Test.Sdk 16.8.0
+    nuget altcover ~> 7
+
+    nuget Microsoft.EntityFrameworkCore.Design ~> 6.0.0
+    nuget Microsoft.EntityFrameworkCore.InMemory ~> 6.0.0
+    nuget Microsoft.EntityFrameworkCore.Relational ~> 6.0.0
+    nuget Microsoft.EntityFrameworkCore.Sqlite ~> 6.0.0
+    nuget Microsoft.EntityFrameworkCore.SqlServer ~> 6.0.0
+    nuget Microsoft.EntityFrameworkCore.Specification.Tests ~> 6.0.0
+    nuget FSharp.Compiler.Service 41.0.1
+    nuget Microsoft.CodeAnalysis >= 3.8.0
+    nuget NetTopologySuite.IO.SqlServerBytes 2.0.0
+    nuget System.Runtime.Numerics
+    nuget System.ComponentModel.Primitives
 
 // [ FAKE GROUP ]
 group Build
     storage: none
     source https://www.nuget.org/api/v2
     source https://api.nuget.org/v3/index.json
-    nuget Fake.IO.FileSystem 5.20.4-alpha.1642
-    nuget Fake.Core.Target 5.20.4-alpha.1642
-    nuget Fake.Core.ReleaseNotes 5.20.4-alpha.1642
-    nuget FAKE.Core.Environment 5.20.4-alpha.1642
-    nuget Fake.DotNet.Cli 5.20.4-alpha.1642
-    nuget FAKE.Core.Process 5.20.4-alpha.1642
-    nuget Fake.DotNet.AssemblyInfoFile 5.20.4-alpha.1642
-    nuget Fake.Tools.Git 5.20.4-alpha.1642
-    nuget Fake.DotNet.Paket 5.20.4-alpha.1642
-    nuget Fake.Api.GitHub 5.20.4-alpha.1642
-    nuget Fake.BuildServer.GitHubActions 5.20.4-alpha.1642
-    nuget Fantomas 3.2
+    nuget Fake.IO.FileSystem 5.20.4
+    nuget Fake.Core.Target 5.20.4
+    nuget Fake.Core.ReleaseNotes 5.20.4
+    nuget FAKE.Core.Environment 5.20.4
+    nuget Fake.DotNet.Cli 5.20.4
+    nuget FAKE.Core.Process 5.20.4
+    nuget Fake.DotNet.AssemblyInfoFile 5.20.4
+    nuget Fake.Tools.Git 5.20.4
+    nuget Fake.DotNet.Paket 5.20.4
+    nuget Fake.Api.GitHub 5.20.4
+    nuget Fake.BuildServer.GitHubActions 5.20.4
     nuget Argu
     nuget Octokit 0.48
 
@@ -46,13 +59,13 @@ group Docs
     nuget Argu
     nuget FSharp.Compiler.Service 34.1.0
     nuget FSharp.Core ~> 4.6
-    nuget Fake.IO.FileSystem 5.20.4-alpha.1642
-    nuget FAKE.Core.Environment 5.20.4-alpha.1642
-    nuget Fake.DotNet.Cli 5.20.4-alpha.1642
+    nuget Fake.IO.FileSystem 5.20.4
+    nuget FAKE.Core.Environment 5.20.4
+    nuget Fake.DotNet.Cli 5.20.4
     nuget FSharp.Formatting 4.0.0-rc1
     nuget FSharp.Literate 4.0.0-rc1
     nuget Fable.React
-    nuget Microsoft.EntityFrameworkCore.Sqlite 5.0.3
+    nuget Microsoft.EntityFrameworkCore.Sqlite ~> 5.0.11
 
 group Analyzers
   source https://www.nuget.org/api/v2

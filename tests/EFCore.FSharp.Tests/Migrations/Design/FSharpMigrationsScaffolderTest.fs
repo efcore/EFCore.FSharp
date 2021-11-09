@@ -33,96 +33,57 @@ open Expecto
 open Microsoft.EntityFrameworkCore.Internal
 open EntityFrameworkCore.FSharp.Test.TestUtilities.FakeProvider
 open Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure
+open EntityFrameworkCore.FSharp.Test.TestUtilities
 
-type MockHistoryRepository () =
-    interface IHistoryRepository with
-
-        member __.GetBeginIfExistsScript(migrationId) = null
-
-        member __.GetBeginIfNotExistsScript(migrationId) = null
-
-        member __.GetCreateScript() = null
-
-        member __.GetCreateIfNotExistsScript() = null
-
-        member __.GetEndIfScript() = null
-
-        member __.Exists() = false
-
-        member __.ExistsAsync(cancellationToken) = Task.FromResult(false)
-
-        member __.GetAppliedMigrations() = null
-
-        member __.GetAppliedMigrationsAsync(cancellationToken) = Task.FromResult<IReadOnlyList<HistoryRow>>(null)
-
-        member __.GetDeleteScript(migrationId) = null
-
-        member __.GetInsertScript(row) = null
-
-type MockProvider () =
-    interface IDatabaseProvider with
-        member __.Name = "Mock.Provider"
-        member __.IsConfigured (options) = true
-
-type TestOperationReporter  () =
-
-    let messages = ResizeArray<string>();
-
-    member __.Messages = messages
-
-    member __.Clear() = messages.Clear()
-
-    interface IOperationReporter with
-
-        member __.WriteInformation(message) = messages.Add("info: " + message)
-
-        member __.WriteVerbose(message) = messages.Add("verbose: " + message)
-
-        member __.WriteWarning(message) = messages.Add("warn: " + message)
-
-        member __.WriteError(message) = messages.Add("error: " + message)
-
-type ContextWithSnapshot () =
+type ContextWithSnapshot() =
     inherit DbContext()
 
-type GenericContext<'a> () =
+type GenericContext<'a>() =
     inherit DbContext()
 
 [<DbContext(typeof<ContextWithSnapshot>)>]
-type ContextWithSnapshotModelSnapshot () =
+type ContextWithSnapshotModelSnapshot() =
     inherit ModelSnapshot()
 
-    override __.BuildModel (modelBuilder) = ()
+    override __.BuildModel(modelBuilder) = ()
 
 module FSharpMigrationsScaffolderTest =
 
-    let createMigrationScaffolder<'context when 'context :> DbContext and 'context : (new : unit -> 'context)> () =
-        let currentContext = CurrentDbContext(new 'context())
+    let createMigrationScaffolder<'context when 'context :> DbContext and 'context: (new: unit -> 'context)> () =
+        let currentContext = CurrentDbContext(new 'context ())
         let idGenerator = MigrationsIdGenerator()
 
         let sqlServerTypeMappingSource =
-                SqlServerTypeMappingSource(
-                    TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
-                    TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>())
+            SqlServerTypeMappingSource(
+                TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
+                TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()
+            )
 
         let sqlServerAnnotationCodeGenerator =
-                SqlServerAnnotationCodeGenerator(
-                    AnnotationCodeGeneratorDependencies(sqlServerTypeMappingSource))
+            SqlServerAnnotationCodeGenerator(AnnotationCodeGeneratorDependencies(sqlServerTypeMappingSource))
 
         let code = FSharpHelper(sqlServerTypeMappingSource)
 
         let reporter = TestOperationReporter()
+
         let migrationAssembly =
             MigrationsAssembly(
                 currentContext,
-                DbContextOptions<'context>().WithExtension(FakeRelationalOptionsExtension()),
+                DbContextOptions<'context>()
+                    .WithExtension(FakeRelationalOptionsExtension()),
                 idGenerator,
-                FakeDiagnosticsLogger<DbLoggerCategory.Migrations>())
+                FakeDiagnosticsLogger<DbLoggerCategory.Migrations>()
+            )
+
         let historyRepository = MockHistoryRepository()
 
-        let services = RelationalTestHelpers.Instance.CreateContextServices()
-        let model = Model()
-        model.[RelationalAnnotationNames.RelationalModel] <- RelationalModel(model)
+        let services =
+            RelationalTestHelpers.Instance.CreateContextServices()
+
+        let model = Model().FinalizeModel()
+
+        model.AddRuntimeAnnotation(RelationalAnnotationNames.RelationalModel, RelationalModel(model))
+        |> ignore
 
         FSharpMigrationsScaffolder(
             MigrationsScaffolderDependencies(
@@ -132,32 +93,37 @@ module FSharpMigrationsScaffolderTest =
                 MigrationsModelDiffer(
                     TestRelationalTypeMappingSource(
                         TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
-                        TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()),
-                    MigrationsAnnotationProvider(
-                        MigrationsAnnotationProviderDependencies()),
+                        TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()
+                    ),
+                    MigrationsAnnotationProvider(MigrationsAnnotationProviderDependencies()),
                     services.GetRequiredService<IChangeDetector>(),
                     services.GetRequiredService<IUpdateAdapterFactory>(),
-                    services.GetRequiredService<CommandBatchPreparerDependencies>()),
+                    services.GetRequiredService<CommandBatchPreparerDependencies>()
+                ),
                 idGenerator,
                 MigrationsCodeGeneratorSelector(
-                    [|
-                        CSharpMigrationsGenerator(
-                            MigrationsCodeGeneratorDependencies(
-                                sqlServerTypeMappingSource,
-                                sqlServerAnnotationCodeGenerator),
-                            CSharpMigrationsGeneratorDependencies(
-                                code,
-                                CSharpMigrationOperationGenerator(
-                                    CSharpMigrationOperationGeneratorDependencies(
-                                        code)),
-                                CSharpSnapshotGenerator(
-                                    CSharpSnapshotGeneratorDependencies(
-                                        code, sqlServerTypeMappingSource, sqlServerAnnotationCodeGenerator))))
-                    |]),
+                    [| CSharpMigrationsGenerator(
+                           MigrationsCodeGeneratorDependencies(
+                               sqlServerTypeMappingSource,
+                               sqlServerAnnotationCodeGenerator
+                           ),
+                           CSharpMigrationsGeneratorDependencies(
+                               code,
+                               CSharpMigrationOperationGenerator(CSharpMigrationOperationGeneratorDependencies(code)),
+                               CSharpSnapshotGenerator(
+                                   CSharpSnapshotGeneratorDependencies(
+                                       code,
+                                       sqlServerTypeMappingSource,
+                                       sqlServerAnnotationCodeGenerator
+                                   )
+                               )
+                           )
+                       ) |]
+                ),
                 historyRepository,
                 reporter,
                 MockProvider(),
-                SnapshotModelProcessor(reporter, services.GetRequiredService<IConventionSetBuilder>()),
+                SnapshotModelProcessor(reporter, services.GetRequiredService<IModelRuntimeInitializer>()),
                 Migrator(
                     migrationAssembly,
                     historyRepository,
@@ -168,57 +134,88 @@ module FSharpMigrationsScaffolderTest =
                     services.GetRequiredService<IRelationalConnection>(),
                     services.GetRequiredService<ISqlGenerationHelper>(),
                     services.GetRequiredService<ICurrentDbContext>(),
-                    services.GetRequiredService<IConventionSetBuilder>(),
+                    services.GetRequiredService<IModelRuntimeInitializer>(),
                     services.GetRequiredService<IDiagnosticsLogger<DbLoggerCategory.Migrations>>(),
-                    services.GetRequiredService<IDiagnosticsLogger<DbLoggerCategory.Database.Command>>(),
-                    services.GetRequiredService<IDatabaseProvider>())))
+                    services.GetRequiredService<IRelationalCommandDiagnosticsLogger>(),
+                    services.GetRequiredService<IDatabaseProvider>()
+                )
+            )
+        )
 
     [<Tests>]
     let MigrationsScaffolderTests =
-        testList "" [
+        testList
+            ""
+            [
 
-            test "ScaffoldMigration reuses model snapshot" {
-                let scaffolder = createMigrationScaffolder<ContextWithSnapshot>()
+              test "ScaffoldMigration reuses model snapshot" {
+                  let scaffolder =
+                      createMigrationScaffolder<ContextWithSnapshot> ()
 
-                let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
+                  let migration =
+                      scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
 
-                Expect.equal (nameof ContextWithSnapshotModelSnapshot)  migration.SnapshotName "Should be equal"
-                Expect.equal typeof<ContextWithSnapshotModelSnapshot>.Namespace  migration.SnapshotSubnamespace  "Should be equal"
-            }
+                  Expect.equal (nameof ContextWithSnapshotModelSnapshot) migration.SnapshotName "Should be equal"
 
-            // test "ScaffoldMigration handles generic contexts" {
-            //     let scaffolder = createMigrationScaffolder<GenericContext<int>>()
+                  Expect.equal
+                      typeof<ContextWithSnapshotModelSnapshot>.Namespace
+                      migration.SnapshotSubnamespace
+                      "Should be equal"
+              }
 
-            //     let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
+              // test "ScaffoldMigration handles generic contexts" {
+              //     let scaffolder = createMigrationScaffolder<GenericContext<int>>()
 
-            //     Expect.equal "GenericContextModelSnapshot" migration.SnapshotName "Should be equal"
-            // }
+              //     let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
 
-            test "ScaffoldMigration can override namespace" {
-                let scaffolder = createMigrationScaffolder<ContextWithSnapshot>()
+              //     Expect.equal "GenericContextModelSnapshot" migration.SnapshotName "Should be equal"
+              // }
 
-                let migration = scaffolder.ScaffoldMigration("EmptyMigration", null, "OverrideNamespace.OverrideSubNamespace")
+              test "ScaffoldMigration can override namespace" {
+                  let scaffolder =
+                      createMigrationScaffolder<ContextWithSnapshot> ()
 
-                Expect.stringContains migration.MigrationCode "namespace OverrideNamespace.OverrideSubNamespace" "Should contain namespace"
-                Expect.equal "OverrideNamespace.OverrideSubNamespace" migration.MigrationSubNamespace "Should be equal"
+                  let migration =
+                      scaffolder.ScaffoldMigration("EmptyMigration", null, "OverrideNamespace.OverrideSubNamespace")
 
-                Expect.stringContains migration.SnapshotCode "namespace OverrideNamespace.OverrideSubNamespace" "Should contain namespace"
-                Expect.equal "OverrideNamespace.OverrideSubNamespace" migration.SnapshotSubnamespace "Should be equal"
-            }
+                  Expect.stringContains
+                      migration.MigrationCode
+                      "namespace OverrideNamespace.OverrideSubNamespace"
+                      "Should contain namespace"
 
-            test "ScaffoldMigration save works as expected" {
-                let outputDir =  Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+                  Expect.equal
+                      "OverrideNamespace.OverrideSubNamespace"
+                      migration.MigrationSubNamespace
+                      "Should be equal"
 
-                let scaffolder = createMigrationScaffolder<ContextWithSnapshot>()
-                let migration = scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
+                  Expect.stringContains
+                      migration.SnapshotCode
+                      "namespace OverrideNamespace.OverrideSubNamespace"
+                      "Should contain namespace"
 
-                let saveResult = scaffolder.Save(null, migration, outputDir)
+                  Expect.equal "OverrideNamespace.OverrideSubNamespace" migration.SnapshotSubnamespace "Should be equal"
+              }
 
-                Expect.isTrue (File.Exists saveResult.MigrationFile) "MigrationFile should exist"
-                Expect.isTrue (File.Exists saveResult.MetadataFile) "MetadataFile should exist"
-                Expect.isTrue (File.Exists saveResult.SnapshotFile) "SnapshotFile should exist"
+              test "ScaffoldMigration save works as expected" {
+                  let projectDir =
+                      Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
 
-                Directory.Delete(outputDir, true)
-            }
+                  Directory.CreateDirectory(projectDir) |> ignore
 
-    ]
+                  let scaffolder =
+                      createMigrationScaffolder<ContextWithSnapshot> ()
+
+                  let migration =
+                      scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
+
+                  let saveResult =
+                      scaffolder.Save(projectDir, migration, null)
+
+                  Expect.isTrue (File.Exists saveResult.MigrationFile) "MigrationFile should exist"
+                  Expect.isTrue (File.Exists saveResult.MetadataFile) "MetadataFile should exist"
+                  Expect.isTrue (File.Exists saveResult.SnapshotFile) "SnapshotFile should exist"
+
+                  Directory.Delete(projectDir, true)
+              }
+
+              ]

@@ -10,11 +10,10 @@ module CLIArgs =
         | GitHubRepoUrl of string
         | ProjectName of string
         | ReleaseVersion of string
-    with
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | ProjectGlob _  -> "The glob for the dlls to generate API documentation."
+                | ProjectGlob _ -> "The glob for the dlls to generate API documentation."
                 | DocsSourceDirectory _ -> "The docs source directory."
                 | GitHubRepoUrl _ -> "The GitHub repository url."
                 | ProjectName _ -> "The project name."
@@ -28,12 +27,11 @@ module CLIArgs =
         | GitHubRepoUrl of string
         | ProjectName of string
         | ReleaseVersion of string
-    with
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
                 | SiteBaseUrl _ -> "The public site's base url."
-                | ProjectGlob _  -> "The glob for the dlls to generate API documentation"
+                | ProjectGlob _ -> "The glob for the dlls to generate API documentation"
                 | DocsOutputDirectory _ -> "The docs output directory."
                 | DocsSourceDirectory _ -> "The docs source directory."
                 | GitHubRepoUrl _ -> "The GitHub repository url."
@@ -41,9 +39,8 @@ module CLIArgs =
                 | ReleaseVersion _ -> "The project's Release Version name."
 
     type CLIArguments =
-        | [<CustomCommandLine("watch")>]  Watch of ParseResults<WatchArgs>
-        | [<CustomCommandLine("build")>]  Build of ParseResults<BuildArgs>
-    with
+        | [<CustomCommandLine("watch")>] Watch of ParseResults<WatchArgs>
+        | [<CustomCommandLine("build")>] Build of ParseResults<BuildArgs>
         interface IArgParserTemplate with
             member this.Usage =
                 match this with

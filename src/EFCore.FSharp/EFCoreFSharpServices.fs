@@ -12,12 +12,15 @@ open EntityFrameworkCore.FSharp.Scaffolding.Internal
 open EntityFrameworkCore.FSharp.Migrations.Design
 open EntityFrameworkCore.FSharp.Internal
 
-type EFCoreFSharpServices(scaffoldOptions : ScaffoldOptions) =
+type EFCoreFSharpServices(scaffoldOptions: ScaffoldOptions) =
 
-    new () = EFCoreFSharpServices(ScaffoldOptions.Default)
+    new() = EFCoreFSharpServices(ScaffoldOptions.Default)
 
-    static member Default = EFCoreFSharpServices() :> IDesignTimeServices
-    static member WithScaffoldOptions scaffoldOptions = EFCoreFSharpServices scaffoldOptions :> IDesignTimeServices
+    static member Default =
+        EFCoreFSharpServices() :> IDesignTimeServices
+
+    static member WithScaffoldOptions scaffoldOptions =
+        EFCoreFSharpServices scaffoldOptions :> IDesignTimeServices
 
     interface IDesignTimeServices with
         member __.ConfigureDesignTimeServices(services: IServiceCollection) =
@@ -31,4 +34,5 @@ type EFCoreFSharpServices(scaffoldOptions : ScaffoldOptions) =
                 .AddSingleton<ICSharpSnapshotGenerator, FSharpSnapshotGenerator>()
                 .AddSingleton<IMigrationsCodeGenerator, FSharpMigrationsGenerator>()
                 .AddSingleton<IMigrationsScaffolder, FSharpMigrationsScaffolder>()
-                .AddSingleton<FSharpMigrationsGeneratorDependencies>() |> ignore
+                .AddSingleton<FSharpMigrationsGeneratorDependencies>()
+            |> ignore

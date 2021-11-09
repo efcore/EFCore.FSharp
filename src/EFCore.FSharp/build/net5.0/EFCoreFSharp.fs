@@ -1,6 +1,6 @@
 module EFCoreFSharp
 
-    open Microsoft.EntityFrameworkCore.Design
+open Microsoft.EntityFrameworkCore.Design
 
-    [<assembly: DesignTimeServicesReference("EntityFrameworkCore.FSharp.EFCoreFSharpServices, EntityFrameworkCore.FSharp")>]
-    do()
+[<assembly: DesignTimeServicesReference("EntityFrameworkCore.FSharp.EFCoreFSharpServices, EntityFrameworkCore.FSharp")>]
+do ()

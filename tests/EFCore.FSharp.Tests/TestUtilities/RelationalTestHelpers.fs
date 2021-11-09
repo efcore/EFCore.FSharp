@@ -11,15 +11,24 @@ type RelationalTestHelpers private () =
     static member Instance = instance
     member this.Action() = printfn "action"
 
+    override this.LoggingDefinitions =
+        TestRelationalLoggingDefinitions() :> Microsoft.EntityFrameworkCore.Diagnostics.LoggingDefinitions
+
     override this.AddProviderServices services =
         FakeRelationalOptionsExtension.AddEntityFrameworkRelationalDatabase services
 
     override this.UseProviderOptions optionsBuilder =
 
-        let e = optionsBuilder.Options.FindExtension<FakeRelationalOptionsExtension>()
+        let e =
+            optionsBuilder.Options.FindExtension<FakeRelationalOptionsExtension>()
+
         let extension =
-            if isNull e then FakeRelationalOptionsExtension() else e
+            if isNull e then
+                FakeRelationalOptionsExtension()
+            else
+                e
 
         let fakeConn = new FakeDbConnection("Database=Fake")
 
-        (optionsBuilder :> IDbContextOptionsBuilderInfrastructure).AddOrUpdateExtension(extension.WithConnection(fakeConn))
+        (optionsBuilder :> IDbContextOptionsBuilderInfrastructure)
+            .AddOrUpdateExtension(extension.WithConnection(fakeConn))
