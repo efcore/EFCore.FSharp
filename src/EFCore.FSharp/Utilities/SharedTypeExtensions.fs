@@ -25,12 +25,12 @@ module internal rec SharedTypeExtensions =
           (typeof<obj>, "obj") ]
         |> readOnlyDict
 
-    let processType (t: Type) useFullName (sb: StringBuilder) =
+    let processType (t: Type) useFullName compilable (sb: StringBuilder) =
         if t.IsGenericType then
             let genericArguments = t.GetGenericArguments()
-            processGenericType t genericArguments (genericArguments.Length) useFullName sb
+            processGenericType t genericArguments (genericArguments.Length) useFullName compilable sb
         elif t.IsArray then
-            processArrayType t useFullName sb
+            processArrayType t useFullName compilable sb
         else
             match builtInTypeNames.TryGetValue t with
             | (true, builtInName) -> sb.Append(builtInName)
@@ -43,50 +43,76 @@ module internal rec SharedTypeExtensions =
 
                 sb.Append(name)
 
-    let rec processGenericType t genericArguments length useFullName (sb: StringBuilder) =
-        let offset =
-            if t.IsNested then
-                t.DeclaringType.GetGenericArguments().Length
-            else
-                0
+    let rec processGenericType t genericArguments length useFullName (compilable: bool) (sb: StringBuilder) =
 
-        if useFullName then
-            if t.IsNested then
-                processGenericType t.DeclaringType genericArguments offset useFullName sb
-                |> ignore
+        if t.IsConstructedGenericType
+           && t.GetGenericTypeDefinition() = typeof<Nullable<_>> then
+            sb.Append("Nullable<") |> ignore
 
-                sb.Append("+") |> ignore
-            else
-                sb.Append(t.Namespace).Append(".") |> ignore
-
-
-        let genericPartIndex = t.Name.IndexOf("`")
-
-        if genericPartIndex <= 0 then
-            sb.Append(t.Name)
-        else
-            sb.Append(t.Name, 0, genericPartIndex).Append("<")
+            processType (unwrapNullableType t) useFullName compilable sb
             |> ignore
 
-            for i = offset to length do
-                processType genericArguments.[i] useFullName sb
+            sb.Append(">")
+        elif t.IsConstructedGenericType
+             && t.GetGenericTypeDefinition() = typeof<Option<_>> then
+            processType (unwrapNullableType t) useFullName compilable sb
+            |> ignore
+
+            sb.Append(" option")
+        else
+
+            let offset =
+                if t.IsNested then
+                    t.DeclaringType.GetGenericArguments().Length
+                else
+                    0
+
+            if compilable then
+                if t.IsNested then
+                    processType t.DeclaringType useFullName compilable sb
+                    |> ignore
+
+                    sb.Append('.') |> ignore
+                else
+                    sb.Append(t.Namespace).Append('.') |> ignore
+            else if useFullName then
+                if t.IsNested then
+                    processGenericType t.DeclaringType genericArguments offset useFullName compilable sb
+                    |> ignore
+
+                    sb.Append("+") |> ignore
+                else
+                    sb.Append(t.Namespace).Append(".") |> ignore
+
+
+            let genericPartIndex = t.Name.IndexOf("`")
+
+            if genericPartIndex <= 0 then
+                sb.Append(t.Name)
+            else
+                sb.Append(t.Name, 0, genericPartIndex).Append("<")
                 |> ignore
 
-                if (i + 1) <> length then
-                    sb.Append(',') |> ignore
+                for i = offset to (length - 1) do
+                    processType genericArguments.[i] useFullName compilable sb
+                    |> ignore
 
-                    if (not (genericArguments.[i + 1].IsGenericParameter)) then
-                        sb.Append(' ') |> ignore
+                    if (i + 1) <> length then
+                        sb.Append(',') |> ignore
 
-            sb.Append(">")
+                        if (not (genericArguments.[i + 1].IsGenericParameter)) then
+                            sb.Append(' ') |> ignore
 
-    let processArrayType (t: Type) useFullName (sb: StringBuilder) =
+                sb.Append(">")
+
+    let processArrayType (t: Type) useFullName compilable (sb: StringBuilder) =
         let mutable innerType = t
 
         while (innerType.IsArray) do
             innerType <- innerType.GetElementType()
 
-        processType innerType useFullName sb |> ignore
+        processType innerType useFullName compilable sb
+        |> ignore
 
         while (innerType.IsArray) do
             sb
@@ -204,9 +230,9 @@ module internal rec SharedTypeExtensions =
         || t' = typeof<int16>
         || t' = typeof<sbyte>
 
-    let displayName (t: Type) useFullName =
+    let displayName (t: Type) useFullName compilable =
         let sb = StringBuilder()
-        processType t useFullName sb |> ignore
+        processType t useFullName compilable sb |> ignore
         sb.ToString()
 
     let isSingleCaseUnion t =

@@ -408,8 +408,8 @@ type FSharpDbContextGenerator
             |> ignore
 
             match d with
-            | :? DBNull -> lines.Add(".HasValue()")
-            | _ -> lines.Add($".HasValue({code.UnknownLiteral(d)})")
+            | :? DBNull -> lines.Add(".HasDefaultValue()")
+            | _ -> lines.Add($".HasDefaultValue({code.UnknownLiteral(d)})")
         | _ -> ()
 
         let isRowVersion = false
@@ -552,7 +552,7 @@ type FSharpDbContextGenerator
                 annotationCodeGenerator.FilterIgnoredAnnotations(foreignKey.GetAnnotations())
                 |> annotationsToDictionary
 
-            lines.Add(sprintf "fun %s -> %s.HasOne<%s>().WithMany()" identifier identifier targetType)
+            lines.Add(sprintf "(fun %s -> %s.HasOne<%s>().WithMany()" identifier identifier targetType)
 
             if not (foreignKey.PrincipalKey.IsPrimaryKey()) then
                 let principalKeyProps =
@@ -578,6 +578,11 @@ type FSharpDbContextGenerator
             if foreignKey.DeleteBehavior <> defaultOnDeleteAction then
                 lines.Add $".OnDelete({code.Literal(foreignKey.DeleteBehavior)})"
 
+            if lines.Count = 1 then
+                lines.[0] <- lines.[0] + ")"
+            else
+                lines.Add(")")
+
             generateAnnotations foreignKey annotations lines
             writeLines ","
 
@@ -591,10 +596,10 @@ type FSharpDbContextGenerator
         sb
         |> appendEmptyLine
         |> indent
-        |> appendLine $"{entityLambdaIdentifier}.HasMany(fun d -> d.{skipNavigation.Name})"
+        |> appendLine $"{entityLambdaIdentifier}.HasMany(fun d -> d.{inverse.Name})"
         |> indent
-        |> appendLine $".WithMany(fun p -> p.{inverse.Name})"
-        |> appendLine $".UsingEntity<{code.Reference Model.DefaultPropertyBagType}>("
+        |> appendLine $".WithMany(fun p -> p.{skipNavigation.Name})"
+        |> appendLine $".UsingEntity<{code.Reference(Model.DefaultPropertyBagType)}>("
         |> indent
         |> appendLine $"{code.Literal joinEntityType.Name},"
         |> ignore
@@ -665,7 +670,7 @@ type FSharpDbContextGenerator
             else
                 code.Literal tableName
 
-        lines.Add $".ToTable({parameterString})"
+        lines.Add $"j.ToTable({parameterString})"
         generateAnnotations joinEntityType annotations lines
         writeLines " |> ignore"
 

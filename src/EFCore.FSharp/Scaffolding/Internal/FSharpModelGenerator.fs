@@ -76,13 +76,21 @@ type FSharpModelGenerator
 
     override __.GenerateModel(model: IModel, options: ModelCodeGenerationOptions) =
 
+        let dbContextFileName = options.ContextName
+
+        let domainFileName =
+            dbContextFileName.Replace("Context", "Domain")
+
         let generatedCode =
             contextGenerator.WriteCode(
                 model,
                 options.ContextName,
                 options.ConnectionString,
-                options.ContextNamespace,
-                options.ModelNamespace,
+                (if isNull options.ContextNamespace then
+                     options.ModelNamespace
+                 else
+                     options.ContextNamespace),
+                domainFileName,
                 options.UseDataAnnotations,
                 options.UseNullableReferenceTypes,
                 options.SuppressConnectionStringWarning,
@@ -103,13 +111,7 @@ type FSharpModelGenerator
         let resultingFiles =
             ScaffoldedModel(ContextFile = contextFile)
 
-        let dbContextFileName = options.ContextName
-
         let domainFile = ScaffoldedFile()
-
-        let domainFileName =
-            dbContextFileName.Replace("Context", "Domain")
-
         domainFile.Path <- (domainFileName + fileExtension)
 
         let domainFileBuilder =

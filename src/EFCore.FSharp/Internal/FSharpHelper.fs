@@ -154,7 +154,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 let builder = StringBuilder()
 
                 let returnName () =
-                    let name = displayName t useFullName
+                    let name = displayName t useFullName true
 
                     builder.Append(name) |> string
 
@@ -752,7 +752,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                         builder.ToString()
                     else
                         let args =
-                            ((expression.ToString()), (displayName literalType false))
+                            ((expression.ToString()), (displayName literalType false false))
 
                         args
                         |> DesignStrings.LiteralExpressionNotSupported

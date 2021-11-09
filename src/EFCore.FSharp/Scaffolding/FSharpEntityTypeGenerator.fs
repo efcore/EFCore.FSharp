@@ -380,6 +380,84 @@ type FSharpEntityTypeGenerator
 
         sb
 
+    let generateSkipForeignKeyAttribute (navigation: ISkipNavigation) sb =
+
+        if navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
+            let foreignKeyAttribute =
+                AttributeWriter(nameof ForeignKeyAttribute)
+
+            let props =
+                navigation.ForeignKey.Properties
+                |> Seq.map (fun p -> p.Name)
+                |> join ","
+
+            foreignKeyAttribute.AddParameter(code.Literal props)
+            sb |> appendLine (string foreignKeyAttribute)
+        else
+            sb
+
+    let generateSkipInversePropertyAttribute (navigation: ISkipNavigation) sb =
+
+        if navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
+            let inverseNavigation = navigation.Inverse
+
+            if notNull inverseNavigation then
+                let inversePropertyAttribute =
+                    AttributeWriter(nameof InversePropertyAttribute)
+
+                let condition =
+                    navigation.DeclaringEntityType.GetPropertiesAndNavigations()
+                    |> Seq.exists (fun m -> m.Name = inverseNavigation.DeclaringEntityType.Name)
+
+                if condition then
+                    inversePropertyAttribute.AddParameter(code.Literal inverseNavigation.Name)
+                else
+                    inversePropertyAttribute.AddParameter(
+                        $"nameof ({inverseNavigation.DeclaringEntityType.Name}.{inverseNavigation.Name})"
+                    )
+
+                sb |> appendLine (string inversePropertyAttribute)
+            else
+                sb
+        else
+            sb
+
+    let generateSkipNavigationDataAnnotations (navigation: ISkipNavigation) sb =
+
+        sb
+        |> generateSkipForeignKeyAttribute navigation
+        |> generateSkipInversePropertyAttribute navigation
+
+    let generateSkipNavigationProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations sb =
+
+        let skipNavigations = entityType.GetSkipNavigations()
+
+        if skipNavigations |> Seq.isEmpty |> not then
+            sb |> appendEmptyLine |> ignore
+
+            skipNavigations
+            |> Seq.iter
+                (fun p ->
+
+                    let func =
+                        if useDataAnnotations then
+                            generateSkipNavigationDataAnnotations p
+                        else
+                            (fun s -> s)
+
+                    let typeName = p.TargetEntityType.Name
+
+                    let navigationType =
+                        if p.IsCollection then
+                            $"ICollection<{typeName}>"
+                        else
+                            typeName
+
+                    sb |> writeProperty p.Name navigationType func)
+
+        sb
+
+
     let generateNavigationProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations sb =
 
         let sortedNavigations =
@@ -423,6 +501,7 @@ type FSharpEntityTypeGenerator
         |> generateConstructor entityType
         |> generateProperties entityType scaffoldNullableColumnsAs useDataAnnotations
         |> generateNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
+        |> generateSkipNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
         |> unindent
 
     let generateRecordTypeEntry useDataAnnotations scaffoldNullableColumnsAs (p: IProperty) sb =
@@ -455,7 +534,7 @@ type FSharpEntityTypeGenerator
 
         let navigationType =
             if n.IsCollection then
-                sprintf "ICollection<%s>" referencedTypeName
+                sprintf "%s seq" referencedTypeName
             else
                 referencedTypeName
 
@@ -463,9 +542,33 @@ type FSharpEntityTypeGenerator
         |> appendLine (sprintf "%s: %s" n.Name navigationType)
         |> ignore
 
+    let generateSkipNavigateTypeEntry (n: ISkipNavigation) (useDataAnnotations: bool) sb =
+        if useDataAnnotations then
+            sb
+            |> generateSkipNavigationDataAnnotations n
+            |> ignore
+
+        let referencedTypeName = n.TargetEntityType.Name
+
+        let navigationType =
+            if n.IsCollection then
+                sprintf "%s seq" referencedTypeName
+            else
+                referencedTypeName
+
+        sb
+        |> appendLine (sprintf "%s: %s" n.Inverse.Name navigationType)
+        |> ignore
+
     let writeNavigationProperties (nav: INavigation seq) (useDataAnnotations: bool) sb =
         nav
         |> Seq.iter (fun n -> generateNavigateTypeEntry n useDataAnnotations sb)
+
+        sb
+
+    let writeSkipNavigationProperties (nav: ISkipNavigation seq) (useDataAnnotations: bool) sb =
+        nav
+        |> Seq.iter (fun n -> generateSkipNavigateTypeEntry n useDataAnnotations sb)
 
         sb
 
@@ -476,12 +579,15 @@ type FSharpEntityTypeGenerator
             entityType.GetNavigations()
             |> Seq.sortBy (fun n -> ((if n.IsOnDependent then 0 else 1), (if n.IsCollection then 1 else 0)))
 
+        let skipNavigations = entityType.GetSkipNavigations()
+
         sb
         |> appendLine ("CLIMutable" |> createAttributeQuick)
         |> appendLine (sprintf "type %s = {" entityType.Name)
         |> indent
         |> writeRecordProperties properties useDataAnnotations scaffoldNullableColumnsAs
         |> writeNavigationProperties navProperties useDataAnnotations
+        |> writeSkipNavigationProperties skipNavigations useDataAnnotations
         |> unindent
         |> appendLine "}"
         |> appendEmptyLine
