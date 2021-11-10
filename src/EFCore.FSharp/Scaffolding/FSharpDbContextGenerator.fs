@@ -596,9 +596,9 @@ type FSharpDbContextGenerator
         sb
         |> appendEmptyLine
         |> indent
-        |> appendLine $"{entityLambdaIdentifier}.HasMany(fun d -> d.{inverse.Name})"
+        |> appendLine $"{entityLambdaIdentifier}.HasMany(fun d -> d.{skipNavigation.Name})"
         |> indent
-        |> appendLine $".WithMany(fun p -> p.{skipNavigation.Name})"
+        |> appendLine $".WithMany(fun p -> p.{inverse.Name})"
         |> appendLine $".UsingEntity<{code.Reference(Model.DefaultPropertyBagType)}>("
         |> indent
         |> appendLine $"{code.Literal joinEntityType.Name},"

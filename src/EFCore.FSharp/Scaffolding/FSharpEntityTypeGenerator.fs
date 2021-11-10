@@ -557,7 +557,7 @@ type FSharpEntityTypeGenerator
                 referencedTypeName
 
         sb
-        |> appendLine (sprintf "%s: %s" n.Inverse.Name navigationType)
+        |> appendLine (sprintf "%s: %s" n.Name navigationType)
         |> ignore
 
     let writeNavigationProperties (nav: INavigation seq) (useDataAnnotations: bool) sb =
