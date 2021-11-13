@@ -486,7 +486,7 @@ type FSharpDbContextGenerator
                 (if isNull fk.PrincipalToDependent then
                      ""
                  else
-                     code.Literal fk.PrincipalToDependent.Name)
+                     (sprintf "fun p -> p.%s" fk.PrincipalToDependent.Name))
         )
 
         if not (fk.PrincipalKey.IsPrimaryKey()) then
@@ -512,8 +512,14 @@ type FSharpDbContextGenerator
             else
                 ""
 
-        let methodParams = code.Lambda(fk.Properties, "d")
-        lines.Add(sprintf ".HasForeignKey%s(%s)" typeParam methodParams)
+        let methodParams =
+            fk.Properties
+            |> Seq.map (fun p -> "d." + p.Name)
+            |> join ", "
+
+        lines.Add(
+            sprintf ".HasForeignKey%s(fun (d:%s) -> (%s) :> obj)" typeParam fk.DeclaringEntityType.Name methodParams
+        )
 
         let defaultOnDeleteAction =
             if fk.IsRequired then
@@ -545,6 +551,7 @@ type FSharpDbContextGenerator
                 sb |> append line |> ignore
 
             sb |> appendLine terminator |> ignore
+
             lines.Clear()
 
         let generateForeignKeyConfigurationLines (foreignKey: IForeignKey) targetType identifier =
@@ -552,7 +559,13 @@ type FSharpDbContextGenerator
                 annotationCodeGenerator.FilterIgnoredAnnotations(foreignKey.GetAnnotations())
                 |> annotationsToDictionary
 
-            lines.Add(sprintf "(fun %s -> %s.HasOne<%s>().WithMany()" identifier identifier targetType)
+            lines.Add(
+                sprintf
+                    "(fun (%s: Builders.EntityTypeBuilder<_>) -> %s.HasOne<%s>().WithMany()"
+                    identifier
+                    identifier
+                    targetType
+            )
 
             if not (foreignKey.PrincipalKey.IsPrimaryKey()) then
                 let principalKeyProps =
@@ -578,13 +591,9 @@ type FSharpDbContextGenerator
             if foreignKey.DeleteBehavior <> defaultOnDeleteAction then
                 lines.Add $".OnDelete({code.Literal(foreignKey.DeleteBehavior)})"
 
-            if lines.Count = 1 then
-                lines.[0] <- lines.[0] + ")"
-            else
-                lines.Add(")")
-
             generateAnnotations foreignKey annotations lines
-            writeLines ","
+            writeLines "),"
+
 
         if not _entityTypeBuilderInitialized then
             initializeEntityTypeBuilder skipNavigation.DeclaringEntityType sb
@@ -635,7 +644,7 @@ type FSharpDbContextGenerator
         lines.Add $"j.HasKey({props})"
 
         if explicitName then
-            lines.Add ".HasName({code.Literal(key.GetName())})"
+            lines.Add $".HasName({code.Literal(key.GetName())})"
 
         generateAnnotations key keyAnnotations lines
         writeLines " |> ignore"

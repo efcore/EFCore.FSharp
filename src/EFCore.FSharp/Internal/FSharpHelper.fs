@@ -779,18 +779,12 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 else
                     lambdaIdentifier
 
-            StringBuilder()
-                .Append(sprintf "(fun %s -> " lambdaIdentifier')
-                .Append("(")
-                .Append(
-                    String.Join(
-                        ", ",
-                        (properties
-                         |> Seq.map (fun p -> lambdaIdentifier' + "." + p))
-                    )
-                )
-                .Append(") :> obj)")
-            |> string
+            let props =
+                properties
+                |> Seq.map (fun p -> lambdaIdentifier' + "." + p)
+                |> join ", "
+
+            sprintf "(fun %s -> (%s) :> obj)" lambdaIdentifier' props
 
         member this.Literal(values: obj [,]) : string = this.literalArray2D values
 
