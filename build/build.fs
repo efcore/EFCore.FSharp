@@ -62,7 +62,7 @@ let srcAndTest = !!srcGlob ++ testsGlob
 let distDir = __SOURCE_DIRECTORY__ </> ".." </> "dist"
 let distGlob = distDir </> "*.nupkg"
 
-let coverageThresholdPercent = 40 //80
+let coverageThresholdPercent = 55
 
 let coverageReportDir =
     __SOURCE_DIRECTORY__

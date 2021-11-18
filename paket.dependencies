@@ -19,7 +19,7 @@ group Tests
     nuget Expecto 9.0.2
     nuget YoloDev.Expecto.TestSdk 0.12.10
     nuget Microsoft.NET.Test.Sdk 16.8.0
-    nuget altcover ~> 7
+    nuget altcover ~> 8.2.828
 
     nuget Microsoft.EntityFrameworkCore.Design ~> 6.0.0
     nuget Microsoft.EntityFrameworkCore.InMemory ~> 6.0.0

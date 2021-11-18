@@ -1477,7 +1477,7 @@ GROUP Tests
 STORAGE: NONE
 NUGET
   remote: https://www.nuget.org/api/v2
-    altcover (7.6.812)
+    altcover (8.2.828)
     Azure.Core (1.21) - restriction: >= net6.0
       Microsoft.Bcl.AsyncInterfaces (>= 1.0) - restriction: || (>= net461) (>= netstandard2.0)
       System.Diagnostics.DiagnosticSource (>= 4.6) - restriction: || (>= net461) (>= netstandard2.0)

@@ -3,7 +3,7 @@ name: Build master
 on: [push, pull_request]
 
 env:
-  DISABLE_COVERAGE: 1
+  DISABLE_COVERAGE: 0
 
 jobs:
   build:
