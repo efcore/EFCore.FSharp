@@ -117,7 +117,10 @@ type FSharpSnapshotGenerator
         | None -> ()
 
         if inChainedCall then
-            sb |> appendLine " |> ignore" |> ignore
+            sb
+            |> appendLine " |> ignore"
+            |> unindent
+            |> ignore
 
         if typeQualifiedCalls.Count > 0 then
             if leadingNewLine then
@@ -280,7 +283,6 @@ type FSharpSnapshotGenerator
              else
                  ".ValueGeneratedOnAddOrUpdate()")
         |> genPropertyAnnotations entityTypeBuilderName p
-        |> unindent
 
     let generateProperties (entityTypeBuilderName: string) (properties: IProperty seq) (sb: IndentedStringBuilder) =
         properties
@@ -320,7 +322,6 @@ type FSharpSnapshotGenerator
         |> append keyBuilderName
         |> indent
         |> generateKeyAnnotations keyBuilderName key
-        |> unindent
 
     let generateKeys (entityTypeBuilderName: string) (keys: IKey seq) (pk: IKey) (sb: IndentedStringBuilder) =
 
@@ -382,7 +383,6 @@ type FSharpSnapshotGenerator
         |> indent
         |> appendMethodCall idx.IsUnique ".IsUnique()"
         |> generateIndexAnnotations indexBuilderName idx
-        |> unindent
         |> ignore
 
     let generateIndexes (entityTypeBuilderName: string) (indexes: IIndex seq) (sb: IndentedStringBuilder) =
@@ -794,7 +794,6 @@ type FSharpSnapshotGenerator
 
         sb
         |> generateAnnotations entityTypeBuilderName entityType annotations false true
-        |> unindent
         |> ignore
 
         sb
@@ -917,7 +916,6 @@ type FSharpSnapshotGenerator
 
         sb
         |> this.generateForeignKeyAnnotations entityTypeBuilderName fk
-        |> unindent
 
     member private this.generateForeignKeys entityTypeBuilderName (foreignKeys: IForeignKey seq) sb =
         foreignKeys
@@ -1072,6 +1070,7 @@ type FSharpSnapshotGenerator
            | Some _ -> this.generateRelationships entityTypeBuilderName entityType
         |> this.generateData entityTypeBuilderName (entityType.GetProperties()) (entityType |> getData true)
         |> appendEmptyLine
+        |> unindent
         |> appendLine ")) |> ignore"
         |> ignore
 
