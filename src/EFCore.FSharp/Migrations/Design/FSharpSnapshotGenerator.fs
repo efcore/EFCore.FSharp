@@ -267,10 +267,12 @@ type FSharpSnapshotGenerator
 
             (p.IsPrimaryKey()) || (not isNullable)
 
+        let propertyBuilderTypeName =
+            $"{entityTypeBuilderName}.Property<{code.Reference(clrType)}>({code.Literal(p.Name)})"
+
         sb
         |> appendEmptyLine
-        |> append entityTypeBuilderName
-        |> append (sprintf ".Property<%s>(%s)" (code.Reference clrType) (code.Literal p.Name))
+        |> append propertyBuilderTypeName
         |> indent
         |> appendLineIfTrue p.IsConcurrencyToken ".IsConcurrencyToken()"
         |> appendLineIfTrue true (sprintf ".IsRequired(%b)" isPropertyRequired)
@@ -282,7 +284,7 @@ type FSharpSnapshotGenerator
                  ".ValueGeneratedOnUpdate()"
              else
                  ".ValueGeneratedOnAddOrUpdate()")
-        |> genPropertyAnnotations entityTypeBuilderName p
+        |> genPropertyAnnotations propertyBuilderTypeName p
 
     let generateProperties (entityTypeBuilderName: string) (properties: IProperty seq) (sb: IndentedStringBuilder) =
         properties
