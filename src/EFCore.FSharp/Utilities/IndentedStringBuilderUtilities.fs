@@ -33,7 +33,7 @@ module internal IndentedStringBuilderUtilities =
         if addLineBreak.Value then
             sb |> appendEmptyLine |> ignore
         else
-            addLineBreak := true
+            addLineBreak.Value <- true
 
         sb |> append text |> ignore
 
