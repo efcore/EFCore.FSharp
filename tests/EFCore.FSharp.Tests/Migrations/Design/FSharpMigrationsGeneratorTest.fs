@@ -41,11 +41,12 @@ type TestFSharpSnapshotGenerator
     ) =
     inherit FSharpSnapshotGenerator(dependencies, mappingSource, annotationCodeGenerator)
 
-    member this.TestGenerateEntityTypeAnnotations builderName entityType stringBuilder =
-        this.generateEntityTypeAnnotations builderName entityType stringBuilder
+    member this.TestGenerateEntityTypeAnnotations builderName entityType =
+        this.generateEntityTypeAnnotations builderName entityType
 
-    member this.TestGeneratePropertyAnnotations property sb =
-        this.generatePropertyAnnotations property sb
+    member this.TestGeneratePropertyAnnotations property =
+        this.generatePropertyAnnotations property
+
 
 type WithAnnotations() =
     [<DefaultValue>]
@@ -183,7 +184,7 @@ module FSharpMigrationsGeneratorTest =
         (invalidAnnotations: HashSet<string>)
         (validAnnotations: IDictionary<string, (obj * string)>)
         (generationDefault: string)
-        (test: TestFSharpSnapshotGenerator -> IMutableAnnotatable -> IndentedStringBuilder -> unit)
+        (test: TestFSharpSnapshotGenerator -> IMutableAnnotatable -> string)
         =
 
         let sqlServerTypeMappingSource =
@@ -244,10 +245,19 @@ module FSharpMigrationsGeneratorTest =
                     modelBuilder.FinalizeModel(designTime = true)
                     |> ignore
 
-                    let sb = IndentedStringBuilder()
-
                     try
-                        test generator metadataItem sb
+                        let actual = test generator metadataItem
+
+                        let expected =
+                            if validAnnotations.ContainsKey(annotationName) then
+                                snd validAnnotations.[annotationName]
+                            else
+                                generationDefault
+
+                        Expect.equal
+                            (actual.Trim())
+                            (expected.Trim())
+                            $"Should be equal, but failed on {annotationName}"
                     with
                     | exn ->
                         let msg =
@@ -258,15 +268,7 @@ module FSharpMigrationsGeneratorTest =
 
                         Expect.isTrue false msg
 
-                    let actual = sb.ToString()
-
-                    let expected =
-                        if validAnnotations.ContainsKey(annotationName) then
-                            snd validAnnotations.[annotationName]
-                        else
-                            generationDefault
-
-                    Expect.equal (actual.Trim()) (expected.Trim()) $"Should be equal, but failed on {annotationName}")
+                )
 
         ()
 
@@ -436,9 +438,7 @@ module FSharpMigrationsGeneratorTest =
                       notForEntityType
                       forEntityType
                       _toTable
-                      (fun g m b ->
-                          g.generateEntityTypeAnnotations "entityTypeBuilder" (m :> obj :?> _) b
-                          |> ignore)
+                      (fun g m -> g.generateEntityTypeAnnotations "entityTypeBuilder" (m :> obj :?> _))
               }
 
               test "Test new annotations handled for properties" {
@@ -495,28 +495,28 @@ module FSharpMigrationsGeneratorTest =
 
                   let forProperty =
                       [ (CoreAnnotationNames.MaxLength,
-                         (box 256, $"{_nl}.HasMaxLength(256){columnMappingWithDefaultValue} |> ignore"))
+                         (box 256, $"{_nl}.HasMaxLength(256){columnMappingWithDefaultValue}{_nl}|> ignore"))
                         (CoreAnnotationNames.Precision,
-                         (box 4, $"{_nl}.HasPrecision(4){columnMappingWithDefaultValue} |> ignore"))
-                        (CoreAnnotationNames.Scale, (box null, $"{columnMappingWithDefaultValue} |> ignore"))
+                         (box 4, $"{_nl}.HasPrecision(4){columnMappingWithDefaultValue}{_nl}|> ignore"))
+                        (CoreAnnotationNames.Scale, (box null, $"{columnMappingWithDefaultValue}{_nl}|> ignore"))
                         (CoreAnnotationNames.Unicode,
-                         (box false, $"{_nl}.IsUnicode(false){columnMappingWithDefaultValue} |> ignore"))
+                         (box false, $"{_nl}.IsUnicode(false){columnMappingWithDefaultValue}{_nl}|> ignore"))
                         (CoreAnnotationNames.ValueConverter,
                          (box (ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null)),
                           _nl
-                          + $".HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L) |> ignore"))
+                          + $".HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L){_nl}|> ignore"))
                         (CoreAnnotationNames.ProviderClrType,
                          (box typeof<int64>,
-                          $"{_nl}.HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L) |> ignore"))
+                          $"{_nl}.HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L){_nl}|> ignore"))
                         (RelationalAnnotationNames.ColumnName,
                          (box "MyColumn",
                           columnMappingWithDefaultValue
                           + _nl
-                          + ".HasColumnName(\"MyColumn\") |> ignore"))
+                          + $".HasColumnName(\"MyColumn\") |> ignore"))
                         (RelationalAnnotationNames.ColumnType,
                          (box "int",
                           _nl
-                          + $".HasColumnType(\"int\"){_nl}.HasDefaultValue(0) |> ignore"))
+                          + $".HasColumnType(\"int\"){_nl}.HasDefaultValue(0){_nl}|> ignore"))
                         (RelationalAnnotationNames.DefaultValueSql,
                          (box "some SQL",
                           columnMappingWithDefaultValue
@@ -532,7 +532,9 @@ module FSharpMigrationsGeneratorTest =
                           columnMapping
                           + ".HasDefaultValue(\"1\") |> ignore"))
                         (RelationalAnnotationNames.DefaultValue,
-                         (box 0, columnMapping + ".HasDefaultValue(0) |> ignore"))
+                         (box 0,
+                          columnMapping
+                          + $".HasDefaultValue(0){_nl}|> ignore"))
                         (RelationalAnnotationNames.IsFixedLength,
                          (box true,
                           columnMappingWithDefaultValue
@@ -560,10 +562,8 @@ module FSharpMigrationsGeneratorTest =
                           :> IMutableAnnotatable))
                       notForProperty
                       forProperty
-                      (columnMappingWithDefaultValue + " |> ignore")
-                      (fun g m b ->
-                          g.generatePropertyAnnotations "propertyBuilder" (m :> obj :?> _) b
-                          |> ignore)
+                      (columnMappingWithDefaultValue + $"{_nl}|> ignore")
+                      (fun g m -> g.generatePropertyAnnotations "propertyBuilder" (m :> obj :?> _))
               }
 
               test "Snapshot with enum discriminator uses converted values" {
@@ -735,8 +735,7 @@ module FSharpMigrationsGeneratorTest =
                           "    inherit Migration()"
                           ""
                           "    override this.Up(migrationBuilder:MigrationBuilder) ="
-                          "        migrationBuilder.Sql(\"-- TEST\").Annotation(\"Some:EnumValue\", RegexOptions.Multiline)"
-                          "         |> ignore"
+                          "        migrationBuilder.Sql(\"-- TEST\").Annotation(\"Some:EnumValue\", RegexOptions.Multiline) |> ignore"
                           ""
                           "        migrationBuilder.AlterColumn<Database>("
                           "            name = \"C1\""
@@ -770,20 +769,26 @@ module FSharpMigrationsGeneratorTest =
                           "            b.Property<int>(\"Id\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"int\")"
-                          "                .HasDefaultValue(0) |> ignore"
+                          "                .HasDefaultValue(0)"
+                          "                |> ignore"
                           ""
                           "            b.Property<string>(\"C2\")"
                           "                .IsRequired(true)"
-                          "                .HasColumnType(\"nvarchar(max)\") |> ignore"
+                          "                .HasColumnType(\"nvarchar(max)\")"
+                          "                |> ignore"
                           ""
                           "            b.Property<int>(\"C3\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"int\")"
-                          "                .HasDefaultValue(0) |> ignore"
+                          "                .HasDefaultValue(0)"
+                          "                |> ignore"
                           ""
-                          "            b.HasKey(\"Id\") |> ignore"
+                          "            b.HasKey(\"Id\")"
+                          "                |> ignore"
+                          ""
                           ""
                           "            b.ToTable(\"T1\") |> ignore"
+                          ""
                           "        )) |> ignore"
                       }
                       |> join _eol
@@ -911,15 +916,20 @@ module FSharpMigrationsGeneratorTest =
                           "            b.Property<string>(\"Ham\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"just_string(10)\")"
-                          "                .HasDefaultValue(\"A\") |> ignore"
+                          "                .HasDefaultValue(\"A\")"
+                          "                |> ignore"
                           ""
                           "            b.Property<string>(\"Pickle\")"
                           "                .IsRequired(true)"
-                          "                .HasColumnType(\"just_string(10)\") |> ignore"
+                          "                .HasColumnType(\"just_string(10)\")"
+                          "                |> ignore"
                           ""
-                          "            b.HasKey(\"Ham\") |> ignore"
+                          "            b.HasKey(\"Ham\")"
+                          "                |> ignore"
+                          ""
                           ""
                           "            b.ToTable(\"Cheese\") |> ignore"
+                          ""
                           "        )) |> ignore"
                           ""
                           "        modelBuilder.Entity(\"EntityFrameworkCore.FSharp.Test.Migrations.Design.FSharpMigrationsGeneratorTest+EntityWithConstructorBinding\", (fun b ->"
@@ -928,16 +938,21 @@ module FSharpMigrationsGeneratorTest =
                           "                .IsRequired(true)"
                           "                .ValueGeneratedOnAdd()"
                           "                .HasColumnType(\"default_int_mapping\")"
-                          "                .HasDefaultValue(0) |> ignore"
+                          "                .HasDefaultValue(0)"
+                          "                |> ignore"
                           ""
                           "            b.Property<Guid>(\"PropertyWithValueGenerator\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"default_guid_mapping\")"
-                          "                .HasDefaultValue(Guid(\"00000000-0000-0000-0000-000000000000\")) |> ignore"
+                          "                .HasDefaultValue(Guid(\"00000000-0000-0000-0000-000000000000\"))"
+                          "                |> ignore"
                           ""
-                          "            b.HasKey(\"Id\") |> ignore"
+                          "            b.HasKey(\"Id\")"
+                          "                |> ignore"
+                          ""
                           ""
                           "            b.ToTable(\"EntityWithConstructorBinding\") |> ignore"
+                          ""
                           "        )) |> ignore"
                       }
                       |> join _eol
