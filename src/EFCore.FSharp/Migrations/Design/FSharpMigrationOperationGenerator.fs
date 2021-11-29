@@ -415,6 +415,13 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 ""
             }
 
+        let writeCheckConstraint (cc: AddCheckConstraintOperation) =
+            stringBuilder {
+                $"table.CheckConstraint({code.Literal cc.Name}, {code.Literal cc.Sql}"
+                indent { annotations true (op.PrimaryKey.GetAnnotations()) }
+                ""
+            }
+
         let writeForeignKeyConstraint (fk: AddForeignKeyOperation) =
 
             stringBuilder {
@@ -479,7 +486,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                             op.UniqueConstraints
                             |> Seq.map writeUniqueConstraint
 
-                            // TODO: add CheckConstraints
+                            op.CheckConstraints
+                            |> Seq.map writeCheckConstraint
 
                             op.ForeignKeys
                             |> Seq.map writeForeignKeyConstraint
@@ -819,6 +827,31 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             ") |> ignore"
         }
 
+    let generateAddCheckConstraintOperation (op: AddCheckConstraintOperation) =
+        stringBuilder {
+            ".AddCheckConstraint("
+
+            indent {
+                writeName op.Name
+                writeSchema op.Schema
+                writeParameter "table" op.Table
+                writeParameter "sql" op.Sql
+                annotations true (op.GetAnnotations())
+            }
+        }
+
+    let generateDropCheckConstraintOperation (op: DropCheckConstraintOperation) =
+        stringBuilder {
+            ".DropCheckConstraint("
+
+            indent {
+                writeName op.Name
+                writeSchema op.Schema
+                writeParameter "table" op.Table
+                annotations true (op.GetAnnotations())
+            }
+        }
+
     let generateOperation builderName (op: MigrationOperation) =
         let result =
             match op with
@@ -851,6 +884,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             | :? InsertDataOperation as op' -> op' |> generateInsertDataOperation
             | :? DeleteDataOperation as op' -> op' |> generateDeleteDataOperation
             | :? UpdateDataOperation as op' -> op' |> generateUpdateDataOperation
+            | :? AddCheckConstraintOperation as op' -> op' |> generateAddCheckConstraintOperation
+            | :? DropCheckConstraintOperation as op' -> op' |> generateDropCheckConstraintOperation
             | _ ->
                 op
                 |> invalidOp ((op.GetType()) |> DesignStrings.UnknownOperation) // The failure case
