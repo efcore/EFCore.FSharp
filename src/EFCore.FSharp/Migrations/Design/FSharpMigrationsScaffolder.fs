@@ -1,10 +1,10 @@
 namespace EntityFrameworkCore.FSharp.Migrations.Design
 
-open Microsoft.EntityFrameworkCore.Migrations.Design
-open Microsoft.EntityFrameworkCore.Internal
-open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
-open System.Text
 open System.IO
+open System.Text
+open Microsoft.EntityFrameworkCore.Internal
+open Microsoft.EntityFrameworkCore.Migrations.Design
+open EntityFrameworkCore.FSharp
 
 type FSharpMigrationsScaffolder(dependencies) =
     inherit MigrationsScaffolder(dependencies)

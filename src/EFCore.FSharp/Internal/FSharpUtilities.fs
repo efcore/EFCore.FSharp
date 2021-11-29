@@ -8,8 +8,8 @@ open System.Text
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.FSharp.Quotations
 
+open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
-open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open Microsoft.FSharp.Linq.RuntimeHelpers
 
 module FSharpUtilities =
@@ -206,12 +206,6 @@ module FSharpUtilities =
            "yield" |]
 
     let isKeyword str = _keywords |> Seq.contains str
-
-    let handleMethodCallCodeFragment (sb: StringBuilder) (methodCallCodeFragment: MethodCallCodeFragment) =
-        sb
-            .Append("(")
-            .Append(methodCallCodeFragment.Method)
-            .Append(")")
 
     let delimitString (str: string) =
         if str.Contains(Environment.NewLine) then

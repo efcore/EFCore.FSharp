@@ -8,7 +8,7 @@ open System.Numerics
 open System.Text
 open Microsoft.EntityFrameworkCore.Internal
 open System.Globalization
-open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
+open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Storage
@@ -274,12 +274,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             """BigInteger.Parse("%s", NumberFormatInfo.InvariantInfo)"""
             (value.ToString(NumberFormatInfo.InvariantInfo))
 
-    member private this.literalList
-        (values: IReadOnlyList<obj>)
-        (vertical: bool)
-        (isObjType: bool)
-        (sb: IndentedStringBuilder)
-        =
+    member private this.literalList (values: IReadOnlyList<obj>) (vertical: bool) (isObjType: bool) =
 
         let values' =
             if isObjType then
@@ -290,19 +285,15 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 values |> Seq.map this.unknownLiteral
 
         if not vertical then
-            let line =
-                sprintf "[| %s |]" (String.Join("; ", values'))
-
-            sb |> append line
+            sprintf "[| %s |]" (values' |> join "; ")
         else
-            sb |> append "[|" |> incrementIndent |> ignore
 
-            values'
-            |> Seq.iter (fun line -> sb |> appendLine line |> ignore)
+            stringBuilder {
+                "[|"
+                indent { values' }
+                "|]"
+            }
 
-            sb
-
-        |> string
 
     member private this.literalArray2D(values: obj [,]) =
 
@@ -324,12 +315,12 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         sprintf "array2D [ %s ]" (String.Join("; ", rowContents))
 
-    member private this.handleArguments args sb =
+    member private this.handleArguments args (sb: IndentedStringBuilder) =
 
-        sb |> append "(" |> ignore
+        sb.Append("(") |> ignore
 
         if (this.handleList args false sb) then
-            sb |> append ")" |> ignore
+            sb.Append(")") |> ignore
             true
         else
             false
@@ -341,7 +332,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             exps
             |> Seq.map
                 (fun e ->
-                    sb |> append separator |> ignore
+                    sb.Append(separator) |> ignore
 
                     let result = this.handleExpression e simple sb
 
@@ -354,30 +345,26 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         match expression.NodeType with
         | ExpressionType.NewArrayInit ->
 
-            sb |> append "[| " |> ignore
+            sb.Append("[| ") |> ignore
 
             this.handleList (expression :?> NewArrayExpression).Expressions true sb
             |> ignore
 
-            sb |> append " |]" |> ignore
+            sb.Append(" |]") |> ignore
 
             true
         | ExpressionType.Convert ->
-            sb |> append "(" |> ignore
+            sb.Append("(") |> ignore
 
             let result =
                 this.handleExpression (expression :?> UnaryExpression).Operand false sb
 
-            sb
-            |> append " :?> "
-            |> append (this.ReferenceFullName expression.Type true)
-            |> append ")"
+            sb.Append($" :?> {this.ReferenceFullName expression.Type true})")
             |> ignore
 
             result
         | ExpressionType.New ->
-            sb
-            |> append (this.ReferenceFullName expression.Type true)
+            sb.Append(this.ReferenceFullName expression.Type true)
             |> ignore
 
             this.handleArguments ((expression :?> NewExpression).Arguments) sb
@@ -388,8 +375,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             let callExpr = expression :?> MethodCallExpression
 
             if callExpr.Method.IsStatic then
-                sb
-                |> append (this.ReferenceFullName callExpr.Method.DeclaringType true)
+                sb.Append(this.ReferenceFullName callExpr.Method.DeclaringType true)
                 |> ignore
             else if (not (this.handleExpression callExpr.Object false sb)) then
                 exitEarly <- true
@@ -397,10 +383,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             if exitEarly then
                 false
             else
-                sb
-                |> append "."
-                |> append callExpr.Method.Name
-                |> ignore
+                sb.Append($".{callExpr.Method.Name}") |> ignore
 
                 this.handleArguments callExpr.Arguments sb
 
@@ -414,7 +397,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 else
                     this.unknownLiteral (value)
 
-            sb |> append valueToWrite |> ignore
+            sb.Append(valueToWrite) |> ignore
 
             true
 
@@ -422,16 +405,13 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             let memberExpression = expression :?> MemberExpression
 
             let appendAndReturn () =
-                sb
-                |> append "."
-                |> append memberExpression.Member.Name
+                sb.Append($".{memberExpression.Member.Name}")
                 |> ignore
 
                 true
 
             if memberExpression.Expression |> isNull then
-                sb
-                |> append (this.ReferenceFullName memberExpression.Member.DeclaringType true)
+                sb.Append(this.ReferenceFullName memberExpression.Member.DeclaringType true)
                 |> ignore
 
                 appendAndReturn ()
@@ -447,13 +427,9 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                |> not then
                 false
             else
-                sb |> append " + " |> ignore
+                sb.Append(" + ") |> ignore
 
-                if this.handleExpression binaryExpression.Right false sb
-                   |> not then
-                    false
-                else
-                    true
+                this.handleExpression binaryExpression.Right false sb
         | _ -> false
 
 
@@ -502,10 +478,6 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             this.getCompositeEnumValue t value
         else
             this.getSimpleEnumValue t name
-
-    member private this.LiteralList (vertical: bool) (sb: IndentedStringBuilder) (values: IReadOnlyList<obj>) =
-        this.literalList values vertical true sb
-
 
     member private this.isLetterChar cat =
         match cat with
@@ -609,12 +581,12 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         let builder = IndentedStringBuilder()
         let mutable current = fragment
 
-        let processArg (arg: obj) sb =
+        let processArg (arg: obj) (sb: IndentedStringBuilder) =
             match arg with
             | :? NestedClosureCodeFragment as n ->
                 let f = this.buildNestedFragment (n, indent)
-                sb |> appendLine f
-            | _ -> sb |> append (this.unknownLiteral arg)
+                sb.AppendLine(f)
+            | _ -> sb.Append(this.unknownLiteral arg)
 
         if typeQualified then
             if isNull instanceIdentifier
@@ -622,42 +594,37 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                || notNull fragment.ChainedCall then
                 raise (ArgumentException DesignStrings.CannotGenerateTypeQualifiedMethodCall)
 
-            builder
-            |> append (sprintf "%s.%s(%s" fragment.DeclaringType fragment.Method instanceIdentifier)
+            builder.Append $"%s{fragment.DeclaringType}.%s{fragment.Method}(%s{instanceIdentifier}"
             |> ignore
 
             for a in fragment.Arguments do
-                builder |> append ", " |> processArg a |> ignore
+                builder.Append(", ") |> processArg a |> ignore
 
-            builder |> append ")" |> ignore
+            builder.Append(")") |> ignore
 
         else
             if notNull instanceIdentifier then
-                builder |> append instanceIdentifier |> ignore
+                builder.Append(instanceIdentifier) |> ignore
 
                 if notNull current.ChainedCall then
-                    builder
-                    |> appendEmptyLine
-                    |> incrementIndent
-                    |> ignore
+                    builder.AppendLine().IncrementIndent() |> ignore
 
             while notNull current do
-                builder
-                |> append (sprintf ".%s(" current.Method)
+                builder.Append(sprintf ".%s(" current.Method)
                 |> ignore
 
                 for i in [ 0 .. current.Arguments.Count - 1 ] do
                     if i <> 0 then
-                        builder |> append ", " |> ignore
+                        builder.Append(", ") |> ignore
 
                     builder
                     |> processArg current.Arguments.[i]
                     |> ignore
 
-                builder |> append ")" |> ignore
+                builder.Append(")") |> ignore
 
                 if notNull current.ChainedCall then
-                    builder |> appendEmptyLine |> ignore
+                    builder.AppendLine() |> ignore
 
                 current <- current.ChainedCall
 
@@ -670,23 +637,22 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             builder.IncrementIndent() |> ignore
 
         builder
-        |> appendEmptyLine
-        |> incrementIndent
-        |> appendLine (sprintf "(fun %s ->" n.Parameter)
+            .AppendLine()
+            .IncrementIndent()
+            .AppendLine(sprintf "(fun %s ->" n.Parameter)
         |> ignore
 
         let lines =
             n.MethodCalls
             |> Seq.map (fun mc -> this.buildFragment (mc, false, n.Parameter, indent + 1))
 
-        builder |> incrementIndent |> ignore
+        builder.IncrementIndent() |> ignore
 
         for l in lines do
-            builder
-            |> appendMultipleLines (l + " |> ignore") false
+            builder.AppendLines(l + " |> ignore", false)
             |> ignore
 
-        builder |> append ")" |> unindent |> string
+        builder.Append(")") |> string
 
 
     member private this.unknownLiteral(value: obj) =
@@ -828,7 +794,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         member this.Literal(values: 'T [], vertical: bool) : string =
             let isObjType = typeof<'T> = typeof<obj>
-            this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType (IndentedStringBuilder())
+            this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType
 
         member this.Literal(t: Type, fullName: Nullable<bool>) =
             this.ReferenceFullName t (fullName.GetValueOrDefault())

@@ -5,7 +5,6 @@ open System.Collections.Generic
 
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Utilities
 
 open Microsoft.EntityFrameworkCore
@@ -563,9 +562,9 @@ type FSharpSnapshotGenerator
 
             if notNull tableName || notNull tableNameAnnotation then
                 sb
-                |> appendEmptyLine
-                |> append entityTypeBuilderName
-                |> append ".ToTable("
+                    .AppendLine("")
+                    .Append(entityTypeBuilderName)
+                    .Append(".ToTable(")
                 |> ignore
 
                 let schemaAnnotation =
@@ -576,13 +575,10 @@ type FSharpSnapshotGenerator
 
                 if isNull tableName
                    && (isNull schemaAnnotation || isNull schema) then
-                    sb
-                    |> append (sprintf "(string %s)" (code.UnknownLiteral tableName))
+                    sb.Append(sprintf "(string %s)" (code.UnknownLiteral tableName))
                     |> ignore
                 else
-                    sb
-                    |> append (code.UnknownLiteral tableName)
-                    |> ignore
+                    sb.Append(code.UnknownLiteral tableName) |> ignore
 
                 if notNull tableNameAnnotation then
                     annotations.Remove(tableNameAnnotation.Name)
@@ -598,26 +594,23 @@ type FSharpSnapshotGenerator
                            && (isExcludedAnnotation.Value :?> Nullable<bool>)
                                .GetValueOrDefault()
                               <> true) then
-                        sb
-                        |> append (sprintf ", (string %s)" (code.UnknownLiteral schema))
+                        sb.Append(sprintf ", (string %s)" (code.UnknownLiteral schema))
                         |> ignore
                     elif notNull schema then
-                        sb
-                        |> append (sprintf ", %s" (code.UnknownLiteral schema))
+                        sb.Append(sprintf ", %s" (code.UnknownLiteral schema))
                         |> ignore
 
                 if notNull isExcludedAnnotation then
                     if (isExcludedAnnotation.Value :?> Nullable<bool>)
                         .GetValueOrDefault() then
-                        sb
-                        |> append ", (fun t -> t.ExcludeFromMigrations())"
+                        sb.Append ", (fun t -> t.ExcludeFromMigrations())"
                         |> ignore
 
                     annotations.Remove(isExcludedAnnotation.Name)
                     |> ignore
 
 
-                sb |> append ") |> ignore" |> ignore
+                sb.Append ") |> ignore" |> ignore
 
         annotations.Remove(RelationalAnnotationNames.Schema)
         |> ignore
@@ -632,8 +625,8 @@ type FSharpSnapshotGenerator
 
             if notNull viewName then
                 sb
-                |> appendEmptyLine
-                |> append (sprintf "%s.ToView(%s" entityTypeBuilderName (code.UnknownLiteral viewName))
+                    .AppendLine("")
+                    .Append(sprintf "%s.ToView(%s" entityTypeBuilderName (code.UnknownLiteral viewName))
                 |> ignore
 
                 if notNull viewNameAnnotation then
@@ -647,14 +640,14 @@ type FSharpSnapshotGenerator
                     let viewSchemaAnnotationValue = viewSchemaAnnotation.Value :?> string
 
                     sb
-                    |> append ", "
-                    |> append (code.UnknownLiteral viewSchemaAnnotationValue)
+                        .Append(", ")
+                        .Append(code.UnknownLiteral viewSchemaAnnotationValue)
                     |> ignore
 
                     annotations.Remove(viewSchemaAnnotation.Name)
                     |> ignore
 
-                sb |> append ") |> ignore" |> ignore
+                sb.Append ") |> ignore" |> ignore
 
         annotations.Remove(RelationalAnnotationNames.ViewSchema)
         |> ignore
@@ -673,11 +666,11 @@ type FSharpSnapshotGenerator
             if notNull functionName
                || notNull functionNameAnnotation then
                 sb
-                |> appendEmptyLine
-                |> append entityTypeBuilderName
-                |> append ".ToFunction("
-                |> append (code.UnknownLiteral functionName)
-                |> append ") |> ignore"
+                    .AppendLine("")
+                    .Append(entityTypeBuilderName)
+                    .Append(".ToFunction(")
+                    .Append(code.UnknownLiteral functionName)
+                    .Append(") |> ignore")
                 |> ignore
 
                 if notNull functionNameAnnotation then
@@ -694,11 +687,11 @@ type FSharpSnapshotGenerator
 
             if notNull sqlQuery || notNull sqlQueryAnnotation then
                 sb
-                |> appendEmptyLine
-                |> append entityTypeBuilderName
-                |> append ".ToSqlQuery("
-                |> append (code.UnknownLiteral sqlQuery)
-                |> append ") |> ignore"
+                    .AppendLine("")
+                    .Append(entityTypeBuilderName)
+                    .Append(".ToSqlQuery(")
+                    .Append(code.UnknownLiteral sqlQuery)
+                    .Append(") |> ignore")
                 |> ignore
 
                 if notNull sqlQueryAnnotation then
@@ -708,9 +701,9 @@ type FSharpSnapshotGenerator
         if hasDiscriminator then
 
             sb
-            |> appendEmptyLine
-            |> append entityTypeBuilderName
-            |> append ".HasDiscriminator"
+                .AppendLine("")
+                .Append(entityTypeBuilderName)
+                .Append(".HasDiscriminator")
             |> ignore
 
             if annotationAndValueNotNull discriminatorPropertyAnnotation then
@@ -725,23 +718,23 @@ type FSharpSnapshotGenerator
                     | None -> discriminatorProperty.ClrType
 
                 sb
-                |> append "<"
-                |> append (code.Reference(propertyClrType))
-                |> append ">("
-                |> append (code.Literal(discriminatorPropertyAnnotation.Value :?> string))
-                |> append ")"
+                    .Append("<")
+                    .Append(code.Reference(propertyClrType))
+                    .Append(">(")
+                    .Append(code.Literal(discriminatorPropertyAnnotation.Value :?> string))
+                    .Append(")")
                 |> ignore
             else
-                sb |> append "()" |> ignore
+                sb.Append "()" |> ignore
 
             if annotationAndValueNotNull discriminatorMappingCompleteAnnotation then
                 let value =
                     discriminatorMappingCompleteAnnotation.Value
 
                 sb
-                |> append ".IsComplete("
-                |> append (code.UnknownLiteral(value))
-                |> append ")"
+                    .Append(".IsComplete(")
+                    .Append(code.UnknownLiteral(value))
+                    .Append(")")
                 |> ignore
 
             if annotationAndValueNotNull discriminatorValueAnnotation then
@@ -758,12 +751,12 @@ type FSharpSnapshotGenerator
                         defaultValue
 
                 sb
-                |> append ".HasValue("
-                |> append (code.UnknownLiteral(value))
-                |> append ")"
+                    .Append(".HasValue(")
+                    .Append(code.UnknownLiteral(value))
+                    .Append(")")
                 |> ignore
 
-            sb |> append " |> ignore" |> ignore
+            sb.Append " |> ignore" |> ignore
 
         stringBuilder {
             string sb
@@ -1073,4 +1066,4 @@ type FSharpSnapshotGenerator
                     this.generateEntityTypes builderName (model.GetEntityTypesInHierarchicalOrder())
                 }
 
-            sb |> append snapshotCode |> ignore
+            sb.Append(snapshotCode) |> ignore

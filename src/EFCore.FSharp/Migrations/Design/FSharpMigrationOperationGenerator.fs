@@ -6,7 +6,6 @@ open Microsoft.EntityFrameworkCore.Migrations.Operations
 open Microsoft.EntityFrameworkCore.Internal
 
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
-open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Migrations
@@ -861,7 +860,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generate (builderName: string) (operations: MigrationOperation seq) (sb: IndentedStringBuilder) =
 
         if operations |> Seq.isEmpty then
-            sb |> appendLine "()" |> ignore
+            sb.AppendLine "()" |> ignore
         else
 
             let genOp = generateOperation builderName
@@ -873,7 +872,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                         ""
                 }
 
-            sb.AppendLines(generatedOperations) |> ignore
+            sb.AppendLines generatedOperations |> ignore
 
     interface ICSharpMigrationOperationGenerator with
         member this.Generate(builderName, operations, builder) = generate builderName operations builder
