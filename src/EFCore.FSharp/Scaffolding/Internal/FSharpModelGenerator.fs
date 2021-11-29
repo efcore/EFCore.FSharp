@@ -6,8 +6,8 @@ open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Scaffolding
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
+open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 
 
@@ -53,24 +53,17 @@ type FSharpModelGenerator
                 defaultNamespaces
                 |> Seq.append (model |> getNamespacesFromModel)
 
-        let writeNamespaces ``namespace`` (sb: IndentedStringBuilder) =
+        stringBuilder {
+            $"namespace {``namespace``}"
+            ""
+            writeNamespaces namespaces
+            ""
+            $"module rec {moduleName} ="
+            ""
 
-            sb
-            |> append "namespace "
-            |> appendLine ``namespace``
-            |> appendEmptyLine
-            |> writeNamespaces namespaces
-            |> appendEmptyLine
-
-        let noEntities = model.GetEntityTypes() |> Seq.isEmpty
-
-        IndentedStringBuilder()
-        |> writeNamespaces ``namespace``
-        |> append "module rec "
-        |> append moduleName
-        |> appendLine " ="
-        |> appendEmptyLine
-        |> appendIfTrue noEntities "    ()"
+            if model.GetEntityTypes() |> Seq.isEmpty then
+                indent { "()" }
+        }
 
     override __.Language = "F#"
 
@@ -114,25 +107,30 @@ type FSharpModelGenerator
         let domainFile = ScaffoldedFile()
         domainFile.Path <- (domainFileName + fileExtension)
 
+        let createEntityCode (entityType: IEntityType) =
+            entityTypeGenerator.WriteCode(
+                entityType,
+                options.ModelNamespace,
+                options.UseDataAnnotations,
+                options.UseNullableReferenceTypes
+            )
+
         let domainFileBuilder =
             createDomainFileContent model options.UseDataAnnotations options.ModelNamespace domainFileName
 
-        model.GetEntityTypes()
-        |> Seq.filter (isManyToManyJoinEntityType >> not)
-        |> Seq.iter
-            (fun entityType ->
-                domainFileBuilder
-                |> append (
-                    entityTypeGenerator.WriteCode(
-                        entityType,
-                        options.ModelNamespace,
-                        options.UseDataAnnotations,
-                        options.UseNullableReferenceTypes
-                    )
-                )
-                |> ignore)
+        let entityCode =
+            model.GetEntityTypes()
+            |> Seq.filter (isManyToManyJoinEntityType >> not)
+            |> Seq.map createEntityCode
 
-        domainFile.Code <- (domainFileBuilder.ToString())
+        let domainFileCode =
+            stringBuilder {
+                domainFileBuilder
+
+                entityCode
+            }
+
+        domainFile.Code <- domainFileCode
 
         resultingFiles.AdditionalFiles.Add(domainFile)
 

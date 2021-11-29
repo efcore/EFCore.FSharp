@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.FSharp.Test.TestUtilities
+namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 
 open Microsoft.EntityFrameworkCore.TestUtilities
 open Microsoft.EntityFrameworkCore.Infrastructure

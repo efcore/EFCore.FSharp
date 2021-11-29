@@ -11,7 +11,6 @@ open Microsoft.EntityFrameworkCore.Metadata.Internal
 open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
-open EntityFrameworkCore.FSharp.IndentedStringBuilderUtilities
 open EntityFrameworkCore.FSharp.Internal
 
 open System.ComponentModel.DataAnnotations
@@ -54,14 +53,15 @@ type FSharpEntityTypeGenerator
         }
         |> dict
 
-    let writeProperty name typeName func sb =
-        sb
-        |> appendLine (sprintf "[<DefaultValue>] val mutable private _%s : %s" name typeName)
-        |> appendEmptyLine
-        |> func
-        |> appendLine (sprintf "member this.%s with get() = this._%s and set v = this._%s <- v" name name name)
-        |> appendEmptyLine
-        |> ignore
+    let writeProperty (name: string) (typeName: string) (annontationText: string option) =
+
+        stringBuilder {
+            $"[<DefaultValue>] val mutable private _{name} : {typeName}"
+            ""
+            annontationText
+            $"member this.{name} with get() = this._{name} and set v = this._{name} <- v"
+            ""
+        }
 
     let rec getTypeName scaffoldNullableColumnsAs (t: Type) =
 
@@ -99,7 +99,7 @@ type FSharpEntityTypeGenerator
             | true, value -> value
             | _ -> t.Name
 
-    let generateRequiredAttribute (p: IProperty) sb =
+    let generateRequiredAttribute (p: IProperty) =
 
         let isNullableOrOptionType (t: Type) =
             let typeInfo = t.GetTypeInfo()
@@ -112,12 +112,12 @@ type FSharpEntityTypeGenerator
         if (not p.IsNullable)
            && (p.ClrType |> isNullableOrOptionType)
            && (p.IsPrimaryKey() |> not) then
-            sb
-            |> appendLine (nameof RequiredAttribute |> createAttributeQuick)
+            (nameof RequiredAttribute |> createAttributeQuick)
+            |> Some
         else
-            sb
+            None
 
-    let generateColumnAttribute (p: IProperty) sb =
+    let generateColumnAttribute (p: IProperty) =
         let columnName = p.GetColumnBaseName()
         let columnType = getConfiguredColumnType p
 
@@ -145,13 +145,13 @@ type FSharpEntityTypeGenerator
             | Some t -> (sprintf "TypeName = %s" t) |> a.AddParameter
             | None -> ()
 
-            sb |> appendLine (a |> string)
+            a |> string |> Some
 
         else
-            sb
+            None
 
 
-    let generateMaxLengthAttribute (p: IProperty) sb =
+    let generateMaxLengthAttribute (p: IProperty) =
 
         let ml = p.GetMaxLength()
 
@@ -165,25 +165,25 @@ type FSharpEntityTypeGenerator
             let a = AttributeWriter(attrName)
             a.AddParameter(code.Literal ml.Value)
 
-            sb |> append (string a)
+            a |> string |> Some
         else
-            sb
+            None
 
-    let generateKeyAttribute (property: IProperty) sb =
+    let generateKeyAttribute (property: IProperty) =
         if notNull (property.FindContainingPrimaryKey()) then
-            sb
-            |> appendLine (nameof KeyAttribute |> createAttributeQuick)
+            (nameof KeyAttribute |> createAttributeQuick)
+            |> Some
         else
-            sb
+            None
 
-    let generateKeylessAttribute (entityType: IEntityType) sb =
+    let generateKeylessAttribute (entityType: IEntityType) =
         if isNull (entityType.FindPrimaryKey()) then
-            sb
-            |> appendLine (nameof KeylessAttribute |> createAttributeQuick)
+            (nameof KeylessAttribute |> createAttributeQuick)
+            |> Some
         else
-            sb
+            None
 
-    let generateTableAttribute (entityType: IEntityType) sb =
+    let generateTableAttribute (entityType: IEntityType) =
 
         let tableName = entityType.GetTableName()
         let schema = entityType.GetSchema()
@@ -208,11 +208,11 @@ type FSharpEntityTypeGenerator
             if schemaParameterNeeded then
                 tableAttribute.AddParameter($"Schema = {code.Literal(schema)}")
 
-            sb |> appendLine (string tableAttribute)
+            (string tableAttribute) |> Some
         else
-            sb
+            None
 
-    let generateIndexAttributes (entityType: IEntityType) sb =
+    let generateIndexAttributes (entityType: IEntityType) =
 
         let indexes =
             entityType.GetIndexes()
@@ -221,32 +221,41 @@ type FSharpEntityTypeGenerator
                     ConfigurationSource.Convention
                     <> ((i :?> IConventionIndex).GetConfigurationSource()))
 
-        indexes
-        |> Seq.iter
-            (fun index ->
-                let annotations =
-                    annotationCodeGenerator.FilterIgnoredAnnotations(index.GetAnnotations())
-                    |> annotationsToDictionary
+        let attributes =
+            indexes
+            |> Seq.map
+                (fun index ->
+                    let annotations =
+                        annotationCodeGenerator.FilterIgnoredAnnotations(index.GetAnnotations())
+                        |> annotationsToDictionary
 
-                annotationCodeGenerator.RemoveAnnotationsHandledByConventions(index, annotations)
+                    annotationCodeGenerator.RemoveAnnotationsHandledByConventions(index, annotations)
 
-                if annotations.Count = 0 then
-                    let indexAttribute = AttributeWriter(nameof IndexAttribute)
+                    if annotations.Count = 0 then
+                        let indexAttribute = AttributeWriter(nameof IndexAttribute)
 
-                    index.Properties
-                    |> Seq.iter (fun p -> indexAttribute.AddParameter $"nameof({p.Name})")
+                        index.Properties
+                        |> Seq.iter (fun p -> indexAttribute.AddParameter $"nameof({p.Name})")
 
-                    if notNull index.Name then
-                        indexAttribute.AddParameter $"Name = {code.Literal(index.Name)}"
+                        if notNull index.Name then
+                            indexAttribute.AddParameter $"Name = {code.Literal(index.Name)}"
 
-                    if index.IsUnique then
-                        indexAttribute.AddParameter $"IsUnique = {code.Literal(index.IsUnique)}"
+                        if index.IsUnique then
+                            indexAttribute.AddParameter $"IsUnique = {code.Literal(index.IsUnique)}"
 
-                    sb |> appendLine (string indexAttribute) |> ignore)
+                        string indexAttribute |> Some
 
-        sb
+                    else
+                        None)
 
-    let generateForeignKeyAttribute (navigation: INavigation) sb =
+        let output = stringBuilder { attributes }
+
+        if output.Length > 0 then
+            Some output
+        else
+            None
+
+    let generateForeignKeyAttribute (navigation: INavigation) =
 
         if navigation.IsOnDependent
            && navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
@@ -263,11 +272,11 @@ type FSharpEntityTypeGenerator
             else
                 foreignKeyAttribute.AddParameter(code.Literal navigation.ForeignKey.Properties.[0].Name)
 
-            sb |> appendLine (string foreignKeyAttribute)
+            (string foreignKeyAttribute) |> Some
         else
-            sb
+            None
 
-    let generateInversePropertyAttribute (navigation: INavigation) sb =
+    let generateInversePropertyAttribute (navigation: INavigation) =
 
         if navigation.ForeignKey.PrincipalKey.IsPrimaryKey()
            && notNull navigation.Inverse then
@@ -288,99 +297,104 @@ type FSharpEntityTypeGenerator
 
             inversePropertyAttribute.AddParameter param
 
-            sb |> appendLine (string inversePropertyAttribute)
+            (string inversePropertyAttribute) |> Some
         else
-            sb
+            None
 
-    let generateEntityTypeDataAnnotations entityType sb =
-        sb
-        |> generateKeylessAttribute entityType
-        |> generateTableAttribute entityType
-        |> generateIndexAttributes entityType
+    let generateEntityTypeDataAnnotations entityType =
+        let annotations =
+            stringBuilder {
+                generateKeylessAttribute entityType
+                generateTableAttribute entityType
+                generateIndexAttributes entityType
+            }
+
+        if annotations.Length > 0 then
+            Some annotations
+        else
+            None
 
 
-    let generateConstructor (entityType: IEntityType) sb =
+    let generateConstructor (entityType: IEntityType) =
 
         let collectionNavigations =
             entityType.GetNavigations()
             |> Seq.filter (fun n -> n.IsCollection)
 
         if collectionNavigations |> Seq.isEmpty then
-            sb
+            None
         else
-            sb
-            |> appendLine "do"
-            |> indent
-            |> appendLines
-                (collectionNavigations
-                 |> Seq.map
-                     (fun c ->
-                         sprintf
-                             "this.%s <- HashSet<%s>() :> ICollection<%s>"
-                             c.Name
-                             c.TargetEntityType.Name
-                             c.TargetEntityType.Name))
-                false
-            |> appendEmptyLine
-            |> unindent
+            stringBuilder {
+                "do"
+
+                indent {
+                    for c in collectionNavigations do
+                        $"this.{c.Name} <- HashSet<{c.TargetEntityType.Name}>() :> ICollection<{c.TargetEntityType.Name}>"
+
+                    ""
+                }
+            }
+            |> Some
 
 
-    let generatePropertyDataAnnotations (p: IProperty) sb =
-
-        sb
-        |> generateKeyAttribute p
-        |> generateRequiredAttribute p
-        |> generateColumnAttribute p
-        |> generateMaxLengthAttribute p
-        |> ignore
+    let generatePropertyDataAnnotations (p: IProperty) =
 
         let annotations =
-            annotationCodeGenerator.FilterIgnoredAnnotations(p.GetAnnotations())
-            |> annotationsToDictionary
+            stringBuilder {
+                generateKeyAttribute p
+                generateRequiredAttribute p
+                generateColumnAttribute p
+                generateMaxLengthAttribute p
 
-        annotationCodeGenerator.RemoveAnnotationsHandledByConventions(p, annotations)
+                let annotations =
+                    annotationCodeGenerator.FilterIgnoredAnnotations(p.GetAnnotations())
+                    |> annotationsToDictionary
 
-        annotationCodeGenerator.GenerateDataAnnotationAttributes(p, annotations)
-        |> Seq.iter
-            (fun a ->
-                let attributeWriter = AttributeWriter a.Type.Name
+                annotationCodeGenerator.RemoveAnnotationsHandledByConventions(p, annotations)
 
-                a.Arguments
-                |> Seq.iter (fun arg -> attributeWriter.AddParameter(code.UnknownLiteral arg))
+                for a in annotationCodeGenerator.GenerateDataAnnotationAttributes(p, annotations) do
+                    let attributeWriter = AttributeWriter a.Type.Name
 
-                sb |> appendLine (string a) |> ignore)
+                    a.Arguments
+                    |> Seq.iter (fun arg -> attributeWriter.AddParameter(code.UnknownLiteral arg))
 
-        sb
+                    string a
+            }
 
-    let generateNavigationDataAnnotations (navigation: INavigation) sb =
+        if annotations.Length > 0 then
+            Some annotations
+        else
+            None
 
-        sb
-        |> generateForeignKeyAttribute navigation
-        |> generateInversePropertyAttribute navigation
+    let generateNavigationDataAnnotations (navigation: INavigation) =
 
-    let generateProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations sb =
+        stringBuilder {
+            generateForeignKeyAttribute navigation
+            generateInversePropertyAttribute navigation
+        }
+
+    let generateProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations =
 
         let props =
             entityType.GetProperties()
             |> Seq.sortBy (fun p -> p.GetColumnOrder().GetValueOrDefault(-1))
 
-        props
-        |> Seq.iter
-            (fun p ->
-                let func =
+        stringBuilder {
+
+            for p in props do
+                let annotationText =
                     if useDataAnnotations then
                         generatePropertyDataAnnotations p
                     else
-                        (fun s -> s)
+                        None
 
                 let typeName =
                     getTypeName scaffoldNullableColumnsAs p.ClrType
 
-                sb |> writeProperty p.Name typeName func)
+                writeProperty p.Name typeName annotationText
+        }
 
-        sb
-
-    let generateSkipForeignKeyAttribute (navigation: ISkipNavigation) sb =
+    let generateSkipForeignKeyAttribute (navigation: ISkipNavigation) =
 
         if navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
             let foreignKeyAttribute =
@@ -392,11 +406,11 @@ type FSharpEntityTypeGenerator
                 |> join ","
 
             foreignKeyAttribute.AddParameter(code.Literal props)
-            sb |> appendLine (string foreignKeyAttribute)
+            (string foreignKeyAttribute) |> Some
         else
-            sb
+            None
 
-    let generateSkipInversePropertyAttribute (navigation: ISkipNavigation) sb =
+    let generateSkipInversePropertyAttribute (navigation: ISkipNavigation) =
 
         if navigation.ForeignKey.PrincipalKey.IsPrimaryKey() then
             let inverseNavigation = navigation.Inverse
@@ -416,34 +430,34 @@ type FSharpEntityTypeGenerator
                         $"nameof ({inverseNavigation.DeclaringEntityType.Name}.{inverseNavigation.Name})"
                     )
 
-                sb |> appendLine (string inversePropertyAttribute)
+                (string inversePropertyAttribute) |> Some
             else
-                sb
+                None
         else
-            sb
+            None
 
-    let generateSkipNavigationDataAnnotations (navigation: ISkipNavigation) sb =
+    let generateSkipNavigationDataAnnotations (navigation: ISkipNavigation) =
 
-        sb
-        |> generateSkipForeignKeyAttribute navigation
-        |> generateSkipInversePropertyAttribute navigation
+        stringBuilder {
+            generateSkipForeignKeyAttribute navigation
+            generateSkipInversePropertyAttribute navigation
+        }
 
-    let generateSkipNavigationProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations sb =
+    let generateSkipNavigationProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations =
 
         let skipNavigations = entityType.GetSkipNavigations()
 
         if skipNavigations |> Seq.isEmpty |> not then
-            sb |> appendEmptyLine |> ignore
 
-            skipNavigations
-            |> Seq.iter
-                (fun p ->
+            stringBuilder {
+                ""
 
+                for p in skipNavigations do
                     let func =
                         if useDataAnnotations then
-                            generateSkipNavigationDataAnnotations p
+                            generateSkipNavigationDataAnnotations p |> Some
                         else
-                            (fun s -> s)
+                            None
 
                     let typeName = p.TargetEntityType.Name
 
@@ -453,127 +467,108 @@ type FSharpEntityTypeGenerator
                         else
                             typeName
 
-                    sb |> writeProperty p.Name navigationType func)
+                    writeProperty p.Name navigationType func
+            }
+            |> Some
+        else
+            None
 
-        sb
 
-
-    let generateNavigationProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations sb =
+    let generateNavigationProperties (entityType: IEntityType) scaffoldNullableColumnsAs useDataAnnotations =
 
         let sortedNavigations =
             entityType.GetNavigations()
             |> Seq.sortBy (fun n -> ((if n.IsOnDependent then 0 else 1), (if n.IsCollection then 1 else 0)))
 
         if not (sortedNavigations |> Seq.isEmpty) then
-            sb |> appendEmptyLine |> ignore
 
-        sortedNavigations
-        |> Seq.iter
-            (fun p ->
+            stringBuilder {
+                ""
 
-                let func =
-                    if useDataAnnotations then
-                        generateNavigationDataAnnotations p
-                    else
-                        (fun s -> s)
+                for p in sortedNavigations do
+                    let func =
+                        if useDataAnnotations then
+                            generateNavigationDataAnnotations p |> Some
+                        else
+                            None
 
-                let typeName = p.TargetEntityType.Name
+                    let typeName = p.TargetEntityType.Name
 
-                let navigationType =
-                    if p.IsCollection then
-                        $"ICollection<{typeName}>"
-                    else
-                        typeName
+                    let navigationType =
+                        if p.IsCollection then
+                            $"ICollection<{typeName}>"
+                        else
+                            typeName
 
-                sb |> writeProperty p.Name navigationType func)
+                    writeProperty p.Name navigationType func
+            }
+            |> Some
+        else
+            None
 
-        sb
+    let generateClass (entityType: IEntityType) useDataAnnotations scaffoldNullableColumnsAs =
 
-    let generateClass (entityType: IEntityType) useDataAnnotations scaffoldNullableColumnsAs sb =
+        indent {
+            if useDataAnnotations then
+                generateEntityTypeDataAnnotations entityType
 
-        sb
-        |> if useDataAnnotations then
-               generateEntityTypeDataAnnotations entityType
-           else
-               id
-        |> appendLine (sprintf "type %s() as this =" entityType.Name)
-        |> indent
-        |> generateConstructor entityType
-        |> generateProperties entityType scaffoldNullableColumnsAs useDataAnnotations
-        |> generateNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
-        |> generateSkipNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
-        |> unindent
+            $"type {entityType.Name}() as this ="
 
-    let generateRecordTypeEntry useDataAnnotations scaffoldNullableColumnsAs (p: IProperty) sb =
+            indent {
+                generateConstructor entityType
+                generateProperties entityType scaffoldNullableColumnsAs useDataAnnotations
+                generateNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
+                generateSkipNavigationProperties entityType scaffoldNullableColumnsAs useDataAnnotations
+            }
+        }
 
-        if useDataAnnotations then
-            sb |> generatePropertyDataAnnotations p |> ignore
+    let generateRecordTypeEntry useDataAnnotations scaffoldNullableColumnsAs (p: IProperty) =
 
-        let typeName =
-            getTypeName scaffoldNullableColumnsAs p.ClrType
+        stringBuilder {
+            if useDataAnnotations then
+                generatePropertyDataAnnotations p
 
-        sb
-        |> appendLine (sprintf "%s: %s" p.Name typeName)
-        |> ignore
+            let typeName =
+                getTypeName scaffoldNullableColumnsAs p.ClrType
 
-        ()
+            $"{p.Name}: {typeName}"
+        }
 
-    let writeRecordProperties (properties: IProperty seq) (useDataAnnotations: bool) scaffoldNullableColumnsAs sb =
-        properties
-        |> Seq.iter (fun p -> generateRecordTypeEntry useDataAnnotations scaffoldNullableColumnsAs p sb)
+    let generateNavigateTypeEntry (n: INavigation) (useDataAnnotations: bool) =
 
-        sb
+        stringBuilder {
+            if useDataAnnotations then
+                generateNavigationDataAnnotations n
 
-    let generateNavigateTypeEntry (n: INavigation) (useDataAnnotations: bool) sb =
-        if useDataAnnotations then
-            sb
-            |> generateNavigationDataAnnotations n
-            |> ignore
+            let referencedTypeName = n.TargetEntityType.Name
 
-        let referencedTypeName = n.TargetEntityType.Name
+            let navigationType =
+                if n.IsCollection then
+                    sprintf "%s seq" referencedTypeName
+                else
+                    referencedTypeName
 
-        let navigationType =
-            if n.IsCollection then
-                sprintf "%s seq" referencedTypeName
-            else
-                referencedTypeName
+            $"{n.Name}: {navigationType}"
+        }
 
-        sb
-        |> appendLine (sprintf "%s: %s" n.Name navigationType)
-        |> ignore
+    let generateSkipNavigateTypeEntry (n: ISkipNavigation) (useDataAnnotations: bool) =
 
-    let generateSkipNavigateTypeEntry (n: ISkipNavigation) (useDataAnnotations: bool) sb =
-        if useDataAnnotations then
-            sb
-            |> generateSkipNavigationDataAnnotations n
-            |> ignore
+        stringBuilder {
+            if useDataAnnotations then
+                generateSkipNavigationDataAnnotations n
 
-        let referencedTypeName = n.TargetEntityType.Name
+            let referencedTypeName = n.TargetEntityType.Name
 
-        let navigationType =
-            if n.IsCollection then
-                sprintf "%s seq" referencedTypeName
-            else
-                referencedTypeName
+            let navigationType =
+                if n.IsCollection then
+                    sprintf "%s seq" referencedTypeName
+                else
+                    referencedTypeName
 
-        sb
-        |> appendLine (sprintf "%s: %s" n.Name navigationType)
-        |> ignore
+            $"{n.Name}: {navigationType}"
+        }
 
-    let writeNavigationProperties (nav: INavigation seq) (useDataAnnotations: bool) sb =
-        nav
-        |> Seq.iter (fun n -> generateNavigateTypeEntry n useDataAnnotations sb)
-
-        sb
-
-    let writeSkipNavigationProperties (nav: ISkipNavigation seq) (useDataAnnotations: bool) sb =
-        nav
-        |> Seq.iter (fun n -> generateSkipNavigateTypeEntry n useDataAnnotations sb)
-
-        sb
-
-    let generateRecord (entityType: IEntityType) (useDataAnnotations: bool) scaffoldNullableColumnsAs sb =
-        let properties = entityType.GetProperties()
+    let generateRecord (entityType: IEntityType) (useDataAnnotations: bool) scaffoldNullableColumnsAs =
 
         let navProperties =
             entityType.GetNavigations()
@@ -581,29 +576,36 @@ type FSharpEntityTypeGenerator
 
         let skipNavigations = entityType.GetSkipNavigations()
 
-        sb
-        |> appendLine ("CLIMutable" |> createAttributeQuick)
-        |> appendLine (sprintf "type %s = {" entityType.Name)
-        |> indent
-        |> writeRecordProperties properties useDataAnnotations scaffoldNullableColumnsAs
-        |> writeNavigationProperties navProperties useDataAnnotations
-        |> writeSkipNavigationProperties skipNavigations useDataAnnotations
-        |> unindent
-        |> appendLine "}"
-        |> appendEmptyLine
+        indent {
+            "[<CLIMutable>]"
+            $"type {entityType.Name} = {{"
 
+            indent {
+                // Properties
+                for p in entityType.GetProperties() do
+                    generateRecordTypeEntry useDataAnnotations scaffoldNullableColumnsAs p
 
-    let writeCode (entityType: IEntityType) (useDataAnnotation: bool) scaffoldTypesAs scaffoldNullableColumnsAs sb =
+                // Navigation Properties
+                for n in navProperties do
+                    generateNavigateTypeEntry n useDataAnnotations
+
+                // SkipNavigation Properties
+                for n in skipNavigations do
+                    generateSkipNavigateTypeEntry n useDataAnnotations
+            }
+
+            "}"
+            ""
+        }
+
+    let writeCode (entityType: IEntityType) (useDataAnnotation: bool) scaffoldTypesAs scaffoldNullableColumnsAs =
 
         let generate =
             match scaffoldTypesAs with
             | ClassType -> generateClass
             | RecordType -> generateRecord
 
-        sb
-        |> indent
-        |> generate entityType useDataAnnotation scaffoldNullableColumnsAs
-        |> string
+        generate entityType useDataAnnotation scaffoldNullableColumnsAs
 
     interface ICSharpEntityTypeGenerator with
         member this.WriteCode(entityType, ``namespace``, useDataAnnotations, useNullableReferenceTypes) =
@@ -619,4 +621,4 @@ type FSharpEntityTypeGenerator
                 else
                     OptionTypes
 
-            writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs (IndentedStringBuilder())
+            writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs

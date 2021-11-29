@@ -21,6 +21,7 @@
         <Compile Include="TestUtilities\FakeProvider\FakeDbConnection.fs" />
         <Compile Include="TestUtilities\BuildReference.fs" />
         <Compile Include="TestUtilities\RelationalTestHelpers.fs" />
+        <Compile Include="Utilities\StringBufferTests.fs" />
         <Compile Include="Internal\FSharpUtilitiesTest.fs" />
         <Compile Include="Migrations\Design\FSharpMigrationsGeneratorTest.fs" />
         <Compile Include="Migrations\Design\FSharpMigrationsScaffolderTest.fs" />
