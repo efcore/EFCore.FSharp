@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.4] - 2021-11-29
+
+### Fixed
+- Fix compilation error in generated migrations - https://github.com/efcore/EFCore.FSharp/pull/123
+
+### Added
+- Support for Check Constraints in Migrations - https://github.com/efcore/EFCore.FSharp/pull/123
+
 ## [6.0.3] - 2021-11-21
 
 ### Fixed
@@ -39,7 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DbSet/IQueryable helpers to deal with EF Core async and nullable methods - [@lucasteles](https://github.com/lucasteles) - https://github.com/efcore/EFCore.FSharp/pull/94
 - Automatic registration of DesignTimeServices - https://github.com/efcore/EFCore.FSharp/pull/86
 - DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.3...HEAD
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.4...HEAD
+[6.0.4]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.3...v6.0.4
 [6.0.3]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.2...v6.0.3
 [6.0.2]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.1...v6.0.2
 [6.0.1]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.0...v6.0.1
