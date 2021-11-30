@@ -98,31 +98,30 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 indent { tail }
             }
 
-    let oldAnnotations includeIgnore (annotations: Annotation seq) =
+    let oldAnnotations (annotations: Annotation seq) =
         let lines =
             annotations
             |> Seq.map (fun a -> $".OldAnnotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})")
 
         if lines |> Seq.isEmpty then
-            None
+            " |> ignore"
+
+        elif lines |> Seq.length = 1 then
+            let line = lines |> Seq.head
+            $"{line} |> ignore"
+
         else
             let last = lines |> Seq.last
 
             let tail =
                 lines
                 |> Seq.tail
-                |> Seq.map
-                    (fun l ->
-                        if includeIgnore && l = last then
-                            l + " |> ignore"
-                        else
-                            l)
+                |> Seq.map (fun l -> if l = last then l + " |> ignore" else l)
 
             stringBuilder {
                 lines |> Seq.head
                 indent { tail }
             }
-            |> Some
 
 
     let generateAddColumnOperation (op: AddColumnOperation) =
@@ -134,7 +133,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeName op.Name
                 writeSchema op.Schema
                 writeParameter "table" op.Table
-                writeOptionalParameter "type" op.ColumnType
+                writeParameterIfTrue (op.ColumnType |> notNull) "type" op.ColumnType
                 writeNullableParameterIfValue "unicode" op.IsUnicode
                 writeNullableParameterIfValue "maxLength" op.MaxLength
                 writeNullableParameterIfValue "fixedLength" op.IsFixedLength
@@ -211,7 +210,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeName op.Name
                 writeSchema op.Schema
                 writeParameter "table" op.Table
-                writeOptionalParameter "type" op.ColumnType
+                writeParameterIfTrue (op.ColumnType |> notNull) "type" op.ColumnType
                 writeNullableParameterIfValue "unicode" op.IsUnicode
                 writeNullableParameterIfValue "maxLength" op.MaxLength
                 writeParameterIfTrue op.IsRowVersion "rowVersion" true
@@ -223,7 +222,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 if notNull op.OldColumn.ClrType then
                     $",oldClrType = typedefof<%s{code.Reference op.OldColumn.ClrType}>"
 
-                writeOptionalParameter "oldType" op.OldColumn.ColumnType
+                writeParameterIfTrue (op.OldColumn.ColumnType |> notNull) "oldType" op.OldColumn.ColumnType
                 writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
                 writeNullableParameterIfValue "oldMaxLength" op.OldColumn.MaxLength
                 writeParameterIfTrue op.OldColumn.IsRowVersion "oldRowVersion" true
@@ -239,7 +238,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldColumn.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
-                oldAnnotations true (op.OldColumn.GetAnnotations())
+                if not hasNoOldAnnotations then
+                    oldAnnotations (op.OldColumn.GetAnnotations())
             }
         }
 
@@ -254,7 +254,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldDatabase.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
-                oldAnnotations true (op.OldDatabase.GetAnnotations())
+                if not hasNoOldAnnotations then
+                    oldAnnotations (op.OldDatabase.GetAnnotations())
             }
         }
 
@@ -278,7 +279,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldSequence.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
-                oldAnnotations true (op.OldSequence.GetAnnotations())
+                if not hasNoOldAnnotations then
+                    oldAnnotations (op.OldSequence.GetAnnotations())
             }
         }
 
@@ -294,7 +296,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldTable.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
-                oldAnnotations true (op.OldTable.GetAnnotations())
+                if not hasNoOldAnnotations then
+                    oldAnnotations (op.OldTable.GetAnnotations())
             }
         }
 
