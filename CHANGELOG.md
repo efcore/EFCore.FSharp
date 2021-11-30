@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.5] - 2021-11-30
+
+### Fixed
+- AlterColumn operations no longer emit compiler warnings - https://github.com/efcore/EFCore.FSharp/pull/125
+
+### Known Issues
+- AlterColumn operations are being created in what should be empty migrations. No effect on functionality but shouldn't be happening - associated issue - https://github.com/efcore/EFCore.FSharp/issues/126
+
 ## [6.0.4] - 2021-11-29
 
 ### Fixed
@@ -47,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DbSet/IQueryable helpers to deal with EF Core async and nullable methods - [@lucasteles](https://github.com/lucasteles) - https://github.com/efcore/EFCore.FSharp/pull/94
 - Automatic registration of DesignTimeServices - https://github.com/efcore/EFCore.FSharp/pull/86
 - DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.4...HEAD
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.5...HEAD
+[6.0.5]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.4...v6.0.5
 [6.0.4]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.3...v6.0.4
 [6.0.3]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.2...v6.0.3
 [6.0.2]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.1...v6.0.2
