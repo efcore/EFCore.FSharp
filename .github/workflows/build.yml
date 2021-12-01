@@ -1,9 +1,10 @@
-name: Build master
+name: Build
 
 on: [push, pull_request]
 
 env:
   DISABLE_COVERAGE: 0
+  DOTNET_NOLOGO: 1
 
 jobs:
   build:
@@ -15,8 +16,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     # Not specifying a version will attempt to install via global.json
-    - name: Use .NET Core global.json
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET Core SDK
+      uses: actions/setup-dotnet@v1.9.0
+      with:
+        dotnet-version: '6.x'
 
     - name: Build
       if: runner.os != 'Windows'
@@ -25,12 +28,12 @@ jobs:
         ./build.sh
       env:
         # Work around https://github.com/actions/setup-dotnet/issues/29
-        DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
+        #DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
         CI: true
     - name: Build
       if: runner.os == 'Windows'
       run: ./build.cmd
       env:
         # Work around https://github.com/actions/setup-dotnet/issues/29
-        DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
+        #DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
         CI: true
