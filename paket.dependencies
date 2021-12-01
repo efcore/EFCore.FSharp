@@ -18,7 +18,7 @@ group Tests
     nuget Microsoft.SourceLink.GitHub 1.0.0 copy_local: true
     nuget Expecto 9.0.2
     nuget YoloDev.Expecto.TestSdk 0.12.10
-    nuget Microsoft.NET.Test.Sdk 16.8.0
+    nuget Microsoft.NET.Test.Sdk 17.0.0
     nuget altcover ~> 8.2.828
 
     nuget Microsoft.EntityFrameworkCore.Design ~> 6.0.0
