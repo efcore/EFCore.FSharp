@@ -30,8 +30,9 @@ type ExtensionInfo(extension) =
 
     override _.LogFragment = "using FSharp types"
 
-    override _.ShouldUseSameServiceProvider other = other.IsDatabaseProvider
+    override _.ShouldUseSameServiceProvider other = true
 
+[<AllowNullLiteral>]
 type FSharpTypeOptionsExtension() =
     interface IDbContextOptionsExtension with
         member this.ApplyServices(services) =

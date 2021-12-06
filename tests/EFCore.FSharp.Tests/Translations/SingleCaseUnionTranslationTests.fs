@@ -29,6 +29,7 @@ type MyContext() =
 
     override _.OnConfiguring(options: DbContextOptionsBuilder) : unit =
         options
+            .EnableServiceProviderCaching(false)
             .UseInMemoryDatabase("MyContext")
             .UseFSharpTypes()
         |> ignore
