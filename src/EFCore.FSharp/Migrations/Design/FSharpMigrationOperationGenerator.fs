@@ -238,6 +238,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldColumn.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
+
                 if not hasNoOldAnnotations then
                     oldAnnotations (op.OldColumn.GetAnnotations())
             }
@@ -254,6 +255,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldDatabase.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
+
                 if not hasNoOldAnnotations then
                     oldAnnotations (op.OldDatabase.GetAnnotations())
             }
@@ -279,6 +281,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldSequence.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
+
                 if not hasNoOldAnnotations then
                     oldAnnotations (op.OldSequence.GetAnnotations())
             }
@@ -296,6 +299,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                     op.OldTable.GetAnnotations() |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
+
                 if not hasNoOldAnnotations then
                     oldAnnotations (op.OldTable.GetAnnotations())
             }
