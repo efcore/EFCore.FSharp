@@ -7,30 +7,48 @@ open System.Threading.Tasks
 
 let private awaitValueTask (x: ValueTask<_>) = Async.AwaitTask(x.AsTask())
 
-let findEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) = ctx.Set<'a>().Find(key)
+type KeyType =
+    | Composite of obj []
+    | Single of obj
+
+let private transform (a: obj) =
+
+    match a with
+    | :? seq<obj> as s ->
+        Array.ofSeq s
+        |> Array.map (fun i -> box i)
+        |> Composite
+    | _ -> Single a
+
+let findEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+
+    match transform key with
+    | Composite k -> ctx.Set<'a>().Find(k)
+    | Single k -> ctx.Set<'a>().Find(k)
 
 let tryFindEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
     let result = findEntity<'a> ctx key
 
-    if isNull (box result) then
-        None
-    else
-        Some result
+    Option.ofObj (box result)
 
 let findEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
-    async { return! ctx.Set<'a>().FindAsync(key) |> awaitValueTask }
+    let f =
+        match transform key with
+        | Composite k -> ctx.Set<'a>().FindAsync(k)
+        | Single k -> ctx.Set<'a>().FindAsync(k)
 
-let findEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) = ctx.Set<'a>().FindAsync(key)
+    async { return! awaitValueTask f }
+
+let findEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+    match transform key with
+    | Composite k -> ctx.Set<'a>().FindAsync(k)
+    | Single k -> ctx.Set<'a>().FindAsync(k)
 
 let tryFindEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
     async {
         let! result = findEntityAsync<'a> ctx key
 
-        return
-            if isNull (box result) then
-                None
-            else
-                Some result
+        return Option.ofObj (box result)
     }
 
 let tryFindEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
@@ -38,11 +56,7 @@ let tryFindEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
 
     result
         .AsTask()
-        .ContinueWith(fun (t: Task<'a>) ->
-            if isNull (box t.Result) then
-                None
-            else
-                Some t.Result)
+        .ContinueWith(fun (t: Task<'a>) -> Option.ofObj (box t.Result))
 
 
 /// Helper method for saving an updated record type
@@ -55,14 +69,14 @@ let updateEntity (ctx: DbContext) (key: 'a -> 'b) (entity: 'a when 'a: not struc
 
     entity
 
-let updateEntityAsync (ctx: DbContext) (key: 'a -> obj) (entity: 'a when 'a: not struct) =
+let updateEntityAsync (ctx: DbContext) (key: 'a -> 'b) (entity: 'a when 'a: not struct) =
     async { return updateEntity ctx key entity }
 
-let updateEntityRange (ctx: DbContext) (key: 'a -> obj) (entities: 'a seq when 'a: not struct) =
+let updateEntityRange (ctx: DbContext) (key: 'a -> 'b) (entities: 'a seq when 'a: not struct) =
     entities
     |> Seq.map (fun e -> updateEntity ctx key e)
 
-let updateEntityRangeAsync (ctx: DbContext) (key: 'a -> obj) (entities: 'a seq when 'a: not struct) =
+let updateEntityRangeAsync (ctx: DbContext) (key: 'a -> 'b) (entities: 'a seq when 'a: not struct) =
     async { return updateEntityRange ctx key entities }
 
 let saveChanges' (ctx: #DbContext) = ctx.SaveChanges()

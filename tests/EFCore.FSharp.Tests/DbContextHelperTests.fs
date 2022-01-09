@@ -1,6 +1,5 @@
 module EntityFrameworkCore.FSharp.Test.DbContextHelperTests
 
-
 open System
 open System.ComponentModel.DataAnnotations
 open EntityFrameworkCore.FSharp.DbContextHelpers
@@ -14,18 +13,34 @@ type Blog =
       Title: string
       Content: string }
 
+[<CLIMutable>]
+type CompositeType = { Key1: int; Key2: int; Value: string }
+
 type MyContext() =
     inherit DbContext()
 
     [<DefaultValue>]
     val mutable private _blogs: DbSet<Blog>
 
+    [<DefaultValue>]
+    val mutable private _composite: DbSet<CompositeType>
+
     member this.Blogs
         with get () = this._blogs
         and set v = this._blogs <- v
 
+    member this.Composite
+        with get () = this._composite
+        and set v = this._composite <- v
+
     override __.OnConfiguring(options: DbContextOptionsBuilder) : unit =
         options.UseSqlite(sprintf "Data Source=%s.db" (Guid.NewGuid().ToString()))
+        |> ignore
+
+    override __.OnModelCreating(modelBuilder) =
+        modelBuilder
+            .Entity<CompositeType>()
+            .HasKey([| "Key1"; "Key2" |])
         |> ignore
 
 let createContext () =
@@ -56,7 +71,7 @@ let DbContextHelperTests =
 
               let modified = { original with Title = "My New Title" }
 
-              updateEntity ctx (fun b -> b.Id :> obj) modified
+              updateEntity ctx (fun b -> b.Id) modified
               |> ignore
 
               let expected =
@@ -65,6 +80,40 @@ let DbContextHelperTests =
                     Content = "My original content" }
 
               let found = tryFindEntity<Blog> ctx original.Id
+
+              let actual =
+                  Expect.wantSome found "Should not be None"
+
+              Expect.equal actual expected "Record in context should match"
+          }
+
+          test "Helpers work as expected for compsoite keys" {
+
+              let original =
+                  { Key1 = 1
+                    Key2 = 2
+                    Value = "My original content" }
+
+              use ctx = createContext ()
+
+              addEntity ctx original
+              saveChanges ctx
+
+              let modified =
+                  { original with
+                        Value = "My New Content" }
+
+              updateEntity ctx (fun b -> [ box b.Key1; box b.Key2 ]) modified
+              |> ignore
+
+              let expected =
+                  { Key1 = 1
+                    Key2 = 2
+                    Value = "My New Content" }
+
+              let key: obj [] = [| original.Key1; original.Key2 |]
+
+              let found = tryFindEntity<CompositeType> ctx key
 
               let actual =
                   Expect.wantSome found "Should not be None"
@@ -93,7 +142,7 @@ let DbContextHelperTests =
 
                       let modified = { original with Title = "My New Title" }
 
-                      let! _ = updateEntityAsync ctx (fun b -> b.Id :> obj) modified
+                      let! _ = updateEntityAsync ctx (fun b -> b.Id) modified
 
                       return! tryFindEntityAsync<Blog> ctx original.Id
                   }
