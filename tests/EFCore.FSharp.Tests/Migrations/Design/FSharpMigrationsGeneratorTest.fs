@@ -489,9 +489,9 @@ module FSharpMigrationsGeneratorTest =
                       |> HashSet
 
                   let columnMapping =
-                      $"{_nl}.HasColumnType(\"default_int_mapping\"){_nl}"
+                      $"{_nl}.HasColumnType(\"default_int_mapping\")"
 
-                  let columnMappingWithDefaultValue = $"{columnMapping}.HasDefaultValue(0)"
+                  let columnMappingWithDefaultValue = $"{columnMapping}"
 
                   let forProperty =
                       [ (CoreAnnotationNames.MaxLength,
@@ -504,19 +504,16 @@ module FSharpMigrationsGeneratorTest =
                         (CoreAnnotationNames.ValueConverter,
                          (box (ValueConverter<int, int64>((fun v -> v |> int64), (fun v -> v |> int), null)),
                           _nl
-                          + $".HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L){_nl}|> ignore"))
+                          + $".HasColumnType(\"default_long_mapping\"){_nl}|> ignore"))
                         (CoreAnnotationNames.ProviderClrType,
-                         (box typeof<int64>,
-                          $"{_nl}.HasColumnType(\"default_long_mapping\"){_nl}.HasDefaultValue(0L){_nl}|> ignore"))
+                         (box typeof<int64>, $"{_nl}.HasColumnType(\"default_long_mapping\"){_nl}|> ignore"))
                         (RelationalAnnotationNames.ColumnName,
                          (box "MyColumn",
                           columnMappingWithDefaultValue
                           + _nl
                           + $".HasColumnName(\"MyColumn\") |> ignore"))
                         (RelationalAnnotationNames.ColumnType,
-                         (box "int",
-                          _nl
-                          + $".HasColumnType(\"int\"){_nl}.HasDefaultValue(0){_nl}|> ignore"))
+                         (box "int", _nl + $".HasColumnType(\"int\"){_nl}|> ignore"))
                         (RelationalAnnotationNames.DefaultValueSql,
                          (box "some SQL",
                           columnMappingWithDefaultValue
@@ -534,7 +531,7 @@ module FSharpMigrationsGeneratorTest =
                         (RelationalAnnotationNames.DefaultValue,
                          (box 0,
                           columnMapping
-                          + $".HasDefaultValue(0){_nl}|> ignore"))
+                          + $"{_nl}.HasDefaultValue(0){_nl}|> ignore"))
                         (RelationalAnnotationNames.IsFixedLength,
                          (box true,
                           columnMappingWithDefaultValue
@@ -769,7 +766,6 @@ module FSharpMigrationsGeneratorTest =
                           "            b.Property<int>(\"Id\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"int\")"
-                          "                .HasDefaultValue(0)"
                           "                |> ignore"
                           ""
                           "            b.Property<string>(\"C2\")"
@@ -780,7 +776,6 @@ module FSharpMigrationsGeneratorTest =
                           "            b.Property<int>(\"C3\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"int\")"
-                          "                .HasDefaultValue(0)"
                           "                |> ignore"
                           ""
                           "            b.HasKey(\"Id\")"
@@ -916,7 +911,6 @@ module FSharpMigrationsGeneratorTest =
                           "            b.Property<string>(\"Ham\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"just_string(10)\")"
-                          "                .HasDefaultValue(\"A\")"
                           "                |> ignore"
                           ""
                           "            b.Property<string>(\"Pickle\")"
@@ -938,13 +932,11 @@ module FSharpMigrationsGeneratorTest =
                           "                .IsRequired(true)"
                           "                .ValueGeneratedOnAdd()"
                           "                .HasColumnType(\"default_int_mapping\")"
-                          "                .HasDefaultValue(0)"
                           "                |> ignore"
                           ""
                           "            b.Property<Guid>(\"PropertyWithValueGenerator\")"
                           "                .IsRequired(true)"
                           "                .HasColumnType(\"default_guid_mapping\")"
-                          "                .HasDefaultValue(Guid(\"00000000-0000-0000-0000-000000000000\"))"
                           "                |> ignore"
                           ""
                           "            b.HasKey(\"Id\")"
