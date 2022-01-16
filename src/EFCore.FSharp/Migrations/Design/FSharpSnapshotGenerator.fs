@@ -135,8 +135,8 @@ type FSharpSnapshotGenerator
             None
 
     let generateFluentApiForDefaultValue (property: IProperty) =
-        match property.GetDefaultValue() |> Option.ofObj with
-        | Some defaultValue ->
+        match property.TryGetDefaultValue() with
+        | true, defaultValue ->
             let valueConverter =
                 if defaultValue <> (box DBNull.Value) then
                     let valueConverter =
@@ -169,7 +169,7 @@ type FSharpSnapshotGenerator
             $".HasDefaultValue({appendValueConverter})"
             |> Some
 
-        | None -> None
+        | _ -> None
 
     let genPropertyAnnotations propertyBuilderName (property: IProperty) =
         let annotations =
