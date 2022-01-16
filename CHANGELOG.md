@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Prevent ManyServiceProvidersCreatedWarning exception - https://github.com/efcore/EFCore.FSharp/pull/130
 - Helper methods should allow composite keys - https://github.com/efcore/EFCore.FSharp/pull/131
+- AlterColumn operations no longer create unnecessary migrations - https://github.com/efcore/EFCore.FSharp/pull/133
 
 ## [6.0.5] - 2021-11-30
 
