@@ -40,8 +40,6 @@ type FSharpMigrationsModelDiffer
             diffContext: MigrationsModelDiffer.DiffContext
         ) : MigrationOperation seq =
 
-        System.Console.WriteLine("Diffing columns")
-
         let sourceTypeProperty =
             (source.PropertyMappings |> Seq.head).Property
 
