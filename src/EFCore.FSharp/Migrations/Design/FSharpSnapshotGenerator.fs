@@ -807,9 +807,8 @@ type FSharpSnapshotGenerator
 
         if fk.IsUnique && (not fk.IsOwnership) then
 
-            lines.Add
-                $".WithOne({ptd}).HasForeignKey({code.Literal fk.DeclaringEntityType.Name
-                                                 |> code.Literal}, {literalPropNames fk.Properties})"
+            lines.Add $".WithOne({ptd})"
+            lines.Add $".HasForeignKey({code.Literal fk.DeclaringEntityType.Name}, {literalPropNames fk.Properties})"
 
             if fk.PrincipalKey
                <> fk.PrincipalEntityType.FindPrimaryKey() then
