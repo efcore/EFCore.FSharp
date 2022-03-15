@@ -48,7 +48,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             None
 
     let writeOptionalParameter (name: string) (value: #obj) =
-        writeParameterIfTrue (notNull value) name (value |> code.UnknownLiteral |> sanitiseName)
+        writeParameterIfTrue (notNull value) name value
 
     let writeNullableParameterIfValue name (nullableParameter: Nullable<_>) =
 
