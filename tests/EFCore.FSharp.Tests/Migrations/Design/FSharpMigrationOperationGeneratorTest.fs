@@ -373,6 +373,29 @@ module FSharpMigrationOperationGeneratorTest =
                   Test<AddColumnOperation> op expected ``assert``
               }
 
+              test "AddColumnOperation defaultValue is not quoted" {
+                  let op =
+                      AddColumnOperation(Name = "Likes", Table = "Post", ClrType = typeof<int>, DefaultValue = 0)
+
+                  let expected =
+                      seq {
+                          "mb.AddColumn<int>("
+                          "    name = \"Likes\""
+                          "    ,table = \"Post\""
+                          "    ,nullable = false"
+                          "    ,defaultValue = 0"
+                          "    ) |> ignore"
+                      }
+                      |> join _eol
+
+                  let ``assert`` (o: AddColumnOperation) =
+                      Expect.equal o.Name "Likes" "Should be equal"
+                      Expect.equal o.Table "Post" "Should be equal"
+                      Expect.equal o.ClrType typeof<int> "Should be equal"
+
+                  Test<AddColumnOperation> op expected ``assert``
+              }
+
               test "CreateTableOperation optional args" {
                   let op =
                       CreateTableOperation(Name = "MyTable", Schema = "MySchema")
