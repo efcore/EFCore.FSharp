@@ -247,7 +247,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
     let generateAlterDatabaseOperation (op: AlterDatabaseOperation) =
         stringBuilder {
-            ".AlterDatabase()"
+            ".AlterDatabase("
 
             indent {
 
