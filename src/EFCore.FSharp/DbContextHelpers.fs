@@ -20,18 +20,21 @@ let private transform (a: obj) =
         |> Composite
     | _ -> Single a
 
-let findEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+let findEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) : 'a =
 
     match transform key with
     | Composite k -> ctx.Set<'a>().Find(k)
     | Single k -> ctx.Set<'a>().Find(k)
 
-let tryFindEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+let tryFindEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) : 'a option =
     let result = findEntity<'a> ctx key
 
-    Option.ofObj (box result)
+    if isNull (box result) then
+        None
+    else
+        Some result
 
-let findEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+let findEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) : Async<'a> =
     let f =
         match transform key with
         | Composite k -> ctx.Set<'a>().FindAsync(k)
@@ -39,24 +42,34 @@ let findEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
 
     async { return! awaitValueTask f }
 
-let findEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+let findEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) : ValueTask<'a> =
     match transform key with
     | Composite k -> ctx.Set<'a>().FindAsync(k)
     | Single k -> ctx.Set<'a>().FindAsync(k)
 
-let tryFindEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+let tryFindEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) : Async<'a option> =
     async {
         let! result = findEntityAsync<'a> ctx key
 
-        return Option.ofObj (box result)
+        let result' =
+            if isNull (box result) then
+                None
+            else
+                Some result
+
+        return result'
     }
 
-let tryFindEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) =
+let tryFindEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) : Task<'a option> =
     let result = findEntityTaskAsync<'a> ctx key
 
     result
         .AsTask()
-        .ContinueWith(fun (t: Task<'a>) -> Option.ofObj (box t.Result))
+        .ContinueWith(fun (t: Task<'a>) ->
+            if isNull (box t.Result) then
+                None
+            else
+                Some t.Result)
 
 
 /// Helper method for saving an updated record type
