@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.7] - 2022-06-26
+
+### Fixed
+- Change return type of helper methods in `DbContextHelpers` from `obj` to `'a`
+
 ## [6.0.6] - 2022-01-16
 
 ### Fixed
@@ -62,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DbSet/IQueryable helpers to deal with EF Core async and nullable methods - [@lucasteles](https://github.com/lucasteles) - https://github.com/efcore/EFCore.FSharp/pull/94
 - Automatic registration of DesignTimeServices - https://github.com/efcore/EFCore.FSharp/pull/86
 - DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.6...HEAD
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.7...HEAD
+[6.0.7]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.6...v6.0.7
 [6.0.6]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.5...v6.0.6
 [6.0.5]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.4...v6.0.5
 [6.0.4]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.3...v6.0.4
