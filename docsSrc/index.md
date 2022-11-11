@@ -37,6 +37,7 @@ This provides support for code-first and database-first use of EF Core in F#, in
         <a href="{{siteBaseUrl}}/How_Tos/Use_DbContextHelpers.html" class="btn btn-primary">Using DbContext Helpers</a>
         <a href="{{siteBaseUrl}}/How_Tos/Querying_Options.html" class="btn btn-primary">Querying option types</a>
         <a href="{{siteBaseUrl}}/How_Tos/Using_Single_Case_unions.html" class="btn btn-primary">Single Case Unions</a>
+        <a href="{{siteBaseUrl}}/How_Tos/Many-To-Many_Relationships.html" class="btn btn-primary">Many-to-many relationships</a>
       </div>
     </div>
   </div>
