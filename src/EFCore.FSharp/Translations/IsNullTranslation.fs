@@ -9,8 +9,10 @@ let isNullMethodTranslator (sqlExp: ISqlExpressionFactory) =
             if method.DeclaringType.IsValueType then
                 null
             else
-                let expression = arguments |> Seq.head
-
-                match method.Name with
-                | "IsNull" -> sqlExp.IsNull(expression) :> _
-                | _ -> null }
+                let expression = arguments |> Seq.tryHead
+                match expression with
+                | Some expression ->
+                    match method.Name with
+                    | "IsNull" -> sqlExp.IsNull(expression) :> _
+                    | _ -> null
+                | None -> null }

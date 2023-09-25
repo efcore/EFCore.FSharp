@@ -105,6 +105,21 @@ let OptionTranslationQueryTests =
                   }
 
               Expect.equal blog blogWithContent "Record in context should match"
+          }
+
+          test "Do not break ToLower" {
+              use ctx = createContext ()
+              saveBlogs ctx
+
+              let blog =
+                  query {
+                      for blog in ctx.Blogs do
+                          where (blog.Content.ToLower() = "some text")
+                          select blog
+                          headOrDefault
+                  }
+
+              Expect.equal blog blogWithContent "Record in context should match"
           } ]
 
 
