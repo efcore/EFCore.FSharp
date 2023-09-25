@@ -11,8 +11,7 @@ let isNullMethodTranslator (sqlExp: ISqlExpressionFactory) =
             else
                 let expression = arguments |> Seq.tryHead
                 match expression with
-                | Some expression ->
-                    match method.Name with
-                    | "IsNull" -> sqlExp.IsNull(expression) :> _
-                    | _ -> null
-                | None -> null }
+                | Some expression
+                    when method.Name = "IsNull" ->
+                        sqlExp.IsNull(expression) :> _
+                | _ -> null }
