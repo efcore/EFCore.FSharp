@@ -3,12 +3,7 @@
 open Microsoft.EntityFrameworkCore.Update
 
 type TestModificationCommandBatchFactory
-    (
-        commandBuilderFactory,
-        sqlGenerationHelper,
-        updateSqlGenerator,
-        valueBufferFactoryFactory
-    ) =
+    (commandBuilderFactory, sqlGenerationHelper, updateSqlGenerator, valueBufferFactoryFactory) =
 
     let mutable createCount = 0
     member this.CreateCount = createCount

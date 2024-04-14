@@ -47,10 +47,26 @@ type TestOperationReporter() =
 
     interface IOperationReporter with
 
-        member __.WriteInformation(message) = messages.Add("info: " + message)
+        member __.WriteInformation(message) =
+            messages.Add(
+                "info: "
+                + message
+            )
 
-        member __.WriteVerbose(message) = messages.Add("verbose: " + message)
+        member __.WriteVerbose(message) =
+            messages.Add(
+                "verbose: "
+                + message
+            )
 
-        member __.WriteWarning(message) = messages.Add("warn: " + message)
+        member __.WriteWarning(message) =
+            messages.Add(
+                "warn: "
+                + message
+            )
 
-        member __.WriteError(message) = messages.Add("error: " + message)
+        member __.WriteError(message) =
+            messages.Add(
+                "error: "
+                + message
+            )

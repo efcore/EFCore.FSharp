@@ -13,165 +13,236 @@ open EntityFrameworkCore.FSharp.SharedTypeExtensions
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Storage
 open Microsoft.EntityFrameworkCore.Infrastructure
+open Microsoft.EntityFrameworkCore.Metadata
+open System.Security
 
 type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
     let _builtInTypes =
-        [ (typeof<bool>, "bool")
-          (typeof<byte>, "byte")
-          (typeof<sbyte>, "sbyte")
-          (typeof<char>, "char")
-          (typeof<int16>, "Int16")
-          (typeof<int>, "int")
-          (typeof<int64>, "Int64")
-          (typeof<uint16>, "UInt16")
-          (typeof<uint32>, "UInt32")
-          (typeof<uint64>, "UInt64")
-          (typeof<decimal>, "decimal")
-          (typeof<float>, "float")
-          (typeof<double>, "double")
-          (typeof<string>, "string")
-          (typeof<obj>, "obj") ]
+        [
+            (typeof<bool>, "bool")
+            (typeof<byte>, "byte")
+            (typeof<sbyte>, "sbyte")
+            (typeof<char>, "char")
+            (typeof<int16>, "Int16")
+            (typeof<int>, "int")
+            (typeof<int64>, "Int64")
+            (typeof<uint16>, "UInt16")
+            (typeof<uint32>, "UInt32")
+            (typeof<uint64>, "UInt64")
+            (typeof<decimal>, "decimal")
+            (typeof<float>, "float")
+            (typeof<double>, "double")
+            (typeof<string>, "string")
+            (typeof<obj>, "obj")
+        ]
         |> dict
 
-    let _keywords =
-        [| "abstract"
-           "and"
-           "as"
-           "asr"
-           "assert"
-           "atomic"
-           "base"
-           "begin"
-           "break"
-           "checked"
-           "class"
-           "component"
-           "const"
-           "constraint"
-           "constructor"
-           "continue"
-           "default"
-           "delegate"
-           "do"
-           "done"
-           "downcast"
-           "downto"
-           "eager"
-           "elif"
-           "else if"
-           "else"
-           "end"
-           "event"
-           "exception"
-           "extern"
-           "external"
-           "false"
-           "finally"
-           "fixed"
-           "for"
-           "fun"
-           "function"
-           "functor"
-           "global"
-           "if"
-           "in"
-           "include"
-           "inherit"
-           "inline"
-           "interface"
-           "internal"
-           "land"
-           "lazy"
-           "let!"
-           "let"
-           "lor"
-           "lsl"
-           "lsr"
-           "lxor"
-           "match"
-           "member"
-           "method"
-           "mixin"
-           "mod"
-           "module"
-           "mutable"
-           "namespace"
-           "new"
-           "not struct"
-           "not"
-           "null"
-           "object"
-           "of"
-           "open"
-           "or"
-           "override"
-           "parallel"
-           "private"
-           "process"
-           "protected"
-           "public"
-           "pure"
-           "rec"
-           "return!"
-           "return"
-           "sealed"
-           "select"
-           "sig"
-           "static"
-           "struct"
-           "tailcall"
-           "then"
-           "to"
-           "trait"
-           "true"
-           "try"
-           "type"
-           "upcast"
-           "use!"
-           "use"
-           "val"
-           "virtual"
-           "void"
-           "volatile"
-           "when"
-           "while"
-           "with"
-           "yield!"
-           "yield" |]
+    let _keywords = [|
+        "abstract"
+        "and"
+        "as"
+        "asr"
+        "assert"
+        "atomic"
+        "base"
+        "begin"
+        "break"
+        "checked"
+        "class"
+        "component"
+        "const"
+        "constraint"
+        "constructor"
+        "continue"
+        "default"
+        "delegate"
+        "do"
+        "done"
+        "downcast"
+        "downto"
+        "eager"
+        "elif"
+        "else if"
+        "else"
+        "end"
+        "event"
+        "exception"
+        "extern"
+        "external"
+        "false"
+        "finally"
+        "fixed"
+        "for"
+        "fun"
+        "function"
+        "functor"
+        "global"
+        "if"
+        "in"
+        "include"
+        "inherit"
+        "inline"
+        "interface"
+        "internal"
+        "land"
+        "lazy"
+        "let!"
+        "let"
+        "lor"
+        "lsl"
+        "lsr"
+        "lxor"
+        "match"
+        "member"
+        "method"
+        "mixin"
+        "mod"
+        "module"
+        "mutable"
+        "namespace"
+        "new"
+        "not struct"
+        "not"
+        "null"
+        "object"
+        "of"
+        "open"
+        "or"
+        "override"
+        "parallel"
+        "private"
+        "process"
+        "protected"
+        "public"
+        "pure"
+        "rec"
+        "return!"
+        "return"
+        "sealed"
+        "select"
+        "sig"
+        "static"
+        "struct"
+        "tailcall"
+        "then"
+        "to"
+        "trait"
+        "true"
+        "try"
+        "type"
+        "upcast"
+        "use!"
+        "use"
+        "val"
+        "virtual"
+        "void"
+        "volatile"
+        "when"
+        "while"
+        "with"
+        "yield!"
+        "yield"
+    |]
 
-    let literalAsObj l = if l = "null" then l else l + " :> obj"
+    let ensureDecimalPlaces (number: double) =
 
-    member private this.ReferenceFullName (t: Type) useFullName =
+        let literal = number.ToString("G17", CultureInfo.InvariantCulture)
+
+        if Double.IsNaN number then
+            "Double.NaN"
+        elif Double.IsPositiveInfinity number then
+            "Double.PositiveInfinity"
+        elif Double.IsNegativeInfinity number then
+            "Double.NegativeInfinity"
+
+        elif
+            literal.Contains('.')
+            || literal.Contains('E')
+            || literal.Contains('e')
+        then
+            literal
+        else
+            literal
+            + ".0"
+
+    let literalAsObj l =
+        if l = "null" then
+            l
+        else
+            l
+            + " :> obj"
+
+    let shouldUseFullName t = false
+
+
+    member private this.ReferenceFullName (t: Type) (useFullName: Nullable<bool>) =
+
+        let useFullName' =
+            match
+                (useFullName
+                 |> Option.ofNullable)
+            with
+            | Some x -> x
+            | None ->
+                if t.IsNested then
+                    shouldUseFullName t.DeclaringType
+                else
+                    shouldUseFullName t
+
 
         match _builtInTypes.TryGetValue t with
         | true, value -> value
         | _ ->
-            if t |> isNullableType then
-                sprintf "Nullable<%s>" (this.ReferenceFullName(t |> unwrapNullableType) useFullName)
-            elif t |> isOptionType then
-                sprintf "%s option" (this.ReferenceFullName(t |> unwrapOptionType) useFullName)
+            if
+                t
+                |> isNullableType
+            then
+                sprintf
+                    "Nullable<%s>"
+                    (this.ReferenceFullName
+                        (t
+                         |> unwrapNullableType)
+                        useFullName)
+            elif
+                t
+                |> isOptionType
+            then
+                sprintf
+                    "%s option"
+                    (this.ReferenceFullName
+                        (t
+                         |> unwrapOptionType)
+                        useFullName)
             else
                 let builder = StringBuilder()
 
                 let returnName () =
-                    let name = displayName t useFullName true
+                    let name = displayName t useFullName' true
 
-                    builder.Append(name) |> string
+                    builder.Append(name)
+                    |> string
 
                 if t.IsArray then
                     builder
-                        .Append(this.ReferenceFullName(t.GetElementType()) false)
+                        .Append(this.ReferenceFullName (t.GetElementType()) (Nullable(false)))
                         .Append("[")
                     |> ignore
 
                     match t.GetArrayRank() with
-                    | 1 -> builder.Append("]") |> ignore
-                    | n -> (',', n) |> String |> builder.Append |> ignore
+                    | 1 ->
+                        builder.Append("]")
+                        |> ignore
+                    | n ->
+                        (',', n)
+                        |> String
+                        |> builder.Append
+                        |> ignore
 
-                    builder |> string
+                    builder
+                    |> string
                 elif t.IsNested then
                     builder
-                        .Append(this.ReferenceFullName(t.DeclaringType) false)
+                        .Append(this.ReferenceFullName (t.DeclaringType) (Nullable(false)))
                         .Append(".")
                     |> ignore
 
@@ -179,16 +250,11 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 else
                     returnName ()
 
-    member private this.ensureDecimalPlaces(number: string) =
-        if number.IndexOf('.') >= 0 then
-            number
-        else
-            number + ".0"
-
     member private this.literalString(value: string) =
         "\""
         + value
-            .Replace(@"\", @"\\")
+            .Replace("\\", @"\\")
+            .Replace("\0", @"\0")
             .Replace("\"", "\\\"")
             .Replace("\n", @"\n")
             .Replace("\r", @"\r")
@@ -198,58 +264,57 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
     member private this.literalByte(value: byte) = sprintf "(byte %d)" value
 
-    member private this.literalByteArray(values: byte []) =
-        let v = values |> Seq.map this.literalByte
-        sprintf "[| %s |]" (String.Join("; ", v))
-
-    member private this.literalStringArray(values: string []) =
-        let v = values |> Seq.map this.literalString
-        sprintf "[| %s |]" (String.Join("; ", v))
-
-    member private this.literalArray(values: Array) =
-        let v =
-            values.Cast<obj>() |> Seq.map this.unknownLiteral
-
-        sprintf "[| %s |]" (String.Join("; ", v))
-
     member private this.literalChar(value: char) =
-        "\'"
-        + (if value = '\'' then
-               "\\'"
-           else
-               value.ToString())
-        + "\'"
+
+        let value' =
+            match value with
+            | '\\' -> @"\\"
+            | '\n' -> @"\n"
+            | '\r' -> @"\r"
+            | '\'' -> @"\'"
+            | _ -> value.ToString()
+
+        sprintf "\'%s\'" value'
+
+    member private this.literalDateOnly(value: DateOnly) =
+        String.Format(
+            CultureInfo.InvariantCulture,
+            "DateOnly({0}, {1}, {2})",
+            value.Year,
+            value.Month,
+            value.Day
+        )
 
     member private this.literalDateTime(value: DateTime) =
-        sprintf
-            "DateTime(%d, %d, %d, %d, %d, %d, %d, DateTimeKind.%A)%s"
-            value.Year
-            value.Month
-            value.Day
-            value.Hour
-            value.Minute
-            value.Second
-            value.Millisecond
-            value.Kind
-            (if value.Ticks % 10_000L = 0L then
-                 ""
-             else
-                 String.Format(CultureInfo.InvariantCulture, ".AddTicks({0}L)", value.Ticks % 10_000L))
 
-    member private this.literalTimeSpan(value: TimeSpan) =
-        if value.Ticks % 10_000L = 0L then
-            sprintf "TimeSpan(%d, %d, %d, %d, %d)" value.Days value.Hours value.Minutes value.Seconds value.Milliseconds
-        else
-            String.Format(CultureInfo.InvariantCulture, "TimeSpan({0}L)", value.Ticks)
+        String.Format(
+            CultureInfo.InvariantCulture,
+            "new DateTime({0}, {1}, {2}, {3}, {4}, {5}, {6}, DateTimeKind.{7})",
+            value.Year,
+            value.Month,
+            value.Day,
+            value.Hour,
+            value.Minute,
+            value.Second,
+            value.Millisecond,
+            value.Kind
+        )
+        + (if value.Ticks % 10_000L = 0L then
+               ""
+           else
+               String.Format(CultureInfo.InvariantCulture, ".AddTicks({0})", value.Ticks % 10000L))
 
     member private this.literalDateTimeOffset(value: DateTimeOffset) =
-        sprintf "DateTimeOffset(%s, %s)" (value.DateTime |> this.literalDateTime) (value.Offset |> this.literalTimeSpan)
+        sprintf
+            "DateTimeOffset(%s, %s)"
+            (value.DateTime
+             |> this.literalDateTime)
+            (value.Offset
+             |> this.literalTimeSpan)
 
     member private this.literalDecimal(value: decimal) = sprintf "%fm" value
 
-    member private this.literalDouble(value: double) =
-        (value.ToString("R", CultureInfo.InvariantCulture))
-        |> this.ensureDecimalPlaces
+    member private this.literalDouble(value: double) = ensureDecimalPlaces value
 
     member private this.literalFloat32(value: float32) = sprintf "(float32 %f)" value
 
@@ -263,6 +328,47 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
     member private this.literalInt16(value: Int16) = sprintf "%ds" value
 
+    member private this.literaTimeOnly(value: TimeOnly) =
+
+        let result =
+            if value.Millisecond = 0 then
+                String.Format(
+                    CultureInfo.InvariantCulture,
+                    "TimeOnly({0}, {1}, {2})",
+                    value.Hour,
+                    value.Minute,
+                    value.Second
+                )
+            else
+                String.Format(
+                    CultureInfo.InvariantCulture,
+                    "TimeOnly({0}, {1}, {2}, {3}, {4})",
+                    value.Hour,
+                    value.Minute,
+                    value.Second,
+                    value.Millisecond
+                )
+
+        if value.Ticks % 10_000L = 0L then
+            result
+        else
+            result
+            + String.Format(CultureInfo.InvariantCulture, ".AddTicks({0})", value.Ticks % 10000L)
+
+    member private this.literalTimeSpan(value: TimeSpan) =
+        if value.Ticks % 10_000L = 0L then
+            String.Format(
+                CultureInfo.InvariantCulture,
+                "TimeSpan(%d, %d, %d, %d, %d)",
+                value.Days,
+                value.Hours,
+                value.Minutes,
+                value.Seconds,
+                value.Milliseconds
+            )
+        else
+            String.Format(CultureInfo.InvariantCulture, "TimeSpan({0}L)", value.Ticks)
+
     member private this.literalUInt32(value: UInt32) = sprintf "%du" value
 
     member private this.literalUInt64(value: UInt64) = sprintf "%duL" value
@@ -274,7 +380,38 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             """BigInteger.Parse("%s", NumberFormatInfo.InvariantInfo)"""
             (value.ToString(NumberFormatInfo.InvariantInfo))
 
-    member private this.literalList (values: IReadOnlyList<obj>) (vertical: bool) (isObjType: bool) =
+
+    member private this.literalByteArray(values: byte[]) =
+        let v =
+            values
+            |> Seq.map this.literalByte
+
+        sprintf "[| %s |]" (String.Join("; ", v))
+
+    member private this.literalStringArray(values: string[]) =
+        let v =
+            values
+            |> Seq.map this.literalString
+
+        sprintf "[| %s |]" (String.Join("; ", v))
+
+    member private this.literalArray(values: Array) =
+        let v =
+            values.Cast<obj>()
+            |> Seq.map this.unknownLiteral
+
+        sprintf "[| %s |]" (String.Join("; ", v))
+
+    member private this.literalType(t: Type, useFullName: Nullable<bool>) =
+        let value = this.ReferenceFullName t (Nullable(false))
+        sprintf "typeof<%s>" value
+
+
+    member private this.literalList
+        (values: IReadOnlyList<obj>)
+        (vertical: bool)
+        (isObjType: bool)
+        =
 
         let values' =
             if isObjType then
@@ -282,45 +419,32 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 |> Seq.map this.unknownLiteral
                 |> Seq.map literalAsObj
             else
-                values |> Seq.map this.unknownLiteral
+                values
+                |> Seq.map this.unknownLiteral
 
         if not vertical then
-            sprintf "[| %s |]" (values' |> join "; ")
+            sprintf
+                "[| %s |]"
+                (values'
+                 |> join "; ")
         else
 
-            stringBuilder {
+            stringBuffer {
                 "[|"
                 indent { values' }
                 "|]"
             }
 
 
-    member private this.literalArray2D(values: obj [,]) =
-
-        let rowCount = Array2D.length1 values - 1
-        let valuesCount = Array2D.length2 values - 1
-
-        let rowContents =
-            [ 0 .. rowCount ]
-            |> Seq.map
-                (fun i ->
-                    let row' = values.[i, 0..valuesCount]
-
-                    let entries =
-                        row'
-                        |> Seq.map this.unknownLiteral
-                        |> Seq.map literalAsObj
-
-                    sprintf "[ %s ]" (String.Join("; ", entries)))
-
-        sprintf "array2D [ %s ]" (String.Join("; ", rowContents))
-
     member private this.handleArguments args (sb: IndentedStringBuilder) =
 
-        sb.Append("(") |> ignore
+        sb.Append("(")
+        |> ignore
 
         if (this.handleList args false sb) then
-            sb.Append(")") |> ignore
+            sb.Append(")")
+            |> ignore
+
             true
         else
             false
@@ -330,41 +454,49 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         let results =
             exps
-            |> Seq.map
-                (fun e ->
-                    sb.Append(separator) |> ignore
+            |> Seq.map (fun e ->
+                sb.Append(separator)
+                |> ignore
 
-                    let result = this.handleExpression e simple sb
+                let result = this.handleExpression e simple sb
 
-                    separator <- ", "
-                    result)
+                separator <- ", "
+                result
+            )
 
-        results |> Seq.forall (fun r -> r = true)
+        results
+        |> Seq.forall (fun r -> r = true)
 
-    member private this.handleExpression (expression: Expression) simple (sb: IndentedStringBuilder) =
+    member private this.handleExpression
+        (expression: Expression)
+        simple
+        (sb: IndentedStringBuilder)
+        =
         match expression.NodeType with
         | ExpressionType.NewArrayInit ->
 
-            sb.Append("[| ") |> ignore
+            sb.Append("[| ")
+            |> ignore
 
             this.handleList (expression :?> NewArrayExpression).Expressions true sb
             |> ignore
 
-            sb.Append(" |]") |> ignore
+            sb.Append(" |]")
+            |> ignore
 
             true
         | ExpressionType.Convert ->
-            sb.Append("(") |> ignore
+            sb.Append("(")
+            |> ignore
 
-            let result =
-                this.handleExpression (expression :?> UnaryExpression).Operand false sb
+            let result = this.handleExpression (expression :?> UnaryExpression).Operand false sb
 
-            sb.Append($" :?> {this.ReferenceFullName expression.Type true})")
+            sb.Append($" :?> {this.ReferenceFullName expression.Type (Nullable(true))})")
             |> ignore
 
             result
         | ExpressionType.New ->
-            sb.Append(this.ReferenceFullName expression.Type true)
+            sb.Append(this.ReferenceFullName expression.Type (Nullable(true)))
             |> ignore
 
             this.handleArguments ((expression :?> NewExpression).Arguments) sb
@@ -375,7 +507,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             let callExpr = expression :?> MethodCallExpression
 
             if callExpr.Method.IsStatic then
-                sb.Append(this.ReferenceFullName callExpr.Method.DeclaringType true)
+                sb.Append(this.ReferenceFullName callExpr.Method.DeclaringType (Nullable(true)))
                 |> ignore
             else if (not (this.handleExpression callExpr.Object false sb)) then
                 exitEarly <- true
@@ -383,21 +515,27 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             if exitEarly then
                 false
             else
-                sb.Append($".{callExpr.Method.Name}") |> ignore
+                sb.Append($".{callExpr.Method.Name}")
+                |> ignore
 
                 this.handleArguments callExpr.Arguments sb
 
         | ExpressionType.Constant ->
-            let value =
-                (expression :?> ConstantExpression).Value
+            let value = (expression :?> ConstantExpression).Value
 
             let valueToWrite =
-                if simple && (value.GetType() |> isNumeric) then
-                    value |> string
+                if
+                    simple
+                    && (value.GetType()
+                        |> isNumeric)
+                then
+                    value
+                    |> string
                 else
                     this.unknownLiteral (value)
 
-            sb.Append(valueToWrite) |> ignore
+            sb.Append(valueToWrite)
+            |> ignore
 
             true
 
@@ -410,31 +548,43 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
                 true
 
-            if memberExpression.Expression |> isNull then
-                sb.Append(this.ReferenceFullName memberExpression.Member.DeclaringType true)
+            if
+                memberExpression.Expression
+                |> isNull
+            then
+                sb.Append(
+                    this.ReferenceFullName memberExpression.Member.DeclaringType (Nullable(true))
+                )
                 |> ignore
 
                 appendAndReturn ()
-            elif this.handleExpression memberExpression.Expression false sb
-                 |> not then
+            elif
+                this.handleExpression memberExpression.Expression false sb
+                |> not
+            then
                 false
             else
                 appendAndReturn ()
         | ExpressionType.Add ->
             let binaryExpression = expression :?> BinaryExpression
 
-            if this.handleExpression binaryExpression.Left false sb
-               |> not then
+            if
+                this.handleExpression binaryExpression.Left false sb
+                |> not
+            then
                 false
             else
-                sb.Append(" + ") |> ignore
+                sb.Append(" + ")
+                |> ignore
 
                 this.handleExpression binaryExpression.Right false sb
         | _ -> false
 
 
     member private this.getSimpleEnumValue t name =
-        (this.ReferenceFullName t false) + "." + name
+        (this.ReferenceFullName t (Nullable(false)))
+        + "."
+        + name
 
     member private this.getFlags(flags: Enum) =
         let t = flags.GetType()
@@ -447,17 +597,20 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         |> Seq.toList
 
     member private this.getCompositeEnumValue t flags =
-        let allValues = flags |> this.getFlags |> HashSet
+        let allValues =
+            flags
+            |> this.getFlags
+            |> HashSet
 
         allValues
-        |> Seq.iter
-            (fun a ->
-                let decomposedValues = this.getFlags a
+        |> Seq.iter (fun a ->
+            let decomposedValues = this.getFlags a
 
-                if decomposedValues.Length > 1 then
-                    decomposedValues
-                    |> Seq.filter (fun v -> not (obj.Equals(v, a)))
-                    |> allValues.ExceptWith)
+            if decomposedValues.Length > 1 then
+                decomposedValues
+                |> Seq.filter (fun v -> not (obj.Equals(v, a)))
+                |> allValues.ExceptWith
+        )
 
         let folder previous current =
             if String.IsNullOrEmpty previous then
@@ -467,10 +620,11 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                 + " | "
                 + this.getSimpleEnumValue t (Enum.GetName(t, current))
 
-        allValues |> Seq.fold folder ""
+        allValues
+        |> Seq.fold folder ""
 
 
-    member private this.literalEnum(value: Enum) =
+    member private this.literalEnum(value: Enum, useFullName: bool) =
         let t = value.GetType()
         let name = Enum.GetName(t, value)
 
@@ -493,17 +647,27 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
     member private this.isIdentifierPartCharacter ch =
         if ch < 'a' then
             if ch < 'A' then
-                ch >= '0' && ch <= '9'
+                ch >= '0'
+                && ch <= '9'
             else
-                ch <= 'Z' || ch = '_'
+                ch <= 'Z'
+                || ch = '_'
         elif ch <= 'z' then
             true
-        elif ch <= '\u007F' then
+        elif
+            ch
+            <= '\u007F'
+        then
             false
         else
-            let cat = ch |> CharUnicodeInfo.GetUnicodeCategory
+            let cat =
+                ch
+                |> CharUnicodeInfo.GetUnicodeCategory
 
-            if cat |> this.isLetterChar then
+            if
+                cat
+                |> this.isLetterChar
+            then
                 true
             else
                 match cat with
@@ -519,10 +683,14 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             if ch < 'A' then
                 false
             else
-                ch <= 'Z' || ch = '_'
+                ch <= 'Z'
+                || ch = '_'
         elif ch <= 'z' then
             true
-        elif ch <= '\u007F' then
+        elif
+            ch
+            <= '\u007F'
+        then
             false
         else
             ch
@@ -530,18 +698,34 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             |> this.isLetterChar
 
     member private this.handleScope (scope: ICollection<string>) (sb: StringBuilder) =
-        if scope |> Seq.isEmpty then
-            sb |> string
+        if
+            scope
+            |> Seq.isEmpty
+        then
+            sb
+            |> string
         else
-            let baseId = sb |> string
-            let mutable uniqueId = sb |> string
+            let baseId =
+                sb
+                |> string
+
+            let mutable uniqueId =
+                sb
+                |> string
+
             let mutable qualifier = 0
 
-            while scope |> Seq.contains uniqueId do
-                qualifier <- qualifier + 1
+            while scope
+                  |> Seq.contains uniqueId do
+                qualifier <-
+                    qualifier
+                    + 1
+
                 uniqueId <- sprintf "%s%d" baseId qualifier
 
-            uniqueId |> scope.Add
+            uniqueId
+            |> scope.Add
+
             uniqueId
 
     member private this.IdentifierWithScope (name: string) (scope: ICollection<string>) =
@@ -549,24 +733,52 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         let sb = StringBuilder()
         let mutable partStart = 0
 
-        for i = partStart to (name.Length - 1) do
-            if name.[i] |> this.isIdentifierPartCharacter |> not then
-                if partStart <> i then
-                    sb.Append(name.Substring(partStart, (i - partStart)))
+        for i = partStart to (name.Length
+                              - 1) do
+            if
+                name.[i]
+                |> this.isIdentifierPartCharacter
+                |> not
+            then
+                if
+                    partStart
+                    <> i
+                then
+                    sb.Append(
+                        name.Substring(
+                            partStart,
+                            (i
+                             - partStart)
+                        )
+                    )
                     |> ignore
 
                 partStart <- i + 1
 
-        if partStart <> name.Length then
-            sb.Append(name.Substring(partStart)) |> ignore
+        if
+            partStart
+            <> name.Length
+        then
+            sb.Append(name.Substring(partStart))
+            |> ignore
 
-        if sb.Length = 0
-           || sb.[0] |> this.isIdentifierStartCharacter |> not then
-            sb.Insert(0, "_") |> ignore
+        if
+            sb.Length = 0
+            || sb.[0]
+               |> this.isIdentifierStartCharacter
+               |> not
+        then
+            sb.Insert(0, "_")
+            |> ignore
 
-        let identifier = sb |> this.handleScope scope
+        let identifier =
+            sb
+            |> this.handleScope scope
 
-        if _keywords |> Seq.contains identifier then
+        if
+            _keywords
+            |> Seq.contains identifier
+        then
             sprintf "``%s``" identifier
         else
             identifier
@@ -584,57 +796,73 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         let processArg (arg: obj) (sb: IndentedStringBuilder) =
             match arg with
             | :? NestedClosureCodeFragment as n ->
-                let f = this.buildNestedFragment (n, indent)
+                let f: string = this.buildNestedFragment (n, indent)
                 sb.AppendLine(f)
             | _ -> sb.Append(this.unknownLiteral arg)
 
         if typeQualified then
-            if isNull instanceIdentifier
-               || isNull fragment.MethodInfo
-               || notNull fragment.ChainedCall then
+            if
+                isNull instanceIdentifier
+                || isNull fragment.MethodInfo
+                || notNull fragment.ChainedCall
+            then
                 raise (ArgumentException DesignStrings.CannotGenerateTypeQualifiedMethodCall)
 
             builder.Append $"%s{fragment.DeclaringType}.%s{fragment.Method}(%s{instanceIdentifier}"
             |> ignore
 
             for a in fragment.Arguments do
-                builder.Append(", ") |> processArg a |> ignore
+                builder.Append(", ")
+                |> processArg a
+                |> ignore
 
-            builder.Append(")") |> ignore
+            builder.Append(")")
+            |> ignore
 
         else
             if notNull instanceIdentifier then
-                builder.Append(instanceIdentifier) |> ignore
+                builder.Append(instanceIdentifier)
+                |> ignore
 
                 if notNull current.ChainedCall then
-                    builder.AppendLine().IncrementIndent() |> ignore
+                    builder.AppendLine().IncrementIndent()
+                    |> ignore
 
             while notNull current do
                 builder.Append(sprintf ".%s(" current.Method)
                 |> ignore
 
-                for i in [ 0 .. current.Arguments.Count - 1 ] do
+                for i in
+                    [
+                        0 .. current.Arguments.Count
+                             - 1
+                    ] do
                     if i <> 0 then
-                        builder.Append(", ") |> ignore
+                        builder.Append(", ")
+                        |> ignore
 
                     builder
                     |> processArg current.Arguments.[i]
                     |> ignore
 
-                builder.Append(")") |> ignore
+                builder.Append(")")
+                |> ignore
 
                 if notNull current.ChainedCall then
-                    builder.AppendLine() |> ignore
+                    builder.AppendLine()
+                    |> ignore
 
                 current <- current.ChainedCall
 
-        builder |> string
+        builder
+        |> string
 
     member private this.buildNestedFragment(n: NestedClosureCodeFragment, indent: int) =
         let builder = IndentedStringBuilder()
 
         for i in [ -1 .. (indent + 1) ] do
-            builder.IncrementIndent() |> ignore
+            builder.IncrementIndent()
+            |> ignore
 
         builder
             .AppendLine()
@@ -646,13 +874,19 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             n.MethodCalls
             |> Seq.map (fun mc -> this.buildFragment (mc, false, n.Parameter, indent + 1))
 
-        builder.IncrementIndent() |> ignore
+        builder.IncrementIndent()
+        |> ignore
 
         for l in lines do
-            builder.AppendLines(l + " |> ignore", false)
+            builder.AppendLines(
+                l
+                + " |> ignore",
+                false
+            )
             |> ignore
 
-        builder.Append(")") |> string
+        builder.Append(")")
+        |> string
 
 
     member private this.unknownLiteral(value: obj) =
@@ -661,7 +895,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
         else
             match value with
             | :? DBNull -> "null"
-            | :? Enum as e -> this.literalEnum e
+            | :? Enum as e -> this.literalEnum (e, true)
             | :? bool as e -> this.literalBoolean e
             | :? byte as e -> this.literalByte e
             | :? (byte array) as e -> this.literalByteArray e
@@ -682,41 +916,49 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             | :? UInt64 as e -> this.literalUInt64 e
             | :? UInt16 as e -> this.literalUInt16 e
             | :? BigInteger as e -> this.literalBigInteger e
-            | :? (string []) as e -> this.literalStringArray e
+            | :? (string[]) as e -> this.literalStringArray e
             | :? Array as e -> this.literalArray e
-            | :? Type as t -> this.ReferenceFullName t false
+            | :? Type as t -> this.ReferenceFullName t (Nullable<bool>())
             | :? NestedClosureCodeFragment as n -> this.buildNestedFragment (n, 0)
             | _ ->
 
                 let literalType = value.GetType()
 
-                let mapping =
-                    relationalTypeMappingSource.FindMapping literalType
+                let mapping = relationalTypeMappingSource.FindMapping literalType
 
                 if isNull mapping then
                     let t = value.GetType()
 
                     let type' =
-                        if t |> isNullableType then
-                            t |> unwrapNullableType
-                        elif t |> isOptionType then
-                            t |> unwrapOptionType
+                        if
+                            t
+                            |> isNullableType
+                        then
+                            t
+                            |> unwrapNullableType
+                        elif
+                            t
+                            |> isOptionType
+                        then
+                            t
+                            |> unwrapOptionType
                         else
                             t
 
-                    invalidOp (type' |> DesignStrings.UnknownLiteral)
+                    invalidOp (
+                        type'
+                        |> DesignStrings.UnknownLiteral
+                    )
                 else
                     let builder = IndentedStringBuilder()
                     let expression = mapping.GenerateCodeLiteral(value)
 
-                    let handled =
-                        this.handleExpression expression false builder
+                    let handled = this.handleExpression expression false builder
 
                     if handled then
                         builder.ToString()
                     else
-                        let args =
-                            ((expression.ToString()), (displayName literalType false false))
+                        let args = ((expression.ToString()), (displayName literalType false false))
 
                         args
                         |> DesignStrings.LiteralExpressionNotSupported
@@ -724,12 +966,26 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
                         |> raise
 
 
-
     interface ICSharpHelper with
-        member this.Fragment(fragment: MethodCallCodeFragment, instanceIdentifer: string, typeQualified: bool) =
-            this.buildFragment (fragment, typeQualified, instanceIdentifer, 0)
+        member this.Fragment
+            (
+                fragment: IMethodCallCodeFragment,
+                instanceIdentifer: string,
+                typeQualified: bool
+            ) =
+            this.buildFragment (
+                fragment :?> MethodCallCodeFragment,
+                typeQualified,
+                instanceIdentifer,
+                0
+            )
 
-        member this.Identifier(name: string, scope: ICollection<string>, capitalize: Nullable<bool>) : string =
+        member this.Identifier
+            (
+                name: string,
+                scope: ICollection<string>,
+                capitalize: Nullable<bool>
+            ) : string =
             if isNull scope then
                 this.IdentifierWithScope name [||]
             else
@@ -745,12 +1001,14 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
             let props =
                 properties
-                |> Seq.map (fun p -> lambdaIdentifier' + "." + p)
+                |> Seq.map (fun p ->
+                    lambdaIdentifier'
+                    + "."
+                    + p
+                )
                 |> join ", "
 
             sprintf "(fun %s -> (%s) :> obj)" lambdaIdentifier' props
-
-        member this.Literal(values: obj [,]) : string = this.literalArray2D values
 
         member this.Literal(value: Nullable<'T>) : string = this.unknownLiteral value
 
@@ -768,7 +1026,8 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         member this.Literal(value: float) : string = this.literalDouble value
 
-        member this.Literal(value: Enum) : string = this.literalEnum value
+        member this.Literal(value: Enum, fullName: bool) : string =
+            this.literalEnum (value, fullName)
 
         member this.Literal(value: float32) : string = this.literalFloat32 value
 
@@ -792,30 +1051,204 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         member this.Literal(value: UInt64) = this.literalUInt64 value
 
-        member this.Literal(values: 'T [], vertical: bool) : string =
+        member this.Literal(values: 'T[], vertical: bool) : string =
             let isObjType = typeof<'T> = typeof<obj>
-            this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType
 
-        member this.Literal(t: Type, fullName: Nullable<bool>) =
-            this.ReferenceFullName t (fullName.GetValueOrDefault())
+            this.literalList
+                (values
+                 |> Seq.cast<obj>
+                 |> ResizeArray)
+                vertical
+                isObjType
 
-        member this.Namespace(name: string []) : string =
+        member this.Literal(t: Type, fullName: Nullable<bool>) = this.literalType (t, fullName)
+
+        member this.Namespace(name: string[]) : string =
             let join (ns': string array) = String.Join(".", ns')
 
             let ns =
                 name
-                |> Array.filter (String.IsNullOrEmpty >> not)
-                |> Array.collect (fun n -> n.Split([| '.' |], StringSplitOptions.RemoveEmptyEntries))
+                |> Array.filter (
+                    String.IsNullOrEmpty
+                    >> not
+                )
+                |> Array.collect (fun n ->
+                    n.Split([| '.' |], StringSplitOptions.RemoveEmptyEntries)
+                )
                 |> Array.map (fun t -> (this :> ICSharpHelper).Identifier(t, null))
-                |> Array.filter (String.IsNullOrEmpty >> not)
+                |> Array.filter (
+                    String.IsNullOrEmpty
+                    >> not
+                )
                 |> join
 
-            if String.IsNullOrEmpty ns then
-                "_"
-            else
-                ns
+            if String.IsNullOrEmpty ns then "_" else ns
 
-        member this.Reference(t: Type, fullName) : string =
-            this.ReferenceFullName t (fullName.GetValueOrDefault())
+        member this.Reference(t: Type, fullName) : string = this.ReferenceFullName t fullName
 
         member this.UnknownLiteral(value: obj) : string = this.unknownLiteral value
+
+        member this.Arguments(values: IEnumerable<obj>) : string =
+            values
+            |> Seq.map this.unknownLiteral
+            |> join ", "
+
+
+        member this.Expression(node: Expression, collectedNamespaces: ISet<string>) : string =
+            failwith "Not Implemented"
+
+        member this.Fragment(fragment: IMethodCallCodeFragment, indent: int) : string =
+            if isNull fragment then
+                ""
+            else
+
+                let builder = IndentedStringBuilder()
+
+                let appendMethodCall (current: IMethodCallCodeFragment) =
+                    builder.Append(".").Append(current.Method)
+                    |> ignore
+
+                    if current.TypeArguments.Any() then
+                        builder
+                            .Append("<")
+                            .Append(
+                                current.TypeArguments
+                                |> join ", "
+                            )
+                            .Append(">")
+                        |> ignore
+
+                    builder.Append("(")
+                    |> ignore
+
+                    current.Arguments
+                    |> Seq.iteri (fun i arg ->
+                        if i <> 0 then
+                            builder.Append(", ")
+                            |> ignore
+
+                        if arg :? NestedClosureCodeFragment then
+                            builder.Append(
+                                this.buildNestedFragment (
+                                    arg :?> NestedClosureCodeFragment,
+                                    indent + 1
+                                )
+                            )
+                            |> ignore
+                        else
+                            builder.Append(this.unknownLiteral arg)
+                            |> ignore
+                    )
+
+                if isNull fragment.ChainedCall then
+                    appendMethodCall fragment
+                else
+                    let mutable current = fragment
+
+                    while notNull current do
+                        appendMethodCall current
+                        |> ignore
+
+                        current <- current.ChainedCall
+
+                builder.ToString()
+
+        member this.Fragment(fragment: NestedClosureCodeFragment, indent: int) : string =
+
+            if fragment.MethodCalls.Count = 1 then
+                let m = fragment.MethodCalls.Single() :> IMethodCallCodeFragment
+                let x = (this :> ICSharpHelper).Fragment(m, indent)
+                $"(fun {fragment.Parameter} -> {fragment.Parameter}{x})"
+            else
+                failwith "Not Implemented"
+
+        member this.Fragment(fragment: PropertyAccessorCodeFragment) : string =
+            (this :> ICSharpHelper).Lambda(fragment.Properties, fragment.Parameter)
+
+        member this.Fragment(fragment: AttributeCodeFragment) : string =
+            let attributeName =
+                if fragment.Type.Name.EndsWith("Attribute", StringComparison.Ordinal) then
+                    fragment.Type.Name.Substring(
+                        0,
+                        fragment.Type.Name.Length
+                        - 9
+                    )
+                else
+                    fragment.Type.Name
+
+            let args =
+                fragment.Arguments
+                |> Seq.map (fun a -> this.unknownLiteral (a))
+                |> join ", "
+
+            let namedArgs =
+                fragment.NamedArguments
+                |> Seq.map (fun a -> $"{a.Key} = {this.unknownLiteral (a.Value)}")
+                |> join ", "
+
+            if
+                String.IsNullOrEmpty(args)
+                && String.IsNullOrEmpty(namedArgs)
+            then
+                $"[{attributeName}]"
+            elif String.IsNullOrEmpty(args) then
+                $"[{attributeName}({namedArgs})]"
+            elif String.IsNullOrEmpty(namedArgs) then
+                $"[{attributeName}({args})]"
+            else
+                $"[{attributeName}({args}, {namedArgs})]"
+
+        member this.GetRequiredUsings(``type``: Type) : IEnumerable<string> = getNamespaces ``type``
+
+        member this.Lambda(properties: IEnumerable<IProperty>, lambdaIdentifier: string) : string =
+            if properties.Count() = 1 then
+                let p = properties.Single()
+                $"(fun {lambdaIdentifier} -> {lambdaIdentifier}.{p.Name})"
+            else
+
+                stringBuffer {
+                    $"(fun {lambdaIdentifier} ->"
+
+                    indent {
+                        properties
+                        |> Seq.map (fun p -> sprintf "%s.%s" lambdaIdentifier p.Name)
+                        |> join ", "
+                    }
+
+                    ")"
+                }
+
+        member this.Literal(values: obj array2d) : string = failwith "Not Implemented"
+        member this.Literal(value: BigInteger) : string = this.literalBigInteger value
+        member this.Literal(value: DateOnly) : string = this.literalDateOnly value
+        member this.Literal(value: TimeOnly) : string = this.literaTimeOnly value
+        member this.Literal(values: List<'T>, vertical: bool) : string = failwith "Not Implemented"
+
+        member this.Literal(values: Dictionary<'TKey, 'TValue>, vertical: bool) : string =
+            failwith "Not Implemented"
+
+        member this.Statement(node: Expression, collectedNamespaces: ISet<string>) : string =
+            failwith "Not Implemented"
+
+        member this.XmlComment(comment: string, indent: int) : string =
+            let lines =
+                comment.Split(
+                    [|
+                        "\n"
+                        "\r"
+                        "\r\n"
+                    |],
+                    StringSplitOptions.RemoveEmptyEntries
+                )
+
+            stringBuffer {
+                "/// <summary>"
+
+                lines
+                |> Seq.map (fun l ->
+                    "/// "
+                    + (SecurityElement.Escape l)
+                )
+
+                "/// </summary>"
+            }

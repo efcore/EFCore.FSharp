@@ -15,14 +15,8 @@ open EntityFrameworkCore.FSharp
 
 type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
-    let toOnedimensionalArray firstDimension (a: obj [,]) =
-        Array.init
-            a.Length
-            (fun i ->
-                if firstDimension then
-                    a.[i, 0]
-                else
-                    a.[0, i])
+    let toOnedimensionalArray firstDimension (a: obj[,]) =
+        Array.init a.Length (fun i -> if firstDimension then a.[i, 0] else a.[0, i])
 
     let sanitiseName name =
         if FSharpUtilities.isKeyword name then
@@ -43,7 +37,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
     let writeParameterIfTrue trueOrFalse name value =
         if trueOrFalse then
-            writeParameter name value |> Some
+            writeParameter name value
+            |> Some
         else
             None
 
@@ -53,7 +48,9 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let writeNullableParameterIfValue name (nullableParameter: Nullable<_>) =
 
         if nullableParameter.HasValue then
-            let value = nullableParameter |> code.UnknownLiteral
+            let value =
+                nullableParameter
+                |> code.UnknownLiteral
 
             $",%s{sanitiseName name} = Nullable(%s{value})"
             |> Some
@@ -64,76 +61,118 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         let lines =
             annotations
-            |> Seq.map (fun a -> $".Annotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})")
+            |> Seq.map (fun a ->
+                $".Annotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})"
+            )
 
-        if lines |> Seq.isEmpty then
-            if includeIgnore then
-                ") |> ignore"
-            else
-                ")"
+        if
+            lines
+            |> Seq.isEmpty
+        then
+            if includeIgnore then ") |> ignore" else ")"
 
-        elif lines |> Seq.length = 1 then
-            let line = lines |> Seq.head
+        elif
+            lines
+            |> Seq.length = 1
+        then
+            let line =
+                lines
+                |> Seq.head
 
-            if includeIgnore then
-                $"){line} |> ignore"
-            else
-                $"){line}"
+            if includeIgnore then $"){line} |> ignore" else $"){line}"
 
         else
-            let last = lines |> Seq.last
+            let last =
+                lines
+                |> Seq.last
 
             let tail =
                 lines
                 |> Seq.tail
-                |> Seq.map
-                    (fun l ->
-                        if includeIgnore && l = last then
-                            l + " |> ignore"
-                        else
-                            l)
+                |> Seq.map (fun l ->
+                    if
+                        includeIgnore
+                        && l = last
+                    then
+                        l
+                        + " |> ignore"
+                    else
+                        l
+                )
 
-            stringBuilder {
-                ")" + (lines |> Seq.head)
+            stringBuffer {
+                ")"
+                + (lines
+                   |> Seq.head)
+
                 indent { tail }
             }
 
     let oldAnnotations (annotations: Annotation seq) =
         let lines =
             annotations
-            |> Seq.map (fun a -> $".OldAnnotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})")
+            |> Seq.map (fun a ->
+                $".OldAnnotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})"
+            )
 
-        if lines |> Seq.isEmpty then
+        if
+            lines
+            |> Seq.isEmpty
+        then
             " |> ignore"
 
-        elif lines |> Seq.length = 1 then
-            let line = lines |> Seq.head
+        elif
+            lines
+            |> Seq.length = 1
+        then
+            let line =
+                lines
+                |> Seq.head
+
             $"{line} |> ignore"
 
         else
-            let last = lines |> Seq.last
+            let last =
+                lines
+                |> Seq.last
 
             let tail =
                 lines
                 |> Seq.tail
-                |> Seq.map (fun l -> if l = last then l + " |> ignore" else l)
+                |> Seq.map (fun l ->
+                    if l = last then
+                        l
+                        + " |> ignore"
+                    else
+                        l
+                )
 
-            stringBuilder {
-                lines |> Seq.head
+            stringBuffer {
+                lines
+                |> Seq.head
+
                 indent { tail }
             }
 
 
     let generateAddColumnOperation (op: AddColumnOperation) =
 
-        stringBuilder {
-            $".AddColumn<{op.ClrType |> unwrapOptionType |> code.Reference}>("
+        stringBuffer {
+            $".AddColumn<{op.ClrType
+                          |> unwrapOptionType
+                          |> code.Reference}>("
 
             indent {
                 writeName op.Name
                 writeSchema op.Schema
                 writeParameter "table" op.Table
-                writeParameterIfTrue (op.ColumnType |> notNull) "type" op.ColumnType
+
+                writeParameterIfTrue
+                    (op.ColumnType
+                     |> notNull)
+                    "type"
+                    op.ColumnType
+
                 writeNullableParameterIfValue "unicode" op.IsUnicode
                 writeNullableParameterIfValue "maxLength" op.MaxLength
                 writeNullableParameterIfValue "fixedLength" op.IsFixedLength
@@ -144,7 +183,9 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeOptionalParameter "defaultValue" op.DefaultValue
 
                 if isOptionType op.ClrType then
-                    $").SetValueConverter(OptionConverter<%s{op.ClrType |> unwrapOptionType |> code.Reference}> ()"
+                    $").SetValueConverter(OptionConverter<%s{op.ClrType
+                                                             |> unwrapOptionType
+                                                             |> code.Reference}> ()"
 
                 annotations true (op.GetAnnotations())
             }
@@ -152,7 +193,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
     let generateAddForeignKeyOperation (op: AddForeignKeyOperation) =
 
-        stringBuilder {
+        stringBuffer {
             ".AddForeignKey("
 
             indent {
@@ -160,20 +201,45 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeSchema op.Schema
                 writeParameter "table" op.Table
                 writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
-                writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+
+                writeParameterIfTrue
+                    (op.Columns.Length
+                     <> 1)
+                    "columns"
+                    op.Columns
+
                 writeOptionalParameter "principalSchema" op.PrincipalSchema
                 writeParameter "principalTable" op.PrincipalTable
-                writeParameterIfTrue (op.PrincipalColumns.Length = 1) "principalColumn" op.PrincipalColumns.[0]
-                writeParameterIfTrue (op.PrincipalColumns.Length <> 1) "principalColumns" op.PrincipalColumns
-                writeParameterIfTrue (op.OnUpdate <> ReferentialAction.NoAction) "onUpdate" op.OnUpdate
-                writeParameterIfTrue (op.OnDelete <> ReferentialAction.NoAction) "onDelete" op.OnDelete
+
+                writeParameterIfTrue
+                    (op.PrincipalColumns.Length = 1)
+                    "principalColumn"
+                    op.PrincipalColumns.[0]
+
+                writeParameterIfTrue
+                    (op.PrincipalColumns.Length
+                     <> 1)
+                    "principalColumns"
+                    op.PrincipalColumns
+
+                writeParameterIfTrue
+                    (op.OnUpdate
+                     <> ReferentialAction.NoAction)
+                    "onUpdate"
+                    op.OnUpdate
+
+                writeParameterIfTrue
+                    (op.OnDelete
+                     <> ReferentialAction.NoAction)
+                    "onDelete"
+                    op.OnDelete
             }
 
             annotations true (op.GetAnnotations())
         }
 
     let generateAddPrimaryKeyOperation (op: AddPrimaryKeyOperation) =
-        stringBuilder {
+        stringBuffer {
             ".AddPrimaryKey("
 
             indent {
@@ -181,14 +247,19 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeSchema op.Schema
                 writeParameter "table" op.Table
                 writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
-                writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+
+                writeParameterIfTrue
+                    (op.Columns.Length
+                     <> 1)
+                    "columns"
+                    op.Columns
             }
 
             annotations true (op.GetAnnotations())
         }
 
     let generateAddUniqueConstraintOperation (op: AddUniqueConstraintOperation) =
-        stringBuilder {
+        stringBuffer {
             ".AddUniqueConstraint("
 
             indent {
@@ -196,21 +267,32 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeSchema op.Schema
                 writeParameter "table" op.Table
                 writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
-                writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+
+                writeParameterIfTrue
+                    (op.Columns.Length
+                     <> 1)
+                    "columns"
+                    op.Columns
             }
 
             annotations true (op.GetAnnotations())
         }
 
     let generateAlterColumnOperation (op: AlterColumnOperation) =
-        stringBuilder {
+        stringBuffer {
             $".AlterColumn<{code.Reference op.ClrType}>("
 
             indent {
                 writeName op.Name
                 writeSchema op.Schema
                 writeParameter "table" op.Table
-                writeParameterIfTrue (op.ColumnType |> notNull) "type" op.ColumnType
+
+                writeParameterIfTrue
+                    (op.ColumnType
+                     |> notNull)
+                    "type"
+                    op.ColumnType
+
                 writeNullableParameterIfValue "unicode" op.IsUnicode
                 writeNullableParameterIfValue "maxLength" op.MaxLength
                 writeParameterIfTrue op.IsRowVersion "rowVersion" true
@@ -222,7 +304,12 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 if notNull op.OldColumn.ClrType then
                     $",oldClrType = typedefof<%s{code.Reference op.OldColumn.ClrType}>"
 
-                writeParameterIfTrue (op.OldColumn.ColumnType |> notNull) "oldType" op.OldColumn.ColumnType
+                writeParameterIfTrue
+                    (op.OldColumn.ColumnType
+                     |> notNull)
+                    "oldType"
+                    op.OldColumn.ColumnType
+
                 writeNullableParameterIfValue "oldUnicode" op.OldColumn.IsUnicode
                 writeNullableParameterIfValue "oldMaxLength" op.OldColumn.MaxLength
                 writeParameterIfTrue op.OldColumn.IsRowVersion "oldRowVersion" true
@@ -232,10 +319,13 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeOptionalParameter "oldDefaultValue" op.OldColumn.DefaultValue
 
                 if isOptionType op.ClrType then
-                    $").SetValueConverter(OptionConverter<%s{op.ClrType |> unwrapOptionType |> code.Reference}> ()"
+                    $").SetValueConverter(OptionConverter<%s{op.ClrType
+                                                             |> unwrapOptionType
+                                                             |> code.Reference}> ()"
 
                 let hasNoOldAnnotations =
-                    op.OldColumn.GetAnnotations() |> Seq.isEmpty
+                    op.OldColumn.GetAnnotations()
+                    |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -246,13 +336,14 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
 
     let generateAlterDatabaseOperation (op: AlterDatabaseOperation) =
-        stringBuilder {
+        stringBuffer {
             ".AlterDatabase("
 
             indent {
 
                 let hasNoOldAnnotations =
-                    op.OldDatabase.GetAnnotations() |> Seq.isEmpty
+                    op.OldDatabase.GetAnnotations()
+                    |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -262,23 +353,36 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateAlterSequenceOperation (op: AlterSequenceOperation) =
-        stringBuilder {
+        stringBuffer {
             ".AlterSequence("
 
             indent {
                 writeName op.Name
                 writeSchema op.Schema
-                writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
+
+                writeParameterIfTrue
+                    (op.IncrementBy
+                     <> 1)
+                    "incrementBy"
+                    op.IncrementBy
+
                 writeNullableParameterIfValue "minValue " op.MinValue
                 writeNullableParameterIfValue "maxValue " op.MaxValue
                 writeParameterIfTrue op.IsCyclic "cyclic" "true"
-                writeParameterIfTrue (op.OldSequence.IncrementBy <> 1) "oldIncrementBy" op.OldSequence.IncrementBy
+
+                writeParameterIfTrue
+                    (op.OldSequence.IncrementBy
+                     <> 1)
+                    "oldIncrementBy"
+                    op.OldSequence.IncrementBy
+
                 writeNullableParameterIfValue "oldMinValue " op.OldSequence.MinValue
                 writeNullableParameterIfValue "oldMaxValue " op.OldSequence.MaxValue
                 writeParameterIfTrue op.OldSequence.IsCyclic "oldCyclic" "true"
 
                 let hasNoOldAnnotations =
-                    op.OldSequence.GetAnnotations() |> Seq.isEmpty
+                    op.OldSequence.GetAnnotations()
+                    |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -288,7 +392,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateAlterTableOperation (op: AlterTableOperation) =
-        stringBuilder {
+        stringBuffer {
             ".AlterTable("
 
             indent {
@@ -296,7 +400,8 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeSchema op.Schema
 
                 let hasNoOldAnnotations =
-                    op.OldTable.GetAnnotations() |> Seq.isEmpty
+                    op.OldTable.GetAnnotations()
+                    |> Seq.isEmpty
 
                 annotations hasNoOldAnnotations (op.GetAnnotations())
 
@@ -306,7 +411,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateCreateIndexOperation (op: CreateIndexOperation) =
-        stringBuilder {
+        stringBuffer {
             ".CreateIndex("
 
             indent {
@@ -314,7 +419,13 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 writeSchema op.Schema
                 writeParameter "table" op.Table
                 writeParameterIfTrue (op.Columns.Length = 1) "column" op.Columns.[0]
-                writeParameterIfTrue (op.Columns.Length <> 1) "columns" op.Columns
+
+                writeParameterIfTrue
+                    (op.Columns.Length
+                     <> 1)
+                    "columns"
+                    op.Columns
+
                 writeParameterIfTrue op.IsUnique "unique" true
                 writeOptionalParameter "filter" op.Filter
                 annotations true (op.GetAnnotations())
@@ -322,7 +433,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateEnsureSchemaOperation (op: EnsureSchemaOperation) =
-        stringBuilder {
+        stringBuffer {
             ".EnsureSchema("
 
             indent {
@@ -334,19 +445,33 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateCreateSequenceOperation (op: CreateSequenceOperation) =
 
         let typedef =
-            if op.ClrType <> typedefof<Int64> then
+            if
+                op.ClrType
+                <> typedefof<Int64>
+            then
                 $"<%s{code.Reference op.ClrType}>"
             else
                 ""
 
-        stringBuilder {
+        stringBuffer {
             $".CreateSequence{typedef}("
 
             indent {
                 writeName op.Name
                 writeSchema op.Schema
-                writeParameterIfTrue (op.StartValue <> 1L) "startValue" op.StartValue
-                writeParameterIfTrue (op.IncrementBy <> 1) "incrementBy" op.IncrementBy
+
+                writeParameterIfTrue
+                    (op.StartValue
+                     <> 1L)
+                    "startValue"
+                    op.StartValue
+
+                writeParameterIfTrue
+                    (op.IncrementBy
+                     <> 1)
+                    "incrementBy"
+                    op.IncrementBy
+
                 writeNullableParameterIfValue "minValue " op.MinValue
                 writeNullableParameterIfValue "maxValue " op.MaxValue
                 writeParameterIfTrue op.IsCyclic "cyclic" "true"
@@ -362,7 +487,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             let propertyName = code.Identifier c.Name
             map.Add(c.Name, propertyName)
 
-            stringBuilder {
+            stringBuffer {
                 $"%s{propertyName} ="
 
                 indent {
@@ -370,17 +495,37 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
                     indent {
                         $"nullable = %s{code.Literal c.IsNullable}"
-                        writeParameterIfTrue (c.Name <> propertyName) "name" c.Name
-                        writeParameterIfTrue (c.ColumnType |> notNull) "type" c.ColumnType
+
+                        writeParameterIfTrue
+                            (c.Name
+                             <> propertyName)
+                            "name"
+                            c.Name
+
+                        writeParameterIfTrue
+                            (c.ColumnType
+                             |> notNull)
+                            "type"
+                            c.ColumnType
+
                         writeNullableParameterIfValue "unicode" c.IsUnicode
                         writeNullableParameterIfValue "maxLength" c.MaxLength
                         writeParameterIfTrue (c.IsRowVersion) "rowVersion" c.IsRowVersion
 
-                        if c.DefaultValueSql |> notNull then
+                        if
+                            c.DefaultValueSql
+                            |> notNull
+                        then
                             sprintf ", defaultValueSql = %s" (code.Literal c.DefaultValueSql)
-                        elif c.ComputedColumnSql |> notNull then
+                        elif
+                            c.ComputedColumnSql
+                            |> notNull
+                        then
                             sprintf ", computedColumnSql = %s" (code.Literal c.ComputedColumnSql)
-                        elif c.DefaultValue |> notNull then
+                        elif
+                            c.DefaultValue
+                            |> notNull
+                        then
                             sprintf ", defaultValue = %s" (code.UnknownLiteral c.DefaultValue)
                     }
                 }
@@ -388,14 +533,16 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 if isOptionType c.ClrType then
                     sprintf
                         ").SetValueConverter(OptionConverter<%s> ()"
-                        (c.ClrType |> unwrapOptionType |> code.Reference)
+                        (c.ClrType
+                         |> unwrapOptionType
+                         |> code.Reference)
 
                 indent { annotations false (c.GetAnnotations()) }
 
             }
 
         let writeColumns =
-            stringBuilder {
+            stringBuffer {
                 ",columns = (fun table -> "
                 "{|"
 
@@ -416,14 +563,14 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 |> Seq.toList
                 |> code.Lambda
 
-            stringBuilder {
+            stringBuffer {
                 $"table.UniqueConstraint({code.Literal uc.Name}, {constraints}"
                 indent { annotations true (op.PrimaryKey.GetAnnotations()) }
                 ""
             }
 
         let writeCheckConstraint (cc: AddCheckConstraintOperation) =
-            stringBuilder {
+            stringBuffer {
                 $"table.CheckConstraint({code.Literal cc.Name}, {code.Literal cc.Sql}"
                 indent { annotations true (op.PrimaryKey.GetAnnotations()) }
                 ""
@@ -431,7 +578,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         let writeForeignKeyConstraint (fk: AddForeignKeyOperation) =
 
-            stringBuilder {
+            stringBuffer {
                 "table.ForeignKey("
 
                 let constraints =
@@ -443,18 +590,45 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                 indent {
                     writeName fk.Name
 
-                    if fk.Columns.Length = 1
-                       || isNull fk.PrincipalColumns then
+                    if
+                        fk.Columns.Length = 1
+                        || isNull fk.PrincipalColumns
+                    then
                         $",column = {constraints}"
                     else
                         $",columns = {constraints}"
 
-                    writeParameterIfTrue (fk.PrincipalSchema |> notNull) "principalSchema" fk.PrincipalSchema
+                    writeParameterIfTrue
+                        (fk.PrincipalSchema
+                         |> notNull)
+                        "principalSchema"
+                        fk.PrincipalSchema
+
                     writeParameter "principalTable" fk.PrincipalTable
-                    writeParameterIfTrue (fk.PrincipalColumns.Length = 1) "principalColumn" fk.PrincipalColumns.[0]
-                    writeParameterIfTrue (fk.PrincipalColumns.Length <> 1) "principalColumns" fk.PrincipalColumns
-                    writeParameterIfTrue (fk.OnUpdate <> ReferentialAction.NoAction) "onUpdate" fk.OnUpdate
-                    writeParameterIfTrue (fk.OnDelete <> ReferentialAction.NoAction) "onDelete" fk.OnDelete
+
+                    writeParameterIfTrue
+                        (fk.PrincipalColumns.Length = 1)
+                        "principalColumn"
+                        fk.PrincipalColumns.[0]
+
+                    writeParameterIfTrue
+                        (fk.PrincipalColumns.Length
+                         <> 1)
+                        "principalColumns"
+                        fk.PrincipalColumns
+
+                    writeParameterIfTrue
+                        (fk.OnUpdate
+                         <> ReferentialAction.NoAction)
+                        "onUpdate"
+                        fk.OnUpdate
+
+                    writeParameterIfTrue
+                        (fk.OnDelete
+                         <> ReferentialAction.NoAction)
+                        "onDelete"
+                        fk.OnDelete
+
                     annotations true (fk.GetAnnotations())
                 }
 
@@ -465,12 +639,16 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
             let hasConstraints =
                 notNull op.PrimaryKey
-                || (op.UniqueConstraints |> Seq.isEmpty |> not)
-                || (op.ForeignKeys |> Seq.isEmpty |> not)
+                || (op.UniqueConstraints
+                    |> Seq.isEmpty
+                    |> not)
+                || (op.ForeignKeys
+                    |> Seq.isEmpty
+                    |> not)
 
             if hasConstraints then
 
-                stringBuilder {
+                stringBuffer {
                     ", constraints ="
 
                     indent {
@@ -479,7 +657,9 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                         indent {
                             if notNull op.PrimaryKey then
 
-                                let pkName = op.PrimaryKey.Name |> code.Literal
+                                let pkName =
+                                    op.PrimaryKey.Name
+                                    |> code.Literal
 
                                 let pkColumns =
                                     op.PrimaryKey.Columns
@@ -507,7 +687,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
             else
                 None
 
-        stringBuilder {
+        stringBuffer {
             ".CreateTable("
 
             indent {
@@ -522,7 +702,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropColumnOperation (op: DropColumnOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropColumn("
 
             indent {
@@ -534,7 +714,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropForeignKeyOperation (op: DropForeignKeyOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropForeignKey("
 
             indent {
@@ -546,7 +726,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropIndexOperation (op: DropIndexOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropIndex("
 
             indent {
@@ -558,7 +738,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropPrimaryKeyOperation (op: DropPrimaryKeyOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropPrimaryKey("
 
             indent {
@@ -570,7 +750,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropSchemaOperation (op: DropSchemaOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropSchema("
 
             indent {
@@ -580,7 +760,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropSequenceOperation (op: DropSequenceOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropSequence("
 
             indent {
@@ -591,7 +771,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropTableOperation (op: DropTableOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropTable("
 
             indent {
@@ -602,7 +782,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropUniqueConstraintOperation (op: DropUniqueConstraintOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropUniqueConstraint("
 
             indent {
@@ -614,7 +794,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateRenameColumnOperation (op: RenameColumnOperation) =
-        stringBuilder {
+        stringBuffer {
             ".RenameColumn("
 
             indent {
@@ -627,7 +807,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateRenameIndexOperation (op: RenameIndexOperation) =
-        stringBuilder {
+        stringBuffer {
             ".RenameIndex("
 
             indent {
@@ -640,7 +820,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateRenameSequenceOperation (op: RenameSequenceOperation) =
-        stringBuilder {
+        stringBuffer {
             ".RenameSequence("
 
             indent {
@@ -653,7 +833,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateRenameTableOperation (op: RenameTableOperation) =
-        stringBuilder {
+        stringBuffer {
             ".RenameTable("
 
             indent {
@@ -666,7 +846,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateRestartSequenceOperation (op: RestartSequenceOperation) =
-        stringBuilder {
+        stringBuffer {
             ".RestartSequence("
 
             indent {
@@ -681,7 +861,9 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
 
         let sqlAnnotations =
             op.GetAnnotations()
-            |> Seq.map (fun a -> $".Annotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})")
+            |> Seq.map (fun a ->
+                $".Annotation(%s{code.Literal a.Name}, %s{code.UnknownLiteral a.Value})"
+            )
             |> join ""
 
         $".Sql(%s{code.Literal op.Sql})%s{sqlAnnotations} |> ignore"
@@ -691,21 +873,43 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         let parameters =
             seq {
                 if notNull op.Schema then
-                    yield sprintf "schema = %s," (op.Schema |> code.Literal)
+                    yield
+                        sprintf
+                            "schema = %s,"
+                            (op.Schema
+                             |> code.Literal)
 
-                yield sprintf "table = %s," (op.Table |> code.Literal)
+                yield
+                    sprintf
+                        "table = %s,"
+                        (op.Table
+                         |> code.Literal)
 
                 if op.Columns.Length = 1 then
-                    yield sprintf "column = %s," (op.Columns.[0] |> code.Literal)
+                    yield
+                        sprintf
+                            "column = %s,"
+                            (op.Columns.[0]
+                             |> code.Literal)
                 else
-                    yield sprintf "columns = %s," (op.Columns |> code.Literal)
+                    yield
+                        sprintf
+                            "columns = %s,"
+                            (op.Columns
+                             |> code.Literal)
 
                 let length0 = op.Values.GetLength(0)
                 let length1 = op.Values.GetLength(1)
 
                 let valuesArray =
-                    if length0 = 1 && length1 = 1 then
-                        sprintf "value = %s :> obj" (op.Values.[0, 0] |> code.UnknownLiteral)
+                    if
+                        length0 = 1
+                        && length1 = 1
+                    then
+                        sprintf
+                            "value = %s :> obj"
+                            (op.Values.[0, 0]
+                             |> code.UnknownLiteral)
                     elif length0 = 1 then
                         sprintf
                             "values = %s"
@@ -713,16 +917,22 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                              |> toOnedimensionalArray false
                              |> code.Literal)
                     elif length1 = 1 then
-                        let arr = op.Values |> toOnedimensionalArray true
+                        let arr =
+                            op.Values
+                            |> toOnedimensionalArray true
+
                         let lines = code.Literal(arr, true)
                         sprintf "values = %s" lines
                     else
-                        sprintf "values = %s" (op.Values |> code.Literal)
+                        sprintf
+                            "values = %s"
+                            (op.Values
+                             |> code.Literal)
 
                 yield valuesArray
             }
 
-        stringBuilder {
+        stringBuffer {
             ".InsertData("
             indent { parameters }
             ") |> ignore"
@@ -732,20 +942,43 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         let parameters =
             seq {
                 if notNull op.Schema then
-                    yield sprintf "schema = %s, " (op.Schema |> code.Literal)
+                    yield
+                        sprintf
+                            "schema = %s, "
+                            (op.Schema
+                             |> code.Literal)
 
-                yield sprintf "table = %s, " (op.Table |> code.Literal)
+                yield
+                    sprintf
+                        "table = %s, "
+                        (op.Table
+                         |> code.Literal)
 
                 if op.KeyColumns.Length = 1 then
-                    yield sprintf "keyColumn = %s, " (op.KeyColumns.[0] |> code.Literal)
+                    yield
+                        sprintf
+                            "keyColumn = %s, "
+                            (op.KeyColumns.[0]
+                             |> code.Literal)
                 else
-                    yield sprintf "keyColumns = %s, " (op.KeyColumns |> code.Literal)
+                    yield
+                        sprintf
+                            "keyColumns = %s, "
+                            (op.KeyColumns
+                             |> code.Literal)
 
                 let length0 = op.KeyValues.GetLength(0)
                 let length1 = op.KeyValues.GetLength(1)
 
-                if length0 = 1 && length1 = 1 then
-                    yield sprintf "keyValue = %s" (op.KeyValues.[0, 0] |> code.UnknownLiteral)
+                if
+                    length0 = 1
+                    && length1 = 1
+                then
+                    yield
+                        sprintf
+                            "keyValue = %s"
+                            (op.KeyValues.[0, 0]
+                             |> code.UnknownLiteral)
                 elif length0 = 1 then
                     yield
                         sprintf
@@ -755,15 +988,20 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                              |> code.Literal)
                 elif length1 = 1 then
                     let arr =
-                        op.KeyValues |> toOnedimensionalArray true
+                        op.KeyValues
+                        |> toOnedimensionalArray true
 
                     let lines = code.Literal(arr, true)
                     yield sprintf "keyValues = %s" lines
                 else
-                    yield sprintf "keyValues = %s" (op.KeyValues |> code.Literal)
+                    yield
+                        sprintf
+                            "keyValues = %s"
+                            (op.KeyValues
+                             |> code.Literal)
             }
 
-        stringBuilder {
+        stringBuffer {
             ".DeleteData("
             indent { parameters }
             ") |> ignore"
@@ -773,20 +1011,43 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         let parameters =
             seq {
                 if notNull op.Schema then
-                    yield sprintf "schema = %s, " (op.Schema |> code.Literal)
+                    yield
+                        sprintf
+                            "schema = %s, "
+                            (op.Schema
+                             |> code.Literal)
 
-                yield sprintf "table = %s, " (op.Table |> code.Literal)
+                yield
+                    sprintf
+                        "table = %s, "
+                        (op.Table
+                         |> code.Literal)
 
                 if op.KeyColumns.Length = 1 then
-                    yield sprintf "keyColumn = %s, " (op.KeyColumns.[0] |> code.Literal)
+                    yield
+                        sprintf
+                            "keyColumn = %s, "
+                            (op.KeyColumns.[0]
+                             |> code.Literal)
                 else
-                    yield sprintf "keyColumns = %s, " (op.KeyColumns |> code.Literal)
+                    yield
+                        sprintf
+                            "keyColumns = %s, "
+                            (op.KeyColumns
+                             |> code.Literal)
 
                 let length0 = op.KeyValues.GetLength(0)
                 let length1 = op.KeyValues.GetLength(1)
 
-                if length0 = 1 && length1 = 1 then
-                    yield sprintf "keyValue = %s" (op.KeyValues.[0, 0] |> code.UnknownLiteral)
+                if
+                    length0 = 1
+                    && length1 = 1
+                then
+                    yield
+                        sprintf
+                            "keyValue = %s"
+                            (op.KeyValues.[0, 0]
+                             |> code.UnknownLiteral)
                 elif length0 = 1 then
                     yield
                         sprintf
@@ -796,23 +1057,43 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                              |> code.Literal)
                 elif length1 = 1 then
                     let arr =
-                        op.KeyValues |> toOnedimensionalArray true
+                        op.KeyValues
+                        |> toOnedimensionalArray true
 
                     let lines = code.Literal(arr, true)
                     yield sprintf "keyValues = %s" lines
                 else
-                    yield sprintf "keyValues = %s" (op.KeyValues |> code.Literal)
+                    yield
+                        sprintf
+                            "keyValues = %s"
+                            (op.KeyValues
+                             |> code.Literal)
 
                 if op.Columns.Length = 1 then
-                    yield sprintf "column = %s, " (op.Columns.[0] |> code.Literal)
+                    yield
+                        sprintf
+                            "column = %s, "
+                            (op.Columns.[0]
+                             |> code.Literal)
                 else
-                    yield sprintf "columns = %s, " (op.Columns |> code.Literal)
+                    yield
+                        sprintf
+                            "columns = %s, "
+                            (op.Columns
+                             |> code.Literal)
 
                 let length0 = op.Values.GetLength(0)
                 let length1 = op.Values.GetLength(1)
 
-                if length0 = 1 && length1 = 1 then
-                    yield sprintf "value = %s" (op.Values.[0, 0] |> code.UnknownLiteral)
+                if
+                    length0 = 1
+                    && length1 = 1
+                then
+                    yield
+                        sprintf
+                            "value = %s"
+                            (op.Values.[0, 0]
+                             |> code.UnknownLiteral)
                 elif length0 = 1 then
                     yield
                         sprintf
@@ -821,21 +1102,28 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
                              |> toOnedimensionalArray false
                              |> code.Literal)
                 elif length1 = 1 then
-                    let arr = op.Values |> toOnedimensionalArray true
+                    let arr =
+                        op.Values
+                        |> toOnedimensionalArray true
+
                     let lines = code.Literal(arr, true)
                     yield sprintf "values = %s" lines
                 else
-                    yield sprintf "values = %s" (op.Values |> code.Literal)
+                    yield
+                        sprintf
+                            "values = %s"
+                            (op.Values
+                             |> code.Literal)
             }
 
-        stringBuilder {
+        stringBuffer {
             ".UpdateData("
             indent { parameters }
             ") |> ignore"
         }
 
     let generateAddCheckConstraintOperation (op: AddCheckConstraintOperation) =
-        stringBuilder {
+        stringBuffer {
             ".AddCheckConstraint("
 
             indent {
@@ -848,7 +1136,7 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
         }
 
     let generateDropCheckConstraintOperation (op: DropCheckConstraintOperation) =
-        stringBuilder {
+        stringBuffer {
             ".DropCheckConstraint("
 
             indent {
@@ -862,59 +1150,135 @@ type FSharpMigrationOperationGenerator(code: ICSharpHelper) =
     let generateOperation builderName (op: MigrationOperation) =
         let result =
             match op with
-            | :? AddColumnOperation as op' -> op' |> generateAddColumnOperation
-            | :? AddForeignKeyOperation as op' -> op' |> generateAddForeignKeyOperation
-            | :? AddPrimaryKeyOperation as op' -> op' |> generateAddPrimaryKeyOperation
-            | :? AddUniqueConstraintOperation as op' -> op' |> generateAddUniqueConstraintOperation
-            | :? AlterColumnOperation as op' -> op' |> generateAlterColumnOperation
-            | :? AlterDatabaseOperation as op' -> op' |> generateAlterDatabaseOperation
-            | :? AlterSequenceOperation as op' -> op' |> generateAlterSequenceOperation
-            | :? AlterTableOperation as op' -> op' |> generateAlterTableOperation
-            | :? CreateIndexOperation as op' -> op' |> generateCreateIndexOperation
-            | :? EnsureSchemaOperation as op' -> op' |> generateEnsureSchemaOperation
-            | :? CreateSequenceOperation as op' -> op' |> generateCreateSequenceOperation
-            | :? CreateTableOperation as op' -> op' |> generateCreateTableOperation
-            | :? DropColumnOperation as op' -> op' |> generateDropColumnOperation
-            | :? DropForeignKeyOperation as op' -> op' |> generateDropForeignKeyOperation
-            | :? DropIndexOperation as op' -> op' |> generateDropIndexOperation
-            | :? DropPrimaryKeyOperation as op' -> op' |> generateDropPrimaryKeyOperation
-            | :? DropSchemaOperation as op' -> op' |> generateDropSchemaOperation
-            | :? DropSequenceOperation as op' -> op' |> generateDropSequenceOperation
-            | :? DropTableOperation as op' -> op' |> generateDropTableOperation
-            | :? DropUniqueConstraintOperation as op' -> op' |> generateDropUniqueConstraintOperation
-            | :? RenameColumnOperation as op' -> op' |> generateRenameColumnOperation
-            | :? RenameIndexOperation as op' -> op' |> generateRenameIndexOperation
-            | :? RenameSequenceOperation as op' -> op' |> generateRenameSequenceOperation
-            | :? RenameTableOperation as op' -> op' |> generateRenameTableOperation
-            | :? RestartSequenceOperation as op' -> op' |> generateRestartSequenceOperation
-            | :? SqlOperation as op' -> op' |> generateSqlOperation
-            | :? InsertDataOperation as op' -> op' |> generateInsertDataOperation
-            | :? DeleteDataOperation as op' -> op' |> generateDeleteDataOperation
-            | :? UpdateDataOperation as op' -> op' |> generateUpdateDataOperation
-            | :? AddCheckConstraintOperation as op' -> op' |> generateAddCheckConstraintOperation
-            | :? DropCheckConstraintOperation as op' -> op' |> generateDropCheckConstraintOperation
+            | :? AddColumnOperation as op' ->
+                op'
+                |> generateAddColumnOperation
+            | :? AddForeignKeyOperation as op' ->
+                op'
+                |> generateAddForeignKeyOperation
+            | :? AddPrimaryKeyOperation as op' ->
+                op'
+                |> generateAddPrimaryKeyOperation
+            | :? AddUniqueConstraintOperation as op' ->
+                op'
+                |> generateAddUniqueConstraintOperation
+            | :? AddCheckConstraintOperation as op' ->
+                op'
+                |> generateAddCheckConstraintOperation
+            | :? AlterColumnOperation as op' ->
+                op'
+                |> generateAlterColumnOperation
+            | :? AlterDatabaseOperation as op' ->
+                op'
+                |> generateAlterDatabaseOperation
+            | :? AlterSequenceOperation as op' ->
+                op'
+                |> generateAlterSequenceOperation
+            | :? AlterTableOperation as op' ->
+                op'
+                |> generateAlterTableOperation
+            | :? CreateIndexOperation as op' ->
+                op'
+                |> generateCreateIndexOperation
+            | :? EnsureSchemaOperation as op' ->
+                op'
+                |> generateEnsureSchemaOperation
+            | :? CreateSequenceOperation as op' ->
+                op'
+                |> generateCreateSequenceOperation
+            | :? CreateTableOperation as op' ->
+                op'
+                |> generateCreateTableOperation
+            | :? DropColumnOperation as op' ->
+                op'
+                |> generateDropColumnOperation
+            | :? DropForeignKeyOperation as op' ->
+                op'
+                |> generateDropForeignKeyOperation
+            | :? DropIndexOperation as op' ->
+                op'
+                |> generateDropIndexOperation
+            | :? DropPrimaryKeyOperation as op' ->
+                op'
+                |> generateDropPrimaryKeyOperation
+            | :? DropSchemaOperation as op' ->
+                op'
+                |> generateDropSchemaOperation
+            | :? DropSequenceOperation as op' ->
+                op'
+                |> generateDropSequenceOperation
+            | :? DropTableOperation as op' ->
+                op'
+                |> generateDropTableOperation
+            | :? DropUniqueConstraintOperation as op' ->
+                op'
+                |> generateDropUniqueConstraintOperation
+            | :? DropCheckConstraintOperation as op' ->
+                op'
+                |> generateDropCheckConstraintOperation
+            | :? RenameColumnOperation as op' ->
+                op'
+                |> generateRenameColumnOperation
+            | :? RenameIndexOperation as op' ->
+                op'
+                |> generateRenameIndexOperation
+            | :? RenameSequenceOperation as op' ->
+                op'
+                |> generateRenameSequenceOperation
+            | :? RenameTableOperation as op' ->
+                op'
+                |> generateRenameTableOperation
+            | :? RestartSequenceOperation as op' ->
+                op'
+                |> generateRestartSequenceOperation
+            | :? SqlOperation as op' ->
+                op'
+                |> generateSqlOperation
+            | :? InsertDataOperation as op' ->
+                op'
+                |> generateInsertDataOperation
+            | :? DeleteDataOperation as op' ->
+                op'
+                |> generateDeleteDataOperation
+            | :? UpdateDataOperation as op' ->
+                op'
+                |> generateUpdateDataOperation
             | _ ->
                 op
-                |> invalidOp ((op.GetType()) |> DesignStrings.UnknownOperation) // The failure case
+                |> invalidOp (
+                    (op.GetType())
+                    |> DesignStrings.UnknownOperation
+                ) // The failure case
 
-        builderName + result
+        builderName
+        + result
 
-    let generate (builderName: string) (operations: MigrationOperation seq) (sb: IndentedStringBuilder) =
+    let generate
+        (builderName: string)
+        (operations: MigrationOperation seq)
+        (sb: IndentedStringBuilder)
+        =
 
-        if operations |> Seq.isEmpty then
-            sb.AppendLine "()" |> ignore
+        if
+            operations
+            |> Seq.isEmpty
+        then
+            sb.AppendLine "()"
+            |> ignore
         else
 
             let genOp = generateOperation builderName
 
             let generatedOperations =
-                stringBuilder {
+                stringBuffer {
                     for o in operations do
                         genOp o
                         ""
                 }
 
-            sb.AppendLines generatedOperations |> ignore
+            sb.AppendLines generatedOperations
+            |> ignore
 
     interface ICSharpMigrationOperationGenerator with
-        member this.Generate(builderName, operations, builder) = generate builderName operations builder
+        member this.Generate(builderName, operations, builder) =
+            generate builderName operations builder

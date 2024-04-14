@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>EntityFrameworkCore.FSharp</AssemblyName>
     <RootNamespace>EntityFrameworkCore.FSharp</RootNamespace>
     <Authors>Simon Reynolds, Brice Lambson et al.</Authors>
@@ -15,7 +15,7 @@
     <LangVersion>latest</LangVersion>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>6.0.0-local001</Version>
+    <Version>8.0.0-local001</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
@@ -23,9 +23,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ScaffoldOptions.fs" />
+    <Compile Include="Utilities\ToStringInstanceHelper.fs" />
+    <Compile Include="Utilities\CommonMethods.fs" />
     <Compile Include="Utilities\SharedTypeExtensions.fs" />
     <Compile Include="Utilities\EntityFrameworkExtensions.fs" />
-    <Compile Include="Utilities\StringBuffer.fs" />
     <Compile Include="Utilities\Multigraph.fs" />
     <Compile Include="Internal\FSharpHelper.fs" />
     <Compile Include="Internal\FSharpUtilities.fs" />

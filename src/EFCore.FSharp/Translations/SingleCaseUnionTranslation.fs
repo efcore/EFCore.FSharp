@@ -9,4 +9,5 @@ let singleCaseUnionMemberTranslator (sqlExp: ISqlExpressionFactory) =
             if SharedTypeExtensions.isSingleCaseUnion member'.DeclaringType then
                 sqlExp.Convert(instance, returnType) :> _
             else
-                instance }
+                instance
+    }

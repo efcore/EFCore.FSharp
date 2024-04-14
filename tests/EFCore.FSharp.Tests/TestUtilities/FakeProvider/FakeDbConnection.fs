@@ -37,14 +37,24 @@ type FakeDbParameter() =
     override val Size = 0 with get, set
 
     override this.SourceColumn
-        with get () = NotImplementedException() |> raise
-        and set value = NotImplementedException() |> raise
+        with get () =
+            NotImplementedException()
+            |> raise
+        and set value =
+            NotImplementedException()
+            |> raise
 
     override this.SourceColumnNullMapping
-        with get () = NotImplementedException() |> raise
-        and set value = NotImplementedException() |> raise
+        with get () =
+            NotImplementedException()
+            |> raise
+        and set value =
+            NotImplementedException()
+            |> raise
 
-    override this.ResetDbType() = NotImplementedException() |> raise
+    override this.ResetDbType() =
+        NotImplementedException()
+        |> raise
 
 type FakeDbParameterCollection() =
     inherit DbParameterCollection()
@@ -55,35 +65,72 @@ type FakeDbParameterCollection() =
 
     override this.Add value =
         parameters.Add value
-        parameters.Count - 1
 
+        parameters.Count
+        - 1
 
 
     override this.GetEnumerator() = parameters.GetEnumerator() :> _
 
-    override this.SyncRoot = NotImplementedException() |> raise
+    override this.SyncRoot =
+        NotImplementedException()
+        |> raise
 
-    override this.AddRange values = NotImplementedException() |> raise
+    override this.AddRange values =
+        NotImplementedException()
+        |> raise
 
     override this.Clear() = ()
 
-    override this.Contains(value: obj) : bool = NotImplementedException() |> raise
-    override this.Contains(value: string) : bool = NotImplementedException() |> raise
+    override this.Contains(value: obj) : bool =
+        NotImplementedException()
+        |> raise
 
-    override this.CopyTo(array, index) : unit = NotImplementedException() |> raise
+    override this.Contains(value: string) : bool =
+        NotImplementedException()
+        |> raise
 
-    override this.IndexOf(value: obj) : int = NotImplementedException() |> raise
-    override this.IndexOf(value: string) : int = NotImplementedException() |> raise
+    override this.CopyTo(array, index) : unit =
+        NotImplementedException()
+        |> raise
 
-    override this.Insert(index, value) : unit = NotImplementedException() |> raise
-    override this.Remove value : unit = NotImplementedException() |> raise
-    override this.RemoveAt(name: string) : unit = NotImplementedException() |> raise
-    override this.RemoveAt(index: int) : unit = NotImplementedException() |> raise
+    override this.IndexOf(value: obj) : int =
+        NotImplementedException()
+        |> raise
+
+    override this.IndexOf(value: string) : int =
+        NotImplementedException()
+        |> raise
+
+    override this.Insert(index, value) : unit =
+        NotImplementedException()
+        |> raise
+
+    override this.Remove value : unit =
+        NotImplementedException()
+        |> raise
+
+    override this.RemoveAt(name: string) : unit =
+        NotImplementedException()
+        |> raise
+
+    override this.RemoveAt(index: int) : unit =
+        NotImplementedException()
+        |> raise
 
     override this.GetParameter(index: int) : DbParameter = parameters.[index] :?> DbParameter
-    override this.GetParameter(name: string) : DbParameter = NotImplementedException() |> raise
-    override this.SetParameter(name: string, value: DbParameter) : unit = NotImplementedException() |> raise
-    override this.SetParameter(index: int, value: DbParameter) : unit = NotImplementedException() |> raise
+
+    override this.GetParameter(name: string) : DbParameter =
+        NotImplementedException()
+        |> raise
+
+    override this.SetParameter(name: string, value: DbParameter) : unit =
+        NotImplementedException()
+        |> raise
+
+    override this.SetParameter(index: int, value: DbParameter) : unit =
+        NotImplementedException()
+        |> raise
 
 type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor: FakeCommandExecutor) =
     inherit DbCommand()
@@ -124,7 +171,9 @@ type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor: FakeCommandE
         with get () = tran :> DbTransaction
         and set value = tran <- value :?> FakeDbTransaction
 
-    override this.Cancel() = NotImplementedException() |> raise
+    override this.Cancel() =
+        NotImplementedException()
+        |> raise
 
     override this.CommandText
         with get () = commandText
@@ -146,7 +195,9 @@ type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor: FakeCommandE
 
     override this.DbParameterCollection = FakeDbParameterCollection() :> _
 
-    override this.Prepare() = NotImplementedException() |> raise
+    override this.Prepare() =
+        NotImplementedException()
+        |> raise
 
     override this.ExecuteNonQuery() =
         this.AssertTransaction()
@@ -173,19 +224,25 @@ type FakeDbCommand(?connection: FakeDbConnection, ?commandExecutor: FakeCommandE
         exec.ExecuteDbDataReaderAsync this behavior cancellationToken
 
     override this.DesignTimeVisible
-        with get () = NotImplementedException() |> raise
-        and set value = NotImplementedException() |> raise
+        with get () =
+            NotImplementedException()
+            |> raise
+        and set value =
+            NotImplementedException()
+            |> raise
 
     member this.DisposeCount = disposeCount
 
     override this.Dispose disposing =
         if disposing then
-            disposeCount <- disposeCount + 1
+            disposeCount <-
+                disposeCount
+                + 1
 
         base.Dispose disposing
 
 
-and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
+and FakeDbDataReader(?columnNames: string[], ?results: ResizeArray<obj[]>) =
     inherit DbDataReader()
 
     let _columnNames =
@@ -196,9 +253,9 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
     let _results =
         match results with
         | Some e -> e
-        | None -> ResizeArray<obj []>()
+        | None -> ResizeArray<obj[]>()
 
-    let mutable _currentRow: obj [] = null
+    let mutable _currentRow: obj[] = null
     let mutable _rowIndex: int = 0
 
     let mutable _readAsyncCount: int = 0
@@ -208,7 +265,10 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
     override this.Read() =
         _currentRow <-
             if _rowIndex < _results.Count then
-                _rowIndex <- _rowIndex + 1
+                _rowIndex <-
+                    _rowIndex
+                    + 1
+
                 _results.[_rowIndex]
             else
                 null
@@ -218,26 +278,38 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
     member this.ReadAsyncCount = _readAsyncCount
 
     override this.ReadAsync cancellationToken =
-        _readAsyncCount <- _readAsyncCount + 1
+        _readAsyncCount <-
+            _readAsyncCount
+            + 1
 
         _currentRow <-
             if _rowIndex < _results.Count then
-                _rowIndex <- _rowIndex + 1
+                _rowIndex <-
+                    _rowIndex
+                    + 1
+
                 _results.[_rowIndex]
             else
                 null
 
-        not (isNull _currentRow) |> Task.FromResult
+        not (isNull _currentRow)
+        |> Task.FromResult
 
     member this.CloseCount = _closeCount
 
-    override this.Close() = _closeCount <- _closeCount + 1
+    override this.Close() =
+        _closeCount <-
+            _closeCount
+            + 1
 
     member this.DisposeCount = _disposeCount
 
     override this.Dispose disposing =
         if disposing then
-            _disposeCount <- _disposeCount + 1
+            _disposeCount <-
+                _disposeCount
+                + 1
+
             base.Dispose()
 
     override this.FieldCount = _columnNames.Length
@@ -251,17 +323,27 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
 
     override this.GetInt32 ordinal = _currentRow.[ordinal] :?> _
 
-    override this.Depth = NotImplementedException() |> raise
+    override this.Depth =
+        NotImplementedException()
+        |> raise
 
-    override this.HasRows = NotImplementedException() |> raise
+    override this.HasRows =
+        NotImplementedException()
+        |> raise
 
-    override this.IsClosed = NotImplementedException() |> raise
+    override this.IsClosed =
+        NotImplementedException()
+        |> raise
 
     override this.Item
-        with get (i: int): obj = NotImplementedException() |> raise
+        with get (i: int): obj =
+            NotImplementedException()
+            |> raise
 
     override this.Item
-        with get (name: string): obj = NotImplementedException() |> raise
+        with get (name: string): obj =
+            NotImplementedException()
+            |> raise
 
     override this.RecordsAffected = 0
 
@@ -269,13 +351,19 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
 
     override this.GetByte(ordinal: int) = _currentRow.[ordinal] :?> _
 
-    override this.GetBytes(ordinal, dataOffset, buffer, bufferOffset, length) = NotImplementedException() |> raise
+    override this.GetBytes(ordinal, dataOffset, buffer, bufferOffset, length) =
+        NotImplementedException()
+        |> raise
 
     override this.GetChar(ordinal: int) = _currentRow.[ordinal] :?> _
 
-    override this.GetChars(ordinal, dataOffset, buffer, bufferOffset, length) = NotImplementedException() |> raise
+    override this.GetChars(ordinal, dataOffset, buffer, bufferOffset, length) =
+        NotImplementedException()
+        |> raise
 
-    override this.GetDataTypeName(ordinal: int) = NotImplementedException() |> raise
+    override this.GetDataTypeName(ordinal: int) =
+        NotImplementedException()
+        |> raise
 
     override this.GetDateTime(ordinal: int) = _currentRow.[ordinal] :?> _
 
@@ -283,9 +371,13 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
 
     override this.GetDouble(ordinal: int) = _currentRow.[ordinal] :?> _
 
-    override this.GetEnumerator() = NotImplementedException() |> raise
+    override this.GetEnumerator() =
+        NotImplementedException()
+        |> raise
 
-    override this.GetFieldType(ordinal: int) = NotImplementedException() |> raise
+    override this.GetFieldType(ordinal: int) =
+        NotImplementedException()
+        |> raise
 
     override this.GetFloat(ordinal: int) = _currentRow.[ordinal] :?> _
 
@@ -295,15 +387,19 @@ and FakeDbDataReader(?columnNames: string [], ?results: ResizeArray<obj []>) =
 
     override this.GetInt64(ordinal: int) = _currentRow.[ordinal] :?> _
 
-    override this.GetOrdinal(name: string) = NotImplementedException() |> raise
+    override this.GetOrdinal(name: string) =
+        NotImplementedException()
+        |> raise
 
     override this.GetString(ordinal: int) = _currentRow.[ordinal] :?> _
 
-    override this.GetValues(values) = NotImplementedException() |> raise
+    override this.GetValues(values) =
+        NotImplementedException()
+        |> raise
 
-    override this.NextResult() = NotImplementedException() |> raise
-
-
+    override this.NextResult() =
+        NotImplementedException()
+        |> raise
 
 
 and FakeCommandExecutor
@@ -313,7 +409,8 @@ and FakeCommandExecutor
         ?executeReader: FakeDbCommand -> CommandBehavior -> DbDataReader,
         ?executeNonQueryAsync: FakeDbCommand -> CancellationToken -> Task<int>,
         ?executeScalarAsync: FakeDbCommand -> CancellationToken -> Task<obj>,
-        ?executeReaderAsync: FakeDbCommand -> CommandBehavior -> CancellationToken -> Task<DbDataReader>
+        ?executeReaderAsync:
+            FakeDbCommand -> CommandBehavior -> CancellationToken -> Task<DbDataReader>
     ) =
 
     let _executeNonQuery =
@@ -373,7 +470,10 @@ and FakeSqlGenerator(dependencies) =
     member this.AppendDeleteOperationCalls = _appendDeleteOperationCalls
 
     override this.AppendBatchHeader commandStringBuilder =
-        _appendBatchHeaderCalls <- _appendBatchHeaderCalls + 1
+        _appendBatchHeaderCalls <-
+            _appendBatchHeaderCalls
+            + 1
+
         base.AppendBatchHeader(commandStringBuilder)
 
     override this.AppendIdentityWhereCondition(commandStringBuilder, columnModification) =
@@ -383,7 +483,13 @@ and FakeSqlGenerator(dependencies) =
             .Append("provider_specific_identity()")
         |> ignore
 
-    override this.AppendSelectAffectedCountCommand(commandStringBuilder, name, schema, commandPosition) =
+    override this.AppendSelectAffectedCountCommand
+        (
+            commandStringBuilder,
+            name,
+            schema,
+            commandPosition
+        ) =
         commandStringBuilder
             .Append("SELECT provider_specific_rowcount();")
             .Append(Environment.NewLine)
@@ -398,7 +504,8 @@ and FakeSqlGenerator(dependencies) =
             .Append(expectedRowsAffected)
         |> ignore
 
-and [<AllowNullLiteral>] FakeDbTransaction(connection: FakeDbConnection, ?isolationLevel: IsolationLevel) =
+and [<AllowNullLiteral>] FakeDbTransaction
+    (connection: FakeDbConnection, ?isolationLevel: IsolationLevel) =
     inherit DbTransaction()
 
     let mutable commitCount = 0
@@ -416,23 +523,29 @@ and [<AllowNullLiteral>] FakeDbTransaction(connection: FakeDbConnection, ?isolat
     member this.RollbackCount = rollbackCount
     member this.DisposeCount = disposeCount
 
-    override this.Commit() = commitCount <- commitCount + 1
+    override this.Commit() =
+        commitCount <-
+            commitCount
+            + 1
 
-    override this.Rollback() = rollbackCount <- rollbackCount + 1
+    override this.Rollback() =
+        rollbackCount <-
+            rollbackCount
+            + 1
 
     override this.Dispose disposing =
         if disposing then
-            disposeCount <- disposeCount + 1
+            disposeCount <-
+                disposeCount
+                + 1
+
             (this.DbConnection :?> FakeDbConnection).ActiveTransaction <- null
 
         base.Dispose(disposing)
 
 and [<AllowNullLiteral>] FakeDbConnection
-    (
-        connectionString: string,
-        ?commandExecutor: FakeCommandExecutor,
-        ?state: ConnectionState
-    ) as this =
+    (connectionString: string, ?commandExecutor: FakeCommandExecutor, ?state: ConnectionState) as this
+    =
     inherit DbConnection()
 
     let mutable connectionState: ConnectionState =
@@ -475,20 +588,33 @@ and [<AllowNullLiteral>] FakeDbConnection
     override this.Database = "Fake Database"
     override this.DataSource = "Fake DataSource"
 
-    override this.ServerVersion = NotImplementedException() |> raise
+    override this.ServerVersion =
+        NotImplementedException()
+        |> raise
 
-    override this.ChangeDatabase databaseName = NotImplementedException() |> raise
+    override this.ChangeDatabase databaseName =
+        NotImplementedException()
+        |> raise
 
     override this.Open() =
-        openCount <- openCount + 1
+        openCount <-
+            openCount
+            + 1
+
         connectionState <- ConnectionState.Open
 
     override this.OpenAsync cancellationToken =
-        openCountAsync <- openCountAsync + 1
+        openCountAsync <-
+            openCountAsync
+            + 1
+
         base.OpenAsync cancellationToken
 
     override this.Close() =
-        closeCount <- closeCount + 1
+        closeCount <-
+            closeCount
+            + 1
+
         connectionState <- ConnectionState.Closed
 
     override this.CreateDbCommand() =
@@ -503,7 +629,9 @@ and [<AllowNullLiteral>] FakeDbConnection
 
     override this.Dispose disposing =
         if disposing then
-            disposeCount <- disposeCount + 1
+            disposeCount <-
+                disposeCount
+                + 1
 
         base.Dispose disposing
 
@@ -520,16 +648,20 @@ and FakeRelationalConnection(options) =
     member this.DbConnections: IReadOnlyList<FakeDbConnection> = _dbConnections :> _
 
     override this.CreateDbConnection() =
-        let connection =
-            new FakeDbConnection(base.ConnectionString)
+        let connection = new FakeDbConnection(base.ConnectionString)
 
         _dbConnections.Add(connection)
         connection :> _
 
 and FakeRelationalDatabaseCreator() =
 
-    member this.CanConnect() = NotImplementedException() |> raise
-    member this.CanConnectAsync cancellationToken = NotImplementedException() |> raise
+    member this.CanConnect() =
+        NotImplementedException()
+        |> raise
+
+    member this.CanConnectAsync cancellationToken =
+        NotImplementedException()
+        |> raise
 
     interface IRelationalDatabaseCreator with
         member this.CanConnect() : bool =
@@ -544,30 +676,76 @@ and FakeRelationalDatabaseCreator() =
         member this.HasTablesAsync(cancellationToken: CancellationToken) : Task<bool> =
             raise (System.NotImplementedException())
 
-        member this.EnsureDeleted() = NotImplementedException() |> raise
-        member this.EnsureDeletedAsync cancellationToken = NotImplementedException() |> raise
-        member this.EnsureCreated() = NotImplementedException() |> raise
-        member this.EnsureCreatedAsync cancellationToken = NotImplementedException() |> raise
-        member this.Exists() = NotImplementedException() |> raise
-        member this.ExistsAsync cancellationToken = NotImplementedException() |> raise
-        member this.Create() = NotImplementedException() |> raise
-        member this.CreateAsync cancellationToken = NotImplementedException() |> raise
-        member this.Delete() = NotImplementedException() |> raise
-        member this.DeleteAsync cancellationToken = NotImplementedException() |> raise
-        member this.CreateTables() = NotImplementedException() |> raise
-        member this.CreateTablesAsync cancellationToken = NotImplementedException() |> raise
-        member this.GenerateCreateScript() = NotImplementedException() |> raise
+        member this.EnsureDeleted() =
+            NotImplementedException()
+            |> raise
+
+        member this.EnsureDeletedAsync cancellationToken =
+            NotImplementedException()
+            |> raise
+
+        member this.EnsureCreated() =
+            NotImplementedException()
+            |> raise
+
+        member this.EnsureCreatedAsync cancellationToken =
+            NotImplementedException()
+            |> raise
+
+        member this.Exists() =
+            NotImplementedException()
+            |> raise
+
+        member this.ExistsAsync cancellationToken =
+            NotImplementedException()
+            |> raise
+
+        member this.Create() =
+            NotImplementedException()
+            |> raise
+
+        member this.CreateAsync cancellationToken =
+            NotImplementedException()
+            |> raise
+
+        member this.Delete() =
+            NotImplementedException()
+            |> raise
+
+        member this.DeleteAsync cancellationToken =
+            NotImplementedException()
+            |> raise
+
+        member this.CreateTables() =
+            NotImplementedException()
+            |> raise
+
+        member this.CreateTablesAsync cancellationToken =
+            NotImplementedException()
+            |> raise
+
+        member this.GenerateCreateScript() =
+            NotImplementedException()
+            |> raise
 
 and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
     inherit RelationalOptionsExtension
 
     new() = { inherit RelationalOptionsExtension() }
-    new(copyOptions: FakeRelationalOptionsExtension) = { inherit RelationalOptionsExtension(copyOptions) }
+
+    new(copyOptions: FakeRelationalOptionsExtension) =
+        {
+            inherit RelationalOptionsExtension(copyOptions)
+        }
 
     static member AddEntityFrameworkRelationalDatabase serviceCollection =
 
         let serviceMap (map: ServiceCollectionMap) =
-            map.TryAdd(typeof<ProviderCodeGenerator>, typeof<TestProviderCodeGenerator>, ServiceLifetime.Singleton)
+            map.TryAdd(
+                typeof<ProviderCodeGenerator>,
+                typeof<TestProviderCodeGenerator>,
+                ServiceLifetime.Singleton
+            )
             |> ignore
 
         let builder =
@@ -586,12 +764,14 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
         //.TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
 
 
-        builder.TryAddCoreServices() |> ignore
+        builder.TryAddCoreServices()
+        |> ignore
 
         serviceCollection
 
     override this.Info =
-        System.NotImplementedException() |> raise
+        System.NotImplementedException()
+        |> raise
 
 
     override this.Clone() =

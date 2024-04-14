@@ -15,8 +15,8 @@ type FSharpMigrationsModelDiffer
         updateAdapterFactory,
         commandBatchPreparerDependencies
     ) =
-    inherit MigrationsModelDiffer
-        (
+    inherit
+        MigrationsModelDiffer(
             typeMappingSource,
             migrationsAnnotations,
             changeDetector,
@@ -29,9 +29,11 @@ type FSharpMigrationsModelDiffer
         let isPrimaryKey = p.IsPrimaryKey()
 
         let isNullable =
-            (isOptionType clrType || isNullableType clrType)
+            (isOptionType clrType
+             || isNullableType clrType)
 
-        isNullable && not isPrimaryKey
+        isNullable
+        && not isPrimaryKey
 
     override _.Diff
         (
@@ -41,10 +43,14 @@ type FSharpMigrationsModelDiffer
         ) : MigrationOperation seq =
 
         let sourceTypeProperty =
-            (source.PropertyMappings |> Seq.head).Property
+            (source.PropertyMappings
+             |> Seq.head)
+                .Property
 
         let targetTypeProperty =
-            (target.PropertyMappings |> Seq.head).Property
+            (target.PropertyMappings
+             |> Seq.head)
+                .Property
 
         (source :?> Column).IsNullable <- isNullableType sourceTypeProperty
         (target :?> Column).IsNullable <- isNullableType targetTypeProperty
@@ -59,7 +65,9 @@ type FSharpMigrationsModelDiffer
         ) : MigrationOperation seq =
 
         let sourceTypeProperty =
-            (source.PropertyMappings |> Seq.head).Property
+            (source.PropertyMappings
+             |> Seq.head)
+                .Property
 
         (source :?> Column).IsNullable <- isNullableType sourceTypeProperty
 

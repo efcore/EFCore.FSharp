@@ -137,11 +137,12 @@ let TestFluentApiCall (modelBuilder: ModelBuilder) =
 
 
 let _testFluentApiCallMethodInfo =
-    let a =
-        Reflection.Assembly.GetExecutingAssembly()
+    let a = Reflection.Assembly.GetExecutingAssembly()
 
     let modu =
-        a.GetType("EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest")
+        a.GetType(
+            "EntityFrameworkCore.FSharp.Test.Scaffolding.Internal.FSharpDbContextGeneratorTest"
+        )
 
     let methodInfo = modu.GetMethod("TestFluentApiCall")
     methodInfo
@@ -157,8 +158,7 @@ type TestModelAnnotationProvider(dependencies) =
             yield! baseResult
 
             if database.["Test:TestModelAnnotation"] :? string then
-                let annotationValue =
-                    database.["Test:TestModelAnnotation"] :?> string
+                let annotationValue = database.["Test:TestModelAnnotation"] :?> string
 
                 yield (Annotation("Test:TestModelAnnotation", annotationValue)) :> IAnnotation
         }
@@ -180,93 +180,95 @@ let FSharpDbContextGeneratorTest =
             override _.AddModelServices =
                 fun (services) ->
                     services.Replace(
-                        ServiceDescriptor.Singleton<IRelationalAnnotationProvider, TestModelAnnotationProvider>()
+                        ServiceDescriptor.Singleton<IRelationalAnnotationProvider, TestModelAnnotationProvider>
+                            ()
                     )
                     |> ignore
 
             override _.AddScaffoldingServices =
                 fun (services) ->
                     services.Replace(
-                        ServiceDescriptor.Singleton<IAnnotationCodeGenerator, TestModelAnnotationCodeGenerator>()
+                        ServiceDescriptor.Singleton<IAnnotationCodeGenerator, TestModelAnnotationCodeGenerator>
+                            ()
                     )
-                    |> ignore }
+                    |> ignore
+        }
 
-    testList
-        "FSharpDbContextGeneratorTest"
-        [ test "Empty Model" {
+    testList "FSharpDbContextGeneratorTest" [
+        test "Empty Model" {
 
-              let buildModel (m: ModelBuilder) = ()
-              let options = ModelCodeGenerationOptions()
+            let buildModel (m: ModelBuilder) = ()
+            let options = ModelCodeGenerationOptions()
 
-              let assertScaffold (code: ScaffoldedModel) =
-                  Expect.equal
-                      (normaliseLineEndings code.ContextFile.Code)
-                      (normaliseLineEndings emptyModelDbContext)
-                      "Should be equal"
+            let assertScaffold (code: ScaffoldedModel) =
+                Expect.equal
+                    (normaliseLineEndings code.ContextFile.Code)
+                    (normaliseLineEndings emptyModelDbContext)
+                    "Should be equal"
 
-              let assertModel (model: IModel) =
-                  Expect.isEmpty (model.GetEntityTypes()) "Should be empty"
+            let assertModel (model: IModel) =
+                Expect.isEmpty (model.GetEntityTypes()) "Should be empty"
 
-              testBase.Test buildModel options assertScaffold assertModel []
-          }
+            testBase.Test buildModel options assertScaffold assertModel []
+        }
 
-        //   test "Views work" {
+    //   test "Views work" {
 
-        //       let buildModel (m: ModelBuilder) = m.Entity("Vista").ToView("Vista")
+    //       let buildModel (m: ModelBuilder) = m.Entity("Vista").ToView("Vista")
 
-        //       let options =
-        //           ModelCodeGenerationOptions(UseDataAnnotations = true)
+    //       let options =
+    //           ModelCodeGenerationOptions(UseDataAnnotations = true)
 
-        //       let assertScaffold (code: ScaffoldedModel) =
-        //           Expect.stringContains code.ContextFile.Code "entity.ToView(\"Vista\")" "Should contain view"
+    //       let assertScaffold (code: ScaffoldedModel) =
+    //           Expect.stringContains code.ContextFile.Code "entity.ToView(\"Vista\")" "Should contain view"
 
-        //       let assertModel (model: IModel) =
-        //           let entityType =
-        //               model.FindEntityType("TestNamespace.Vista")
+    //       let assertModel (model: IModel) =
+    //           let entityType =
+    //               model.FindEntityType("TestNamespace.Vista")
 
-        //           Expect.isNotNull
-        //               (entityType.FindAnnotation(RelationalAnnotationNames.ViewDefinitionSql))
-        //               "Should not be null"
+    //           Expect.isNotNull
+    //               (entityType.FindAnnotation(RelationalAnnotationNames.ViewDefinitionSql))
+    //               "Should not be null"
 
-        //           Expect.equal (entityType.GetViewName()) "Vista" "Should be equal"
-        //           Expect.isNull (entityType.GetViewSchema()) "Should be null"
-        //           Expect.isNull (entityType.GetTableName()) "Should be null"
-        //           Expect.isNull (entityType.GetSchema()) "Should be null"
+    //           Expect.equal (entityType.GetViewName()) "Vista" "Should be equal"
+    //           Expect.isNull (entityType.GetViewSchema()) "Should be null"
+    //           Expect.isNull (entityType.GetTableName()) "Should be null"
+    //           Expect.isNull (entityType.GetSchema()) "Should be null"
 
-        //       let additionalSources = [ vistaSource ]
+    //       let additionalSources = [ vistaSource ]
 
-        //       testBase.Test buildModel options assertScaffold assertModel additionalSources
+    //       testBase.Test buildModel options assertScaffold assertModel additionalSources
 
-        //   }
+    //   }
 
-        //   test "Temporal Tables work" {
+    //   test "Temporal Tables work" {
 
-        //       let buildModel (m: ModelBuilder) =
-        //           m.Entity(
-        //               "Customer",
-        //               fun e ->
-        //                   e.Property<int>("Id") |> ignore
-        //                   e.Property<string>("Name") |> ignore
-        //                   e.HasKey("Id") |> ignore
+    //       let buildModel (m: ModelBuilder) =
+    //           m.Entity(
+    //               "Customer",
+    //               fun e ->
+    //                   e.Property<int>("Id") |> ignore
+    //                   e.Property<string>("Name") |> ignore
+    //                   e.HasKey("Id") |> ignore
 
-        //                   e.ToTable(fun tb -> tb.IsTemporal() |> ignore)
-        //                   |> ignore
-        //           )
+    //                   e.ToTable(fun tb -> tb.IsTemporal() |> ignore)
+    //                   |> ignore
+    //           )
 
-        //       let options =
-        //           ModelCodeGenerationOptions(UseDataAnnotations = false)
+    //       let options =
+    //           ModelCodeGenerationOptions(UseDataAnnotations = false)
 
-        //       let assertScaffold (code: ScaffoldedModel) =
-        //           Expect.equal
-        //               (normaliseLineEndings code.ContextFile.Code)
-        //               (normaliseLineEndings temporalDbContext)
-        //               "Should be equal"
+    //       let assertScaffold (code: ScaffoldedModel) =
+    //           Expect.equal
+    //               (normaliseLineEndings code.ContextFile.Code)
+    //               (normaliseLineEndings temporalDbContext)
+    //               "Should be equal"
 
-        //       let assertModel (model: IModel) = ()
+    //       let assertModel (model: IModel) = ()
 
-        //       let additionalSources = [ customerSource ]
+    //       let additionalSources = [ customerSource ]
 
-        //       testBase.Test buildModel options assertScaffold assertModel additionalSources
+    //       testBase.Test buildModel options assertScaffold assertModel additionalSources
 
-        //   }
-         ]
+    //   }
+    ]

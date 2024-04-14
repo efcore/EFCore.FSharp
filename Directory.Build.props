@@ -1,13 +1,25 @@
+
+<!--
+This file allows overriding of properties for all projects in the directory.
+See https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-by-directory?view=vs-2022#directorybuildprops-and-directorybuildtargets
+ -->
+
 <Project>
     <PropertyGroup>
-        <!-- summary is not migrated from project.json, but you can use the <Description> property for that if needed. -->
         <PackageTags>f#, fsharp</PackageTags>
         <PackageProjectUrl>https://github.com/efcore/EFCore.FSharp</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE.md</PackageLicenseUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile> <!--https://docs.microsoft.com/en-gb/nuget/reference/msbuild-targets#packagereadmefile -->
         <RepositoryType>git</RepositoryType>
         <Authors>efcore</Authors>
         <RepositoryUrl>https://github.com/efcore/EFCore.FSharp</RepositoryUrl>
-        <!-- owners is not supported in MSBuild -->
     </PropertyGroup>
+    <PropertyGroup>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/"/>
+        <None Include="$(MSBuildThisFileDirectory)LICENSE.md" Pack="true" PackagePath="/"/>
+    </ItemGroup>
 </Project>

@@ -9,11 +9,12 @@ open Expecto
 open Microsoft.EntityFrameworkCore
 
 [<CLIMutable>]
-type Blog =
-    { [<Key>]
-      Id: Guid
-      Title: string
-      Content: string }
+type Blog = {
+    [<Key>]
+    Id: Guid
+    Title: string
+    Content: string
+}
 
 type MyContext() =
     inherit DbContext()
@@ -35,136 +36,132 @@ type MyContext() =
 
 let createContext () =
     let ctx = new MyContext()
-    ctx.Database.EnsureDeleted() |> ignore
-    ctx.Database.EnsureCreated() |> ignore
+
+    ctx.Database.EnsureDeleted()
+    |> ignore
+
+    ctx.Database.EnsureCreated()
+    |> ignore
+
     ctx
 
-let blogWithContent =
-    { Id = Guid.NewGuid()
-      Title = "My Title"
-      Content = "Some text" }
+let blogWithContent = {
+    Id = Guid.NewGuid()
+    Title = "My Title"
+    Content = "Some text"
+}
 
-let blogWithoutContent =
-    { Id = Guid.NewGuid()
-      Title = "My Title"
-      Content = null }
+let blogWithoutContent = {
+    Id = Guid.NewGuid()
+    Title = "My Title"
+    Content = null
+}
 
 let saveBlogs ctx =
-    [ blogWithContent; blogWithoutContent ]
+    [
+        blogWithContent
+        blogWithoutContent
+    ]
     |> List.iter (addEntity ctx)
 
     saveChanges ctx
 
 [<Tests>]
 let OptionTranslationQueryTests =
-    testList
-        "IsNullTranslationTests with query"
-        [
+    testList "IsNullTranslationTests with query" [
 
-          test "Filter content nullable property with isNull should return a blog with content" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter content nullable property with isNull should return a blog with content" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  query {
-                      for blog in ctx.Blogs do
-                          where (not (isNull blog.Content))
-                          select blog
-                          headOrDefault
-                  }
+            let blog =
+                query {
+                    for blog in ctx.Blogs do
+                        where (not (isNull blog.Content))
+                        select blog
+                        headOrDefault
+                }
 
-              Expect.equal blog blogWithContent "Record in context should match"
-          }
+            Expect.equal blog blogWithContent "Record in context should match"
+        }
 
 
-          test "Filter content nullable property with IsNone should return a blog without content" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter content nullable property with IsNone should return a blog without content" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  query {
-                      for blog in ctx.Blogs do
-                          where (isNull blog.Content)
-                          select blog
-                          headOrDefault
-                  }
+            let blog =
+                query {
+                    for blog in ctx.Blogs do
+                        where (isNull blog.Content)
+                        select blog
+                        headOrDefault
+                }
 
-              Expect.equal blog blogWithoutContent "Record in context should match"
-          }
+            Expect.equal blog blogWithoutContent "Record in context should match"
+        }
 
-          test "Filter content nullable property by value" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter content nullable property by value" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  query {
-                      for blog in ctx.Blogs do
-                          where (blog.Content = "Some text")
-                          select blog
-                          headOrDefault
-                  }
+            let blog =
+                query {
+                    for blog in ctx.Blogs do
+                        where (blog.Content = "Some text")
+                        select blog
+                        headOrDefault
+                }
 
-              Expect.equal blog blogWithContent "Record in context should match"
-          }
+            Expect.equal blog blogWithContent "Record in context should match"
+        }
 
-          test "Do not break ToLower" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Do not break ToLower" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  query {
-                      for blog in ctx.Blogs do
-                          where (blog.Content.ToLower() = "some text")
-                          select blog
-                          headOrDefault
-                  }
+            let blog =
+                query {
+                    for blog in ctx.Blogs do
+                        where (blog.Content.ToLower() = "some text")
+                        select blog
+                        headOrDefault
+                }
 
-              Expect.equal blog blogWithContent "Record in context should match"
-          } ]
+            Expect.equal blog blogWithContent "Record in context should match"
+        }
+    ]
 
 
 [<Tests>]
 let OptionTranslationLinqMethodsTests =
-    testList
-        "IsNullTranslationTests with LINQ Methods"
-        [
+    testList "IsNullTranslationTests with LINQ Methods" [
 
-          test "Filter content nullable property with IsSome should return a blog with content" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter content nullable property with IsSome should return a blog with content" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun x -> not (isNull x.Content))
-                      .FirstOrDefault()
+            let blog = ctx.Blogs.Where(fun x -> not (isNull x.Content)).FirstOrDefault()
 
-              Expect.equal blog blogWithContent "Record in context should match"
-          }
+            Expect.equal blog blogWithContent "Record in context should match"
+        }
 
 
-          test "Filter content nullable property with IsNone should return a blog without content" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter content nullable property with IsNone should return a blog without content" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun x -> isNull x.Content)
-                      .FirstOrDefault()
+            let blog = ctx.Blogs.Where(fun x -> isNull x.Content).FirstOrDefault()
 
-              Expect.equal blog blogWithoutContent "Record in context should match"
-          }
+            Expect.equal blog blogWithoutContent "Record in context should match"
+        }
 
-          test "Filter content nullable property by value" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter content nullable property by value" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun x -> x.Content = "Some text")
-                      .FirstOrDefault()
+            let blog = ctx.Blogs.Where(fun x -> x.Content = "Some text").FirstOrDefault()
 
-              Expect.equal blog blogWithContent "Record in context should match"
-          } ]
+            Expect.equal blog blogWithContent "Record in context should match"
+        }
+    ]

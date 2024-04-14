@@ -8,10 +8,12 @@ open Microsoft.Extensions.DependencyModel
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
-type BuildReference =
-    { CopyLocal: bool
-      References: MetadataReference seq
-      Path: string }
+type BuildReference = {
+    CopyLocal: bool
+    References: MetadataReference seq
+    Path: string
+} with
+
     static member ByName name copyLocal path =
         let references =
             DependencyContext.Default.CompileLibraries
@@ -29,45 +31,52 @@ type BuildReference =
             | Some p' -> p'
             | None -> null
 
-        { References = references
-          CopyLocal = copyLocal
-          Path = p }
+        {
+            References = references
+            CopyLocal = copyLocal
+            Path = p
+        }
 
     static member ByPath path =
         let references =
             seq { (MetadataReference.CreateFromFile(path) :> MetadataReference) }
 
-        { References = references
-          CopyLocal = false
-          Path = path }
+        {
+            References = references
+            CopyLocal = false
+            Path = path
+        }
 
-type BuildFileResult =
-    { TargetPath: string
-      TargetDir: string
-      TargetName: string }
+type BuildFileResult = {
+    TargetPath: string
+    TargetDir: string
+    TargetName: string
+} with
 
-    static member Create targetPath =
-        { TargetPath = targetPath
-          TargetDir = Path.GetDirectoryName(targetPath)
-          TargetName = Path.GetFileNameWithoutExtension(targetPath) }
+    static member Create targetPath = {
+        TargetPath = targetPath
+        TargetDir = Path.GetDirectoryName(targetPath)
+        TargetName = Path.GetFileNameWithoutExtension(targetPath)
+    }
 
-type BuildSource =
-    { TargetDir: string
-      Sources: string list }
+type BuildSource = {
+    TargetDir: string
+    Sources: string list
+} with
 
     member this.BuildInMemory(references: string array) =
         let projectName = "TestProject"
 
         let checker = FSharpChecker.Create()
 
-        let source =
-            String.Join(Environment.NewLine, this.Sources)
+        let source = String.Join(Environment.NewLine, this.Sources)
 
         let sourceText = SourceText.ofString source
 
-        let options =
-            { FSharpParsingOptions.Default with
-                  SourceFiles = [| "empty.fs" |] }
+        let options = {
+            FSharpParsingOptions.Default with
+                SourceFiles = [| "empty.fs" |]
+        }
 
         let parseResult =
             checker.ParseFile("empty.fs", sourceText, options)
@@ -91,7 +100,10 @@ type BuildSource =
             | None ->
                 let messages =
                     errors
-                    |> Seq.map (fun e -> e.Message + Environment.NewLine)
+                    |> Seq.map (fun e ->
+                        e.Message
+                        + Environment.NewLine
+                    )
 
                 invalidOp (String.Join(Environment.NewLine, messages))
 

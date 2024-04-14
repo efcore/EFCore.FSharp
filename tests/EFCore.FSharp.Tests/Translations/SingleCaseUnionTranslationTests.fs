@@ -11,11 +11,12 @@ open Microsoft.EntityFrameworkCore
 type PositiveInteger = PositiveInteger of int
 
 [<CLIMutable>]
-type Blog =
-    { [<Key>]
-      Id: Guid
-      Title: string
-      Votes: PositiveInteger }
+type Blog = {
+    [<Key>]
+    Id: Guid
+    Title: string
+    Votes: PositiveInteger
+}
 
 type MyContext() =
     inherit DbContext()
@@ -40,67 +41,66 @@ let createContext () =
     let ctx = new MyContext()
     ctx
 
-let blogWithVotes =
-    { Id = Guid.NewGuid()
-      Title = "My Title"
-      Votes = PositiveInteger 10 }
+let blogWithVotes = {
+    Id = Guid.NewGuid()
+    Title = "My Title"
+    Votes = PositiveInteger 10
+}
 
 let saveBlogs ctx =
-    addEntity ctx blogWithVotes |> ignore
-    saveChanges ctx |> ignore
+    addEntity ctx blogWithVotes
+    |> ignore
+
+    saveChanges ctx
+    |> ignore
 
 [<Tests>]
 let OptionTranslationQueryTests =
-    testList
-        "SingleCaseUnionTranslationTests with query"
-        [
+    testList "SingleCaseUnionTranslationTests with query" [
 
-          test "Filter votes property with exact value" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter votes property with exact value" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  query {
-                      for blog in ctx.Blogs do
-                          where (blog.Votes = PositiveInteger 10)
-                          select blog
-                          headOrDefault
-                  }
+            let blog =
+                query {
+                    for blog in ctx.Blogs do
+                        where (blog.Votes = PositiveInteger 10)
+                        select blog
+                        headOrDefault
+                }
 
-              Expect.equal blog blogWithVotes "Record in context should match"
-          }
+            Expect.equal blog blogWithVotes "Record in context should match"
+        }
 
 
-          test "Filter votes property with 'greater than' extracting property" {
-              use ctx = createContext ()
-              saveBlogs ctx
+        test "Filter votes property with 'greater than' extracting property" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  query {
-                      for blog in ctx.Blogs do
-                          let (PositiveInteger votes) = blog.Votes
-                          where (votes > 0)
-                          select blog
-                          headOrDefault
-                  }
+            let blog =
+                query {
+                    for blog in ctx.Blogs do
+                        let (PositiveInteger votes) = blog.Votes
+                        where (votes > 0)
+                        select blog
+                        headOrDefault
+                }
 
-              Expect.equal blog blogWithVotes "Record in context should match"
-          } ]
+            Expect.equal blog blogWithVotes "Record in context should match"
+        }
+    ]
 
 
 [<Tests>]
 let OptionTranslationLinqMethodsTests =
-    testList
-        "SingleCaseUnionTranslationTests with LINQ"
-        [ test "Filter votes property with exact value" {
-              use ctx = createContext ()
-              saveBlogs ctx
+    testList "SingleCaseUnionTranslationTests with LINQ" [
+        test "Filter votes property with exact value" {
+            use ctx = createContext ()
+            saveBlogs ctx
 
-              let blog =
-                  ctx
-                      .Blogs
-                      .Where(fun b -> b.Votes = PositiveInteger 10)
-                      .FirstOrDefault()
+            let blog = ctx.Blogs.Where(fun b -> b.Votes = PositiveInteger 10).FirstOrDefault()
 
-              Expect.equal blog blogWithVotes "Record in context should match"
-          } ]
+            Expect.equal blog blogWithVotes "Record in context should match"
+        }
+    ]

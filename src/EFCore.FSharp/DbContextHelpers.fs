@@ -8,7 +8,7 @@ open System.Threading.Tasks
 let private awaitValueTask (x: ValueTask<_>) = Async.AwaitTask(x.AsTask())
 
 type KeyType =
-    | Composite of obj []
+    | Composite of obj[]
     | Single of obj
 
 let private transform (a: obj) =
@@ -29,10 +29,7 @@ let findEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) : 'a =
 let tryFindEntity<'a when 'a: not struct> (ctx: DbContext) (key: obj) : 'a option =
     let result = findEntity<'a> ctx key
 
-    if isNull (box result) then
-        None
-    else
-        Some result
+    if isNull (box result) then None else Some result
 
 let findEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) : Async<'a> =
     let f =
@@ -51,11 +48,7 @@ let tryFindEntityAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) : Asy
     async {
         let! result = findEntityAsync<'a> ctx key
 
-        let result' =
-            if isNull (box result) then
-                None
-            else
-                Some result
+        let result' = if isNull (box result) then None else Some result
 
         return result'
     }
@@ -65,20 +58,14 @@ let tryFindEntityTaskAsync<'a when 'a: not struct> (ctx: DbContext) (key: obj) :
 
     result
         .AsTask()
-        .ContinueWith(fun (t: Task<'a>) ->
-            if isNull (box t.Result) then
-                None
-            else
-                Some t.Result)
+        .ContinueWith(fun (t: Task<'a>) -> if isNull (box t.Result) then None else Some t.Result)
 
 
 /// Helper method for saving an updated record type
 let updateEntity (ctx: DbContext) (key: 'a -> 'b) (entity: 'a when 'a: not struct) =
     let currentEntity = findEntity<'a> ctx (key entity)
 
-    ctx
-        .Entry(currentEntity)
-        .CurrentValues.SetValues(entity :> obj)
+    ctx.Entry(currentEntity).CurrentValues.SetValues(entity :> obj)
 
     entity
 
@@ -94,35 +81,54 @@ let updateEntityRangeAsync (ctx: DbContext) (key: 'a -> 'b) (entities: 'a seq wh
 
 let saveChanges' (ctx: #DbContext) = ctx.SaveChanges()
 
-let saveChanges ctx = saveChanges' ctx |> ignore
+let saveChanges ctx =
+    saveChanges' ctx
+    |> ignore
 
 let saveChangesAsync' (ctx: #DbContext) =
-    async { return! ctx.SaveChangesAsync() |> Async.AwaitTask }
+    async {
+        return!
+            ctx.SaveChangesAsync()
+            |> Async.AwaitTask
+    }
 
-let saveChangesAsync ctx = saveChangesAsync' ctx |> Async.Ignore
+let saveChangesAsync ctx =
+    saveChangesAsync' ctx
+    |> Async.Ignore
 
 let saveChangesTaskAsync' (ctx: #DbContext) = ctx.SaveChangesAsync()
 let saveChangesTaskAsync ctx = saveChangesTaskAsync' ctx :> Task
 
 let addEntity' (ctx: #DbContext) (entity: 'a when 'a: not struct) = ctx.Set<'a>().Add entity
 
-let addEntity ctx entity = addEntity' ctx entity |> ignore
+let addEntity ctx entity =
+    addEntity' ctx entity
+    |> ignore
 
 
 let addEntityAsync' (ctx: #DbContext) (entity: 'a when 'a: not struct) =
-    async { return! ctx.Set<'a>().AddAsync(entity) |> awaitValueTask }
+    async {
+        return!
+            ctx.Set<'a>().AddAsync(entity)
+            |> awaitValueTask
+    }
 
 let addEntityAsync ctx entity =
-    addEntityAsync' ctx entity |> Async.Ignore
+    addEntityAsync' ctx entity
+    |> Async.Ignore
 
-let addEntityTaskAsync' (ctx: #DbContext) (entity: 'a when 'a: not struct) = ctx.Set<'a>().AddAsync(entity).AsTask()
+let addEntityTaskAsync' (ctx: #DbContext) (entity: 'a when 'a: not struct) =
+    ctx.Set<'a>().AddAsync(entity).AsTask()
 
 let addEntityTaskAsync ctx entity =
     (addEntityTaskAsync' ctx entity) :> Task
 
-let addEntityRange' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) = ctx.Set<'a>().AddRange entities
+let addEntityRange' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
+    ctx.Set<'a>().AddRange entities
 
-let addEntityRange (ctx: #DbContext) (entities: 'a seq when 'a: not struct) = addEntityRange' ctx entities |> ignore
+let addEntityRange (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
+    addEntityRange' ctx entities
+    |> ignore
 
 let addEntityRangeAsync' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
     async {
@@ -132,28 +138,44 @@ let addEntityRangeAsync' (ctx: #DbContext) (entities: 'a seq when 'a: not struct
     }
 
 let addEntityRangeAsync (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
-    addEntityRangeAsync' ctx entities |> Async.Ignore
+    addEntityRangeAsync' ctx entities
+    |> Async.Ignore
 
 let attachEntity' (ctx: #DbContext) (entity: 'a when 'a: not struct) = ctx.Set<'a>().Attach entity
-let attachEntity (ctx: #DbContext) (entity: 'a when 'a: not struct) = attachEntity' ctx entity |> ignore
 
-let attachEntityRange' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) = ctx.Set<'a>().AttachRange(entities)
+let attachEntity (ctx: #DbContext) (entity: 'a when 'a: not struct) =
+    attachEntity' ctx entity
+    |> ignore
+
+let attachEntityRange' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
+    ctx.Set<'a>().AttachRange(entities)
 
 let attachEntityRange (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
-    attachEntityRange' ctx entities |> ignore
+    attachEntityRange' ctx entities
+    |> ignore
 
 let removeEntity' (ctx: #DbContext) (entity: 'a when 'a: not struct) = ctx.Set<'a>().Remove entity
-let removeEntity (ctx: #DbContext) (entity: 'a when 'a: not struct) = removeEntity' ctx entity |> ignore
 
-let removeEntityRange' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) = ctx.Set<'a>().RemoveRange(entities)
+let removeEntity (ctx: #DbContext) (entity: 'a when 'a: not struct) =
+    removeEntity' ctx entity
+    |> ignore
+
+let removeEntityRange' (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
+    ctx.Set<'a>().RemoveRange(entities)
 
 let removeEntityRange (ctx: #DbContext) (entities: 'a seq when 'a: not struct) =
-    removeEntityRange' ctx entities |> ignore
+    removeEntityRange' ctx entities
+    |> ignore
 
 let toListAsync (dbset: #IQueryable<_>) =
     async {
-        let! list = dbset.ToListAsync() |> Async.AwaitTask
-        return list |> List.ofSeq
+        let! list =
+            dbset.ToListAsync()
+            |> Async.AwaitTask
+
+        return
+            list
+            |> List.ofSeq
     }
 
 let toListTaskAsync (dbset: #IQueryable<_>) = dbset.ToListAsync()
@@ -161,12 +183,16 @@ let toListTaskAsync (dbset: #IQueryable<_>) = dbset.ToListAsync()
 
 let tryFirstAsync (dbset: #IQueryable<_>) =
     async {
-        let! ret = dbset.FirstOrDefaultAsync() |> Async.AwaitTask
+        let! ret =
+            dbset.FirstOrDefaultAsync()
+            |> Async.AwaitTask
+
         return FSharpUtilities.OptionOfNullableObj ret
     }
 
 let tryFirstTaskAsync dbset =
-    tryFirstAsync dbset |> Async.StartAsTask
+    tryFirstAsync dbset
+    |> Async.StartAsTask
 
 
 let tryFirst (dbset: #IQueryable<_>) =
@@ -194,9 +220,18 @@ let tryFilterFirst predicate (dbSet: #IQueryable<_>) =
     FSharpUtilities.OptionOfNullableObj ret
 
 type IQueryable<'T> with
-    member this.TryFirstAsync() = this |> tryFirstAsync
-    member this.TryFirstTaskAsync() = this |> tryFirstTaskAsync
-    member this.TryFirst() = this |> tryFirst
+
+    member this.TryFirstAsync() =
+        this
+        |> tryFirstAsync
+
+    member this.TryFirstTaskAsync() =
+        this
+        |> tryFirstTaskAsync
+
+    member this.TryFirst() =
+        this
+        |> tryFirst
 
     member this.TryFirstAsync expr =
         async {
@@ -208,7 +243,8 @@ type IQueryable<'T> with
         }
 
     member this.TryFirstTaskAsync expr =
-        this.TryFirstAsync(expr) |> Async.StartAsTask
+        this.TryFirstAsync(expr)
+        |> Async.StartAsTask
 
     member this.TryFirst expr =
         this.FirstOrDefault(predicate = expr)

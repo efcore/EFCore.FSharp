@@ -21,19 +21,25 @@ type FSharpModelGenerator
 
     let fileExtension = ".fs"
 
-    let defaultNamespaces =
-        [ "System"
-          "System.Collections.Generic" ]
+    let defaultNamespaces = [
+        "System"
+        "System.Collections.Generic"
+    ]
 
-    let annotationNamespaces =
-        [ "System.ComponentModel.DataAnnotations"
-          "System.ComponentModel.DataAnnotations.Schema" ]
+    let annotationNamespaces = [
+        "System.ComponentModel.DataAnnotations"
+        "System.ComponentModel.DataAnnotations.Schema"
+    ]
 
     let getNamespacesFromModel (model: IModel) =
         model.GetEntityTypes()
         |> Seq.collect (fun e -> e.GetProperties())
         |> Seq.collect (fun p -> getNamespaces p.ClrType)
-        |> Seq.filter (fun ns -> defaultNamespaces |> Seq.contains ns |> not)
+        |> Seq.filter (fun ns ->
+            defaultNamespaces
+            |> Seq.contains ns
+            |> not
+        )
         |> Seq.distinct
         |> Seq.sort
 
@@ -48,12 +54,18 @@ type FSharpModelGenerator
             if useDataAnnotations then
                 defaultNamespaces
                 |> Seq.append annotationNamespaces
-                |> Seq.append (model |> getNamespacesFromModel)
+                |> Seq.append (
+                    model
+                    |> getNamespacesFromModel
+                )
             else
                 defaultNamespaces
-                |> Seq.append (model |> getNamespacesFromModel)
+                |> Seq.append (
+                    model
+                    |> getNamespacesFromModel
+                )
 
-        stringBuilder {
+        stringBuffer {
             $"namespace {``namespace``}"
             ""
             writeNamespaces namespaces
@@ -61,7 +73,10 @@ type FSharpModelGenerator
             $"module rec {moduleName} ="
             ""
 
-            if model.GetEntityTypes() |> Seq.isEmpty then
+            if
+                model.GetEntityTypes()
+                |> Seq.isEmpty
+            then
                 indent { "()" }
         }
 
@@ -71,8 +86,7 @@ type FSharpModelGenerator
 
         let dbContextFileName = options.ContextName
 
-        let domainFileName =
-            dbContextFileName.Replace("Context", "Domain")
+        let domainFileName = dbContextFileName.Replace("Context", "Domain")
 
         let generatedCode =
             contextGenerator.WriteCode(
@@ -90,7 +104,9 @@ type FSharpModelGenerator
                 options.SuppressOnConfiguring
             )
 
-        let dbContextFileName = options.ContextName + fileExtension
+        let dbContextFileName =
+            options.ContextName
+            + fileExtension
 
         let path =
             if notNull options.ContextDir then
@@ -98,14 +114,15 @@ type FSharpModelGenerator
             else
                 dbContextFileName
 
-        let contextFile =
-            ScaffoldedFile(Code = generatedCode, Path = path)
+        let contextFile = ScaffoldedFile(Code = generatedCode, Path = path)
 
-        let resultingFiles =
-            ScaffoldedModel(ContextFile = contextFile)
+        let resultingFiles = ScaffoldedModel(ContextFile = contextFile)
 
         let domainFile = ScaffoldedFile()
-        domainFile.Path <- (domainFileName + fileExtension)
+
+        domainFile.Path <-
+            (domainFileName
+             + fileExtension)
 
         let createEntityCode (entityType: IEntityType) =
             entityTypeGenerator.WriteCode(
@@ -116,15 +133,22 @@ type FSharpModelGenerator
             )
 
         let domainFileBuilder =
-            createDomainFileContent model options.UseDataAnnotations options.ModelNamespace domainFileName
+            createDomainFileContent
+                model
+                options.UseDataAnnotations
+                options.ModelNamespace
+                domainFileName
 
         let entityCode =
             model.GetEntityTypes()
-            |> Seq.filter (isManyToManyJoinEntityType >> not)
+            |> Seq.filter (
+                isManyToManyJoinEntityType
+                >> not
+            )
             |> Seq.map createEntityCode
 
         let domainFileCode =
-            stringBuilder {
+            stringBuffer {
                 domainFileBuilder
 
                 entityCode

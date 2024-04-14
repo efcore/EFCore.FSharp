@@ -19,8 +19,7 @@ open Microsoft.EntityFrameworkCore.Design.Internal
 type ModelCodeGeneratorTestBase() =
 
     let createServices () =
-        let testAssembly =
-            (typeof<ModelCodeGeneratorTestBase>).Assembly
+        let testAssembly = (typeof<ModelCodeGeneratorTestBase>).Assembly
 
         let reporter = TestOperationReporter()
 
@@ -31,62 +30,77 @@ type ModelCodeGeneratorTestBase() =
         services
 
     let getRequiredReferences () =
-        let runtimeNames =
-            [ "mscorlib.dll"
-              "netstandard.dll"
-              "System.Buffers.dll"
-              "System.Collections.Concurrent.dll"
-              "System.Collections.dll"
-              "System.ComponentModel.dll"
-              "System.ComponentModel.Primitives.dll"
-              "System.Console.dll"
-              "System.Data.Common.dll"
-              "System.Diagnostics.TraceSource.dll"
-              "System.Globalization.dll"
-              "System.IO.FileSystem.dll"
-              "System.Linq.Expressions.dll"
-              "System.Net.Requests.dll"
-              "System.Net.WebClient.dll"
-              "System.ObjectModel.dll"
-              "System.Private.CoreLib.dll"
-              "System.Resources.ResourceManager.dll"
-              "System.Runtime.dll"
-              "System.Runtime.Extensions.dll"
-              "System.Runtime.InteropServices.dll"
-              "System.Runtime.Numerics.dll"
-              "System.Threading.dll"
-              "System.Threading.Tasks.dll"
-              "System.Threading.Thread.dll"
-              "System.Threading.ThreadPool.dll" ]
+        let runtimeNames = [
+            "mscorlib.dll"
+            "netstandard.dll"
+            "System.Buffers.dll"
+            "System.Collections.Concurrent.dll"
+            "System.Collections.dll"
+            "System.ComponentModel.dll"
+            "System.ComponentModel.Primitives.dll"
+            "System.Console.dll"
+            "System.Data.Common.dll"
+            "System.Diagnostics.TraceSource.dll"
+            "System.Globalization.dll"
+            "System.IO.FileSystem.dll"
+            "System.Linq.Expressions.dll"
+            "System.Net.Requests.dll"
+            "System.Net.WebClient.dll"
+            "System.ObjectModel.dll"
+            "System.Private.CoreLib.dll"
+            "System.Resources.ResourceManager.dll"
+            "System.Runtime.dll"
+            "System.Runtime.Extensions.dll"
+            "System.Runtime.InteropServices.dll"
+            "System.Runtime.Numerics.dll"
+            "System.Threading.dll"
+            "System.Threading.Tasks.dll"
+            "System.Threading.Thread.dll"
+            "System.Threading.ThreadPool.dll"
+        ]
 
-        let localNames =
-            [ "FSharp.Core.dll"
-              "FSharp.Compiler.Service.dll"
-              "Microsoft.EntityFrameworkCore.dll"
-              "Microsoft.EntityFrameworkCore.Abstractions.dll"
-              "Microsoft.EntityFrameworkCore.Design.dll"
-              "Microsoft.EntityFrameworkCore.Proxies.dll"
-              "Microsoft.EntityFrameworkCore.Relational.dll"
-              "Microsoft.EntityFrameworkCore.Sqlite.dll"
-              "Microsoft.EntityFrameworkCore.SqlServer.dll"
-              "EntityFrameworkCore.FSharp.dll" ]
+        let localNames = [
+            "FSharp.Core.dll"
+            "FSharp.Compiler.Service.dll"
+            "Microsoft.EntityFrameworkCore.dll"
+            "Microsoft.EntityFrameworkCore.Abstractions.dll"
+            "Microsoft.EntityFrameworkCore.Design.dll"
+            "Microsoft.EntityFrameworkCore.Proxies.dll"
+            "Microsoft.EntityFrameworkCore.Relational.dll"
+            "Microsoft.EntityFrameworkCore.Sqlite.dll"
+            "Microsoft.EntityFrameworkCore.SqlServer.dll"
+            "EntityFrameworkCore.FSharp.dll"
+        ]
 
         let runtimeDir =
             System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
         let runtimeRefs =
-            runtimeNames |> List.map (fun r -> runtimeDir + r)
+            runtimeNames
+            |> List.map (fun r ->
+                runtimeDir
+                + r
+            )
 
         let localRefs =
-            let thisAssembly =
-                System.Reflection.Assembly.GetExecutingAssembly()
+            let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
 
             let location =
-                thisAssembly.Location.Replace(thisAssembly.GetName().Name + ".dll", "")
+                thisAssembly.Location.Replace(
+                    thisAssembly.GetName().Name
+                    + ".dll",
+                    ""
+                )
 
-            localNames |> List.map (fun s -> location + s)
+            localNames
+            |> List.map (fun s ->
+                location
+                + s
+            )
 
-        runtimeRefs @ localRefs |> List.toArray
+        runtimeRefs
+        @ localRefs
+        |> List.toArray
 
     abstract member AddModelServices: (IServiceCollection -> unit)
     abstract member AddScaffoldingServices: (IServiceCollection -> unit)
@@ -99,8 +113,7 @@ type ModelCodeGeneratorTestBase() =
         (additionalSources: string list)
         =
 
-        let designServices =
-            ServiceCollection() :> IServiceCollection
+        let designServices = ServiceCollection() :> IServiceCollection
         // Add F# overrides
         let efCoreFSharpServices = EFCoreFSharpServices.Default
         efCoreFSharpServices.ConfigureDesignTimeServices designServices
@@ -117,8 +130,7 @@ type ModelCodeGeneratorTestBase() =
 
         let _ = modelBuilder.Model.GetEntityTypeErrors()
 
-        let model =
-            modelBuilder.FinalizeModel(designTime = true, skipValidation = true)
+        let model = modelBuilder.FinalizeModel(designTime = true, skipValidation = true)
 
         let services = createServices ()
         efCoreFSharpServices.ConfigureDesignTimeServices services
@@ -155,7 +167,6 @@ type ModelCodeGeneratorTestBase() =
 
         let assembly = build.BuildInMemory references
 
-        let context =
-            assembly.CreateInstance("TestNamespace.TestDbContext") :?> DbContext
+        let context = assembly.CreateInstance("TestNamespace.TestDbContext") :?> DbContext
 
         assertModel context.Model

@@ -2,40 +2,34 @@
   "version": 1,
   "isRoot": true,
   "tools": {
-    "sourcelink": {
-      "version": "3.1.1",
-      "commands": [
-        "sourcelink"
-      ]
-    },
     "dotnet-reportgenerator-globaltool": {
-      "version": "4.2.15",
+      "version": "5.1.18",
       "commands": [
         "reportgenerator"
       ]
     },
     "paket": {
-      "version": "6.0.13",
+      "version": "8.0.3",
       "commands": [
         "paket"
       ]
     },
-    "fcswatch-cli": {
-      "version": "0.7.14",
-      "commands": [
-        "fcswatch"
-      ]
-    },
     "fsharp-analyzers": {
-      "version": "0.9.0",
+      "version": "0.11.0",
       "commands": [
         "fsharp-analyzers"
       ]
     },
-    "fantomas-tool": {
-      "version": "4.5.6",
+    "fantomas": {
+      "version": "6.0.1",
       "commands": [
-          "fantomas"
+        "fantomas"
+      ]
+    },
+    "fsdocs-tool": {
+      "version": "18.1.0",
+      "commands": [
+        "fsdocs"
       ]
     }
   }

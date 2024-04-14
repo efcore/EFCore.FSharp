@@ -16,13 +16,24 @@ type FSharpMigrationsScaffolder(dependencies) =
             + migration.FileExtension
 
         let migrationDirectory =
-            if outputDir |> notNull then
+            if
+                outputDir
+                |> notNull
+            then
                 outputDir
             else
-                this.GetDirectory(projectDir, lastMigrationFileName, migration.MigrationSubNamespace)
+                this.GetDirectory(
+                    projectDir,
+                    lastMigrationFileName,
+                    migration.MigrationSubNamespace
+                )
 
         let migrationFile =
-            Path.Combine(migrationDirectory, migration.MigrationId + migration.FileExtension)
+            Path.Combine(
+                migrationDirectory,
+                migration.MigrationId
+                + migration.FileExtension
+            )
 
         let migrationMetadataFile =
             Path.Combine(
@@ -33,13 +44,13 @@ type FSharpMigrationsScaffolder(dependencies) =
             )
 
         let modelSnapshotFileName =
-            migration.SnapshotName + migration.FileExtension
+            migration.SnapshotName
+            + migration.FileExtension
 
         let modelSnapshotDirectory =
             this.GetDirectory(projectDir, modelSnapshotFileName, migration.SnapshotSubnamespace)
 
-        let modelSnapshotFile =
-            Path.Combine(modelSnapshotDirectory, modelSnapshotFileName)
+        let modelSnapshotFile = Path.Combine(modelSnapshotDirectory, modelSnapshotFileName)
 
         dependencies.OperationReporter.WriteVerbose(DesignStrings.WritingMigration(migrationFile))
 
@@ -58,7 +69,9 @@ type FSharpMigrationsScaffolder(dependencies) =
             File.WriteAllText(migrationMetadataFile, migration.MetadataCode, Encoding.UTF8)
         (* End custom code *)
 
-        dependencies.OperationReporter.WriteVerbose(DesignStrings.WritingSnapshot(modelSnapshotFile))
+        dependencies.OperationReporter.WriteVerbose(
+            DesignStrings.WritingSnapshot(modelSnapshotFile)
+        )
 
         Directory.CreateDirectory(modelSnapshotDirectory)
         |> ignore

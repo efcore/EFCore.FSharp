@@ -11,12 +11,20 @@ open Microsoft.EntityFrameworkCore.Storage
 type internal IntArrayTypeMapping =
     inherit RelationalTypeMapping
 
-    new() = { inherit RelationalTypeMapping("some_int_array_mapping", (typeof<int []>)) }
+    new() =
+        {
+            inherit RelationalTypeMapping("some_int_array_mapping", (typeof<int[]>))
+        }
 
-    new(parameters) = { inherit RelationalTypeMapping(parameters) }
+    new(parameters) =
+        {
+            inherit RelationalTypeMapping(parameters)
+        }
 
     override this.Clone parameters =
-        parameters |> IntArrayTypeMapping :> RelationalTypeMapping
+        parameters
+        |> IntArrayTypeMapping
+        :> RelationalTypeMapping
 
 type internal TestStringTypeMapping(storeType, dbType, unicode, size, fixedLength) =
     inherit StringTypeMapping(storeType, dbType, unicode, size)
@@ -26,37 +34,43 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
     inherit RelationalTypeMappingSource(dependencies, relationalDependencies)
 
 
-
     let _string =
         StringTypeMapping("just_string(2000)", Nullable()) :> RelationalTypeMapping
 
     let _binary =
-        ByteArrayTypeMapping("just_binary(max)", dbType = Nullable<DbType>(DbType.Binary)) :> RelationalTypeMapping
+        ByteArrayTypeMapping("just_binary(max)", dbType = Nullable<DbType>(DbType.Binary))
+        :> RelationalTypeMapping
 
     let _rowversion =
-        ByteArrayTypeMapping("rowversion", dbType = Nullable<DbType>(DbType.Binary), size = Nullable<int>(8))
+        ByteArrayTypeMapping(
+            "rowversion",
+            dbType = Nullable<DbType>(DbType.Binary),
+            size = Nullable<int>(8)
+        )
         :> RelationalTypeMapping
 
     let _defaultIntMapping =
-        IntTypeMapping("default_int_mapping", dbType = Nullable<DbType>(DbType.Int32)) :> RelationalTypeMapping
+        IntTypeMapping("default_int_mapping", dbType = Nullable<DbType>(DbType.Int32))
+        :> RelationalTypeMapping
 
     let _defaultLongMapping =
-        LongTypeMapping("default_long_mapping", dbType = Nullable<DbType>(DbType.Int64)) :> RelationalTypeMapping
+        LongTypeMapping("default_long_mapping", dbType = Nullable<DbType>(DbType.Int64))
+        :> RelationalTypeMapping
 
     let _defaultShortMapping =
-        ShortTypeMapping("default_short_mapping", dbType = Nullable<DbType>(DbType.Int16)) :> RelationalTypeMapping
+        ShortTypeMapping("default_short_mapping", dbType = Nullable<DbType>(DbType.Int16))
+        :> RelationalTypeMapping
 
     let _defaultByteMapping =
-        ByteTypeMapping("default_byte_mapping", dbType = Nullable<DbType>(DbType.Byte)) :> RelationalTypeMapping
+        ByteTypeMapping("default_byte_mapping", dbType = Nullable<DbType>(DbType.Byte))
+        :> RelationalTypeMapping
 
     let _defaultBoolMapping =
         BoolTypeMapping("default_bool_mapping") :> RelationalTypeMapping
 
-    let _someIntMapping =
-        IntTypeMapping("some_int_mapping") :> RelationalTypeMapping
+    let _someIntMapping = IntTypeMapping("some_int_mapping") :> RelationalTypeMapping
 
-    let _intArray =
-        IntArrayTypeMapping() :> RelationalTypeMapping
+    let _intArray = IntArrayTypeMapping() :> RelationalTypeMapping
 
     let _defaultDecimalMapping =
         DecimalTypeMapping("default_decimal_mapping") :> RelationalTypeMapping
@@ -81,30 +95,34 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
         TimeSpanTypeMapping("default_timespan_mapping") :> RelationalTypeMapping
 
     let _simpleMappings =
-        [ (typeof<int>, _defaultIntMapping)
-          (typeof<Int64>, _defaultLongMapping)
-          (typeof<DateTime>, _defaultDateTimeMapping)
-          (typeof<Guid>, _defaultGuidMapping)
-          (typeof<bool>, _defaultBoolMapping)
-          (typeof<byte>, _defaultByteMapping)
-          (typeof<double>, _defaultDoubleMapping)
-          (typeof<DateTimeOffset>, _defaultDateTimeOffsetMapping)
-          (typeof<char>, _defaultIntMapping)
-          (typeof<Int16>, _defaultShortMapping)
-          (typeof<float>, _defaultFloatMapping)
-          (typeof<decimal>, _defaultDecimalMapping)
-          (typeof<TimeSpan>, _defaultTimeSpanMapping)
-          (typeof<string>, _string)
-          (typeof<int []>, _intArray) ]
+        [
+            (typeof<int>, _defaultIntMapping)
+            (typeof<Int64>, _defaultLongMapping)
+            (typeof<DateTime>, _defaultDateTimeMapping)
+            (typeof<Guid>, _defaultGuidMapping)
+            (typeof<bool>, _defaultBoolMapping)
+            (typeof<byte>, _defaultByteMapping)
+            (typeof<double>, _defaultDoubleMapping)
+            (typeof<DateTimeOffset>, _defaultDateTimeOffsetMapping)
+            (typeof<char>, _defaultIntMapping)
+            (typeof<Int16>, _defaultShortMapping)
+            (typeof<float>, _defaultFloatMapping)
+            (typeof<decimal>, _defaultDecimalMapping)
+            (typeof<TimeSpan>, _defaultTimeSpanMapping)
+            (typeof<string>, _string)
+            (typeof<int[]>, _intArray)
+        ]
         |> dict
         :?> IReadOnlyDictionary<Type, RelationalTypeMapping>
 
     let _simpleNameMappings =
-        [ ("some_int_mapping", _someIntMapping)
-          ("some_string(max)", _string)
-          ("some_binary(max)", _binary)
-          ("money", _defaultDecimalMapping)
-          ("dec", _defaultDecimalMapping) ]
+        [
+            ("some_int_mapping", _someIntMapping)
+            ("some_string(max)", _string)
+            ("some_binary(max)", _binary)
+            ("money", _defaultDecimalMapping)
+            ("dec", _defaultDecimalMapping)
+        ]
         |> dict
         :?> IReadOnlyDictionary<string, RelationalTypeMapping>
 
@@ -117,8 +135,7 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
 
         match clrType with
         | t when t = typeof<string> ->
-            let isAnsi =
-                mappingInfo.IsUnicode.GetValueOrDefault()
+            let isAnsi = mappingInfo.IsUnicode.GetValueOrDefault()
 
             let isFixedLength =
                 mappingInfo.IsFixedLength.HasValue
@@ -136,17 +153,15 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
                     mappingInfo.Size
                 else if mappingInfo.IsKeyOrIndex then
                     let s = if isAnsi then 900 else 450
-                    s |> Nullable
+
+                    s
+                    |> Nullable
                 else
                     Nullable<int>()
 
             let name =
                 if isStoreTypeNameNull then
-                    let sizeStr =
-                        if size.HasValue then
-                            string size.Value
-                        else
-                            "max"
+                    let sizeStr = if size.HasValue then string size.Value else "max"
 
                     sprintf "%s(%s)" baseName sizeStr
                 else
@@ -158,33 +173,28 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
                 else
                     Nullable<DbType>()
 
-            TestStringTypeMapping(name, dbType, (not isAnsi), size, isFixedLength) :> RelationalTypeMapping
+            TestStringTypeMapping(name, dbType, (not isAnsi), size, isFixedLength)
+            :> RelationalTypeMapping
 
-        | t when t = typeof<byte []> ->
+        | t when t = typeof<byte[]> ->
             if mappingInfo.IsRowVersion.GetValueOrDefault() then
                 _rowversion
             else
                 let size =
-                    if mappingInfo.Size.HasValue then
-                        mappingInfo.Size
-                    else if mappingInfo.IsKeyOrIndex then
-                        Nullable<int>(900)
-                    else
-                        Nullable<int>()
+                    if mappingInfo.Size.HasValue then mappingInfo.Size
+                    else if mappingInfo.IsKeyOrIndex then Nullable<int>(900)
+                    else Nullable<int>()
 
                 let name =
                     if isNull storeTypeName then
-                        let sizeStr =
-                            if size.HasValue then
-                                string size.Value
-                            else
-                                "max"
+                        let sizeStr = if size.HasValue then string size.Value else "max"
 
                         sprintf "just_binary(%s)" sizeStr
                     else
                         storeTypeName
 
-                ByteArrayTypeMapping(name, Nullable<DbType>(DbType.Binary), size) :> RelationalTypeMapping
+                ByteArrayTypeMapping(name, Nullable<DbType>(DbType.Binary), size)
+                :> RelationalTypeMapping
 
 
         | _ ->
@@ -202,13 +212,14 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
                     mapping
             | _ ->
 
-                let successFromName, mappingFromName =
-                    _simpleNameMappings.TryGetValue storeTypeName
+                let successFromName, mappingFromName = _simpleNameMappings.TryGetValue storeTypeName
 
-                if (not isStoreTypeNameNull)
-                   && (clrType = null
-                       || mappingFromName.ClrType = clrType)
-                   && successFromName then
+                if
+                    (not isStoreTypeNameNull)
+                    && (clrType = null
+                        || mappingFromName.ClrType = clrType)
+                    && successFromName
+                then
                     mappingFromName
                 else
                     null

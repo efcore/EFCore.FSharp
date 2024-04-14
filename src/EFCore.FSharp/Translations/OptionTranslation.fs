@@ -9,7 +9,8 @@ let optionMemberTranslator (sqlExp: ISqlExpressionFactory) =
             if not (SharedTypeExtensions.isOptionType member'.DeclaringType) then
                 null
             else
-                sqlExp.Convert(instance, returnType) :> _ }
+                sqlExp.Convert(instance, returnType) :> _
+    }
 
 let optionMethodCallTranslator (sqlExp: ISqlExpressionFactory) =
     { new IMethodCallTranslator with
@@ -18,9 +19,12 @@ let optionMethodCallTranslator (sqlExp: ISqlExpressionFactory) =
                 null
             else
 
-                let expression = arguments |> Seq.head
+                let expression =
+                    arguments
+                    |> Seq.head
 
                 match method.Name with
                 | "get_IsNone" -> sqlExp.IsNull(expression) :> _
                 | "get_IsSome" -> sqlExp.IsNotNull(expression) :> _
-                | _ -> null }
+                | _ -> null
+    }

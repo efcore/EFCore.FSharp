@@ -30,12 +30,9 @@ open System.Data
 open Microsoft.Data.SqlClient
 
 type GeometryValueCoverter<'geometry when 'geometry :> Geometry>
-    (
-        reader: SqlServerBytesReader,
-        writer: SqlServerBytesWriter
-    ) =
-    inherit ValueConverter<'geometry, SqlBytes>
-        (
+    (reader: SqlServerBytesReader, writer: SqlServerBytesWriter) =
+    inherit
+        ValueConverter<'geometry, SqlBytes>(
             (fun g -> SqlBytes(writer.Write g)),
             (fun b -> reader.Read(b.Value) :?> 'geometry)
         )
@@ -45,21 +42,16 @@ module Helpers =
         let isGeography =
             String.Equals(storeType, "geography", StringComparison.OrdinalIgnoreCase)
 
-        let reader =
-            SqlServerBytesReader(geometryServices, IsGeography = isGeography)
+        let reader = SqlServerBytesReader(geometryServices, IsGeography = isGeography)
 
-        let writer =
-            SqlServerBytesWriter(IsGeography = isGeography)
+        let writer = SqlServerBytesWriter(IsGeography = isGeography)
 
         GeometryValueCoverter<'geometry>(reader, writer)
 
 type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
-    (
-        geometryServices: NtsGeometryServices,
-        storeType: string
-    ) =
-    inherit RelationalGeometryTypeMapping<'geometry, SqlBytes>
-        (
+    (geometryServices: NtsGeometryServices, storeType: string) =
+    inherit
+        RelationalGeometryTypeMapping<'geometry, SqlBytes>(
             (Helpers.createConverter geometryServices storeType),
             storeType
         )
@@ -68,14 +60,12 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
         String.Equals(storeType, "geography", StringComparison.OrdinalIgnoreCase)
 
     let getSqlBytes =
-        typeof<SqlDataReader>.GetRuntimeMethod ("GetSqlBytes", [| typeof<int> |])
+        typeof<SqlDataReader>.GetRuntimeMethod("GetSqlBytes", [| typeof<int> |])
 
     let createSqlDbTypeAccessor paramType =
-        let paramParam =
-            Expression.Parameter(typeof<DbParameter>, "parameter")
+        let paramParam = Expression.Parameter(typeof<DbParameter>, "parameter")
 
-        let valueParam =
-            Expression.Parameter(typeof<SqlDbType>, "value")
+        let valueParam = Expression.Parameter(typeof<SqlDbType>, "value")
 
         Expression
             .Lambda<Action<DbParameter, SqlDbType>>(
@@ -91,11 +81,9 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
 
     let createUdtTypeNameAccessor (paramType) =
 
-        let paramParam =
-            Expression.Parameter(typeof<DbParameter>, "parameter")
+        let paramParam = Expression.Parameter(typeof<DbParameter>, "parameter")
 
-        let valueParam =
-            Expression.Parameter(typeof<string>, "value")
+        let valueParam = Expression.Parameter(typeof<string>, "value")
 
         Expression
             .Lambda<Action<DbParameter, string>>(
@@ -110,7 +98,8 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
             .Compile()
 
     override __.Clone(parameters: RelationalTypeMapping.RelationalTypeMappingParameters) =
-        SqlServerGeometryTypeMapping<'geometry>(geometryServices, storeType) :> RelationalTypeMapping
+        SqlServerGeometryTypeMapping<'geometry>(geometryServices, storeType)
+        :> RelationalTypeMapping
 
     override __.GenerateNonNullSqlLiteral(value) =
         let builder = new StringBuilder()
@@ -120,36 +109,21 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
             (geometry = (Point.Empty :> Geometry))
             || (geometry.SRID = (if isGeography then 4326 else 0))
 
-        let g =
-            if isGeography then
-                "geography"
-            else
-                "geometry"
+        let g = if isGeography then "geography" else "geometry"
 
-        let m =
-            if defaultSrid then
-                "Parse"
-            else
-                "STGeomFromText"
+        let m = if defaultSrid then "Parse" else "STGeomFromText"
 
-        let a =
-            (WKTWriter.ForMicrosoftSqlServer())
-                .Write(geometry)
+        let a = (WKTWriter.ForMicrosoftSqlServer()).Write(geometry)
 
-        builder
-            .Append(g)
-            .Append("::")
-            .Append(m)
-            .Append("('")
-            .Append(a)
-            .Append("'")
+        builder.Append(g).Append("::").Append(m).Append("('").Append(a).Append("'")
         |> ignore
 
         if (not defaultSrid) then
             builder.Append(", ").Append(geometry.SRID)
             |> ignore
 
-        builder.Append(")") |> ignore
+        builder.Append(")")
+        |> ignore
 
         builder.ToString()
 
@@ -172,17 +146,15 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
 
         sqlDbTypeSetter.Invoke(parameter, SqlDbType.Udt)
 
-        udtTypeNameSetter.Invoke(
-            parameter,
-            (if isGeography then
-                 "geography"
-             else
-                 "geometry")
-        )
+        udtTypeNameSetter.Invoke(parameter, (if isGeography then "geography" else "geometry"))
 
 type SqlServerNetTopologySuiteTypeMappingSourcePlugin(geometryServices) =
 
-    let spatialStoresTypes = Set.ofList [ "geometry"; "geography" ]
+    let spatialStoresTypes =
+        Set.ofList [
+            "geometry"
+            "geography"
+        ]
 
     let notNull a = not (isNull a)
 
@@ -192,25 +164,17 @@ type SqlServerNetTopologySuiteTypeMappingSourcePlugin(geometryServices) =
             let storeTypeName = mappingInfo.StoreTypeName
 
             if
-                typeof<Geometry>.IsAssignableFrom (clrType)
+                typeof<Geometry>.IsAssignableFrom(clrType)
                 || (notNull storeTypeName
                     && spatialStoresTypes.Contains(storeTypeName))
             then
-                let genericType =
-                    if notNull clrType then
-                        clrType
-                    else
-                        typeof<Geometry>
+                let genericType = if notNull clrType then clrType else typeof<Geometry>
 
-                let storeName =
-                    if notNull storeTypeName then
-                        storeTypeName
-                    else
-                        "geography"
+                let storeName = if notNull storeTypeName then storeTypeName else "geography"
 
                 let instance =
                     Activator.CreateInstance(
-                        typedefof<SqlServerGeometryTypeMapping<_>>.MakeGenericType (genericType),
+                        typedefof<SqlServerGeometryTypeMapping<_>>.MakeGenericType(genericType),
                         geometryServices,
                         storeName
                     )
@@ -236,12 +200,19 @@ module FSharpMigrationOperationGeneratorTest =
 
         FSharpMigrationOperationGenerator(
             FSharpHelper(
-                SqlServerTypeMappingSource(typeMappingSourceDependencies, relationalTypeMappingSourceDependencies)
+                SqlServerTypeMappingSource(
+                    typeMappingSourceDependencies,
+                    relationalTypeMappingSourceDependencies
+                )
             )
         )
         :> ICSharpMigrationOperationGenerator
 
-    let Test<'a when 'a :> MigrationOperation> (operation: 'a) (expectedCode: string) (``assert``: ('a -> unit)) =
+    let Test<'a when 'a :> MigrationOperation>
+        (operation: 'a)
+        (expectedCode: string)
+        (``assert``: ('a -> unit))
+        =
 
         let generator =
             FSharpMigrationOperationGenerator(
@@ -249,7 +220,11 @@ module FSharpMigrationOperationGeneratorTest =
                     SqlServerTypeMappingSource(
                         TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
                         RelationalTypeMappingSourceDependencies(
-                            [| SqlServerNetTopologySuiteTypeMappingSourcePlugin(NtsGeometryServices.Instance) |]
+                            [|
+                                SqlServerNetTopologySuiteTypeMappingSourcePlugin(
+                                    NtsGeometryServices.Instance
+                                )
+                            |]
                         )
                     )
                 )
@@ -257,7 +232,8 @@ module FSharpMigrationOperationGeneratorTest =
 
         let builder = IndentedStringBuilder()
 
-        builder.AppendLine "open System" |> ignore
+        builder.AppendLine "open System"
+        |> ignore
 
         builder.AppendLine "open Microsoft.EntityFrameworkCore.Migrations"
         |> ignore
@@ -265,13 +241,17 @@ module FSharpMigrationOperationGeneratorTest =
         builder.AppendLine "open NetTopologySuite.Geometries"
         |> ignore
 
-        builder.AppendLine "" |> ignore
+        builder.AppendLine ""
+        |> ignore
 
         builder.AppendLine "module OperationsFactory ="
         |> ignore
 
-        builder.IncrementIndent() |> ignore
-        builder.AppendLine "" |> ignore
+        builder.IncrementIndent()
+        |> ignore
+
+        builder.AppendLine ""
+        |> ignore
 
         builder.AppendLine "let Create(mb: MigrationBuilder) ="
         |> ignore
@@ -281,14 +261,18 @@ module FSharpMigrationOperationGeneratorTest =
         expected.AppendLines(builder.ToString(), false)
         |> ignore
 
-        expected.IncrementIndent() |> ignore
-        expected.IncrementIndent() |> ignore
+        expected.IncrementIndent()
+        |> ignore
+
+        expected.IncrementIndent()
+        |> ignore
 
         expected.AppendLines(expectedCode, false)
         |> ignore
 
 
-        builder.IncrementIndent() |> ignore
+        builder.IncrementIndent()
+        |> ignore
 
         (generator :> ICSharpMigrationOperationGenerator)
             .Generate("mb", [| operation |], builder)
@@ -299,14 +283,15 @@ module FSharpMigrationOperationGeneratorTest =
 
         let build = { TargetDir = ""; Sources = [ code ] }
 
-        let references =
-            [| "System.Collections"
-               "System.Net.Requests"
-               "System.Net.WebClient"
-               "System.Runtime"
-               "System.Runtime.Numerics"
-               "Microsoft.EntityFrameworkCore.Relational"
-               "NetTopologySuite" |]
+        let references = [|
+            "System.Collections"
+            "System.Net.Requests"
+            "System.Net.WebClient"
+            "System.Runtime"
+            "System.Runtime.Numerics"
+            "Microsoft.EntityFrameworkCore.Relational"
+            "NetTopologySuite"
+        |]
 
         let assembly = build.BuildInMemory(references)
 
@@ -316,191 +301,205 @@ module FSharpMigrationOperationGeneratorTest =
 
         let createMethod = factoryType.GetMethod("Create")
         let mb = MigrationBuilder(activeProvider = null)
-        createMethod.Invoke(null, [| mb |]) |> ignore
+
+        createMethod.Invoke(null, [| mb |])
+        |> ignore
+
         let result = mb.Operations.Cast<'a>().Single()
 
         ``assert`` result
 
     [<Tests>]
     let FSharpMigrationOperationGeneratorTest =
-        testList
-            "FSharpMigrationOperationGeneratorTest"
-            [
+        testList "FSharpMigrationOperationGeneratorTest" [
 
-              test "Generate separates operations by a blank line" {
-                  let generator = createGenerator ()
-                  let builder = IndentedStringBuilder()
+            test "Generate separates operations by a blank line" {
+                let generator = createGenerator ()
+                let builder = IndentedStringBuilder()
 
-                  generator.Generate(
-                      "mb",
-                      [| SqlOperation(Sql = "-- Don't stand so")
-                         SqlOperation(Sql = "-- close to me") |],
-                      builder
-                  )
+                generator.Generate(
+                    "mb",
+                    [|
+                        SqlOperation(Sql = "-- Don't stand so")
+                        SqlOperation(Sql = "-- close to me")
+                    |],
+                    builder
+                )
 
-                  let expected =
-                      "mb.Sql(\"-- Don't stand so\") |> ignore"
-                      + _eol
-                      + _eol
-                      + "mb.Sql(\"-- close to me\") |> ignore"
-                      + _eol
-                      + _eol
+                let expected =
+                    "mb.Sql(\"-- Don't stand so\") |> ignore"
+                    + _eol
+                    + _eol
+                    + "mb.Sql(\"-- close to me\") |> ignore"
+                    + _eol
+                    + _eol
 
-                  let actual = builder.ToString()
+                let actual = builder.ToString()
 
-                  Expect.equal expected actual "Should be equal"
-              }
+                Expect.equal expected actual "Should be equal"
+            }
 
-              test "AddColumnOperation required args" {
-                  let op =
-                      AddColumnOperation(Name = "Id", Table = "Post", ClrType = typeof<int>)
+            test "AddColumnOperation required args" {
+                let op = AddColumnOperation(Name = "Id", Table = "Post", ClrType = typeof<int>)
 
-                  let expected =
-                      seq {
-                          "mb.AddColumn<int>("
-                          "    name = \"Id\""
-                          "    ,table = \"Post\""
-                          "    ,nullable = false"
-                          "    ) |> ignore"
-                      }
-                      |> join _eol
+                let expected =
+                    seq {
+                        "mb.AddColumn<int>("
+                        "    name = \"Id\""
+                        "    ,table = \"Post\""
+                        "    ,nullable = false"
+                        "    ) |> ignore"
+                    }
+                    |> join _eol
 
-                  let ``assert`` (o: AddColumnOperation) =
-                      Expect.equal o.Name "Id" "Should be equal"
-                      Expect.equal o.Table "Post" "Should be equal"
-                      Expect.equal o.ClrType typeof<int> "Should be equal"
+                let ``assert`` (o: AddColumnOperation) =
+                    Expect.equal o.Name "Id" "Should be equal"
+                    Expect.equal o.Table "Post" "Should be equal"
+                    Expect.equal o.ClrType typeof<int> "Should be equal"
 
-                  Test<AddColumnOperation> op expected ``assert``
-              }
+                Test<AddColumnOperation> op expected ``assert``
+            }
 
-              test "AddColumnOperation defaultValue is not quoted" {
-                  let op =
-                      AddColumnOperation(Name = "Likes", Table = "Post", ClrType = typeof<int>, DefaultValue = 0)
+            test "AddColumnOperation defaultValue is not quoted" {
+                let op =
+                    AddColumnOperation(
+                        Name = "Likes",
+                        Table = "Post",
+                        ClrType = typeof<int>,
+                        DefaultValue = 0
+                    )
 
-                  let expected =
-                      seq {
-                          "mb.AddColumn<int>("
-                          "    name = \"Likes\""
-                          "    ,table = \"Post\""
-                          "    ,nullable = false"
-                          "    ,defaultValue = 0"
-                          "    ) |> ignore"
-                      }
-                      |> join _eol
+                let expected =
+                    seq {
+                        "mb.AddColumn<int>("
+                        "    name = \"Likes\""
+                        "    ,table = \"Post\""
+                        "    ,nullable = false"
+                        "    ,defaultValue = 0"
+                        "    ) |> ignore"
+                    }
+                    |> join _eol
 
-                  let ``assert`` (o: AddColumnOperation) =
-                      Expect.equal o.Name "Likes" "Should be equal"
-                      Expect.equal o.Table "Post" "Should be equal"
-                      Expect.equal o.ClrType typeof<int> "Should be equal"
+                let ``assert`` (o: AddColumnOperation) =
+                    Expect.equal o.Name "Likes" "Should be equal"
+                    Expect.equal o.Table "Post" "Should be equal"
+                    Expect.equal o.ClrType typeof<int> "Should be equal"
 
-                  Test<AddColumnOperation> op expected ``assert``
-              }
+                Test<AddColumnOperation> op expected ``assert``
+            }
 
-              test "CreateTableOperation optional args" {
-                  let op =
-                      CreateTableOperation(Name = "MyTable", Schema = "MySchema")
+            test "CreateTableOperation optional args" {
+                let op = CreateTableOperation(Name = "MyTable", Schema = "MySchema")
 
-                  op.Columns.Add
-                  <| AddColumnOperation(Name = "Id", Table = "MyTable", ClrType = typeof<Guid>)
+                op.Columns.Add
+                <| AddColumnOperation(Name = "Id", Table = "MyTable", ClrType = typeof<Guid>)
 
-                  let expected =
-                      seq {
-                          "mb.CreateTable("
-                          "    name = \"MyTable\""
-                          "    ,schema = \"MySchema\""
-                          "    ,columns = (fun table -> "
-                          "    {|"
-                          "        Id ="
-                          "            table.Column<Guid>("
-                          "                nullable = false"
-                          "            )"
-                          "    |})"
-                          ") |> ignore"
-                      }
-                      |> join _eol
+                let expected =
+                    seq {
+                        "mb.CreateTable("
+                        "    name = \"MyTable\""
+                        "    ,schema = \"MySchema\""
+                        "    ,columns = (fun table -> "
+                        "    {|"
+                        "        Id ="
+                        "            table.Column<Guid>("
+                        "                nullable = false"
+                        "            )"
+                        "    |})"
+                        ") |> ignore"
+                    }
+                    |> join _eol
 
-                  let ``assert`` (o: CreateTableOperation) =
-                      Expect.equal o.Name "MyTable" "Should be equal"
-                      Expect.equal o.Schema "MySchema" "Should be equal"
-                      Expect.equal o.Columns.Count 1 "Should have one column"
+                let ``assert`` (o: CreateTableOperation) =
+                    Expect.equal o.Name "MyTable" "Should be equal"
+                    Expect.equal o.Schema "MySchema" "Should be equal"
+                    Expect.equal o.Columns.Count 1 "Should have one column"
 
-                      let c = o.Columns.[0]
+                    let c = o.Columns.[0]
 
-                      Expect.equal c.ClrType typeof<Guid> "Should be equal"
+                    Expect.equal c.ClrType typeof<Guid> "Should be equal"
 
-                  Test<CreateTableOperation> op expected ``assert``
-              }
+                Test<CreateTableOperation> op expected ``assert``
+            }
 
-              test "AddForeignKey" {
-                  let op =
-                      AddForeignKeyOperation(
-                          Name = "FK_Test",
-                          Table = "MyTable",
-                          Columns = [| "MyColumn" |],
-                          PrincipalTable = "PrincipalTable",
-                          PrincipalColumns = [| "Id" |]
-                      )
+            test "AddForeignKey" {
+                let op =
+                    AddForeignKeyOperation(
+                        Name = "FK_Test",
+                        Table = "MyTable",
+                        Columns = [| "MyColumn" |],
+                        PrincipalTable = "PrincipalTable",
+                        PrincipalColumns = [| "Id" |]
+                    )
 
-                  let expected =
-                      seq {
-                          "mb.AddForeignKey("
-                          "    name = \"FK_Test\""
-                          "    ,table = \"MyTable\""
-                          "    ,column = \"MyColumn\""
-                          "    ,principalTable = \"PrincipalTable\""
-                          "    ,principalColumn = \"Id\""
-                          ") |> ignore"
-                      }
-                      |> join _eol
+                let expected =
+                    seq {
+                        "mb.AddForeignKey("
+                        "    name = \"FK_Test\""
+                        "    ,table = \"MyTable\""
+                        "    ,column = \"MyColumn\""
+                        "    ,principalTable = \"PrincipalTable\""
+                        "    ,principalColumn = \"Id\""
+                        ") |> ignore"
+                    }
+                    |> join _eol
 
-                  let ``assert`` (o: AddForeignKeyOperation) =
-                      Expect.equal o.Name "FK_Test" "Should be equal"
-                      Expect.equal o.Table "MyTable" "Should be equal"
-                      Expect.equal o.PrincipalTable "PrincipalTable" "Should be equal"
+                let ``assert`` (o: AddForeignKeyOperation) =
+                    Expect.equal o.Name "FK_Test" "Should be equal"
+                    Expect.equal o.Table "MyTable" "Should be equal"
+                    Expect.equal o.PrincipalTable "PrincipalTable" "Should be equal"
 
-                  Test<AddForeignKeyOperation> op expected ``assert``
-              }
+                Test<AddForeignKeyOperation> op expected ``assert``
+            }
 
-              test "AddPrimaryKey" {
-                  let op =
-                      AddPrimaryKeyOperation(Name = "PK_Test", Table = "MyTable", Columns = [| "MyColumn" |])
+            test "AddPrimaryKey" {
+                let op =
+                    AddPrimaryKeyOperation(
+                        Name = "PK_Test",
+                        Table = "MyTable",
+                        Columns = [| "MyColumn" |]
+                    )
 
-                  let expected =
-                      seq {
-                          "mb.AddPrimaryKey("
-                          "    name = \"PK_Test\""
-                          "    ,table = \"MyTable\""
-                          "    ,column = \"MyColumn\""
-                          ") |> ignore"
-                      }
-                      |> join _eol
+                let expected =
+                    seq {
+                        "mb.AddPrimaryKey("
+                        "    name = \"PK_Test\""
+                        "    ,table = \"MyTable\""
+                        "    ,column = \"MyColumn\""
+                        ") |> ignore"
+                    }
+                    |> join _eol
 
-                  let ``assert`` (o: AddPrimaryKeyOperation) =
-                      Expect.equal o.Name "PK_Test" "Should be equal"
-                      Expect.equal o.Table "MyTable" "Should be equal"
+                let ``assert`` (o: AddPrimaryKeyOperation) =
+                    Expect.equal o.Name "PK_Test" "Should be equal"
+                    Expect.equal o.Table "MyTable" "Should be equal"
 
-                  Test<AddPrimaryKeyOperation> op expected ``assert``
-              }
+                Test<AddPrimaryKeyOperation> op expected ``assert``
+            }
 
-              test "AddUniqueConstraint" {
-                  let op =
-                      AddUniqueConstraintOperation(Name = "UQ_Test", Table = "MyTable", Columns = [| "MyColumn" |])
+            test "AddUniqueConstraint" {
+                let op =
+                    AddUniqueConstraintOperation(
+                        Name = "UQ_Test",
+                        Table = "MyTable",
+                        Columns = [| "MyColumn" |]
+                    )
 
-                  let expected =
-                      seq {
-                          "mb.AddUniqueConstraint("
-                          "    name = \"UQ_Test\""
-                          "    ,table = \"MyTable\""
-                          "    ,column = \"MyColumn\""
-                          ") |> ignore"
-                      }
-                      |> join _eol
+                let expected =
+                    seq {
+                        "mb.AddUniqueConstraint("
+                        "    name = \"UQ_Test\""
+                        "    ,table = \"MyTable\""
+                        "    ,column = \"MyColumn\""
+                        ") |> ignore"
+                    }
+                    |> join _eol
 
-                  let ``assert`` (o: AddUniqueConstraintOperation) =
-                      Expect.equal o.Name "UQ_Test" "Should be equal"
-                      Expect.equal o.Table "MyTable" "Should be equal"
+                let ``assert`` (o: AddUniqueConstraintOperation) =
+                    Expect.equal o.Name "UQ_Test" "Should be equal"
+                    Expect.equal o.Table "MyTable" "Should be equal"
 
-                  Test<AddUniqueConstraintOperation> op expected ``assert``
-              }
+                Test<AddUniqueConstraintOperation> op expected ``assert``
+            }
 
-              ]
+        ]
