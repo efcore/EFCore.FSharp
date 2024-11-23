@@ -494,7 +494,7 @@ let updateChangelog ctx =
         |> List.ofSeq
         |> List.rev
 
-    let isRef line =
+    let isRef (line:string) =
         System.Text.RegularExpressions.Regex.IsMatch(line, @"^\[.+?\]:\s?[a-z]+://.*$")
 
     let linkReferenceTargets =
