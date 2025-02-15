@@ -6,7 +6,7 @@ This guide is for a simple single-project setup rather than a production-ready t
 
 This guide assumes:
 
-- You have the `.NET Core SDK` installed (tested with version 3.1, though it may work with other versions)
+- You have the `.NET Core SDK` installed (tested with version 7.0, though it may work with other versions)
 - You have `SQLite` installed and a basic knowledge of how to explore a SQLite database
 
 # Setup
@@ -39,18 +39,28 @@ We will use `Paket` for package management, though you can apply the same princi
     `dotnet paket convert-from-nuget`
 
 ## Installing the package
+
+Install the following packages, taking care to ensure that they are all the same version.
+
+- `Microsoft.EntityFrameworkCore`
+- `Microsoft.EntityFrameworkCore.Relational`
+- `Microsoft.EntityFrameworkCore.Sqlite` or [other database providers](https://learn.microsoft.com/en-us/ef/core/providers)
+- `EntityFrameworkCore.FSharp`
+
 paket
 
 ```bash
-dotnet paket add Microsoft.EntityFrameworkCore.Sqlite
-dotnet paket add EntityFrameworkCore.FSharp
+dotnet paket add Microsoft.EntityFrameworkCore --version 6.0.7
+dotnet paket add Microsoft.EntityFrameworkCore.Relational --version 6.0.7
+dotnet paket add Microsoft.EntityFrameworkCore.Sqlite --version 6.0.7
+dotnet paket add EntityFrameworkCore.FSharp --version 6.0.7
 ```
 
 dotnet CLI
 
 ```bash
-dotnet add package Microsoft.EntityFrameworkCore.Sqlite
-dotnet add package EntityFrameworkCore.FSharp
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version 6.0.7
+dotnet add package EntityFrameworkCore.FSharp --version 6.0.7
 ```
 
 # Create the database
