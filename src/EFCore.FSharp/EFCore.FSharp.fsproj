@@ -6,7 +6,7 @@
     <RootNamespace>EntityFrameworkCore.FSharp</RootNamespace>
     <Authors>Simon Reynolds, Brice Lambson et al.</Authors>
     <Description>Adds F# design-time support to EF Core</Description>
-    <PackageLicenseUrl>https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageLicense>MIT</PackageLicense>
     <PackageProjectUrl>https://github.com/efcore/EFCore.FSharp</PackageProjectUrl>
     <PackageTags>Entity Framework Core;entity-framework-core;ef;efcore;fsharp</PackageTags>
     <RepositoryUrl>https://github.com/efcore/EFCore.FSharp.git</RepositoryUrl>

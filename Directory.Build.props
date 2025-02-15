@@ -3,7 +3,7 @@
         <!-- summary is not migrated from project.json, but you can use the <Description> property for that if needed. -->
         <PackageTags>f#, fsharp</PackageTags>
         <PackageProjectUrl>https://github.com/efcore/EFCore.FSharp</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/efcore/EFCore.FSharp/blob/master/LICENSE.md</PackageLicenseUrl>
+        <PackageLicense>MIT</PackageLicense>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <RepositoryType>git</RepositoryType>
         <Authors>efcore</Authors>
