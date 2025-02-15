@@ -67,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DbSet/IQueryable helpers to deal with EF Core async and nullable methods - [@lucasteles](https://github.com/lucasteles) - https://github.com/efcore/EFCore.FSharp/pull/94
 - Automatic registration of DesignTimeServices - https://github.com/efcore/EFCore.FSharp/pull/86
 - DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
+
 [Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.7...HEAD
 [6.0.7]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.6...v6.0.7
 [6.0.6]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.5...v6.0.6
