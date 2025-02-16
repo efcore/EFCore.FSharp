@@ -44,19 +44,20 @@ group Build
     storage: none
     source https://www.nuget.org/api/v2
     source https://api.nuget.org/v3/index.json
-    nuget Fake.IO.FileSystem 6.1.3
-    nuget Fake.Core.Target 6.1.3
-    nuget Fake.Core.ReleaseNotes 6.1.3
-    nuget FAKE.Core.Environment 6.1.3
-    nuget Fake.DotNet.Cli 6.1.3
-    nuget FAKE.Core.Process 6.1.3
-    nuget Fake.DotNet.AssemblyInfoFile 6.1.3
-    nuget Fake.Tools.Git 6.1.3
-    nuget Fake.DotNet.Paket 6.1.3
-    nuget Fake.Api.GitHub 6.1.3
-    nuget Fake.BuildServer.GitHubActions 6.1.3
+    nuget Fake.IO.FileSystem 5.20.4
+    nuget Fake.Core.Target 5.20.4
+    nuget Fake.Core.ReleaseNotes 5.20.4
+    nuget FAKE.Core.Environment 5.20.4
+    nuget Fake.DotNet.Cli 5.20.4
+    nuget FAKE.Core.Process 5.20.4
+    nuget Fake.DotNet.AssemblyInfoFile 5.20.4
+    nuget Fake.Tools.Git 5.20.4
+    nuget Fake.DotNet.Paket 5.20.4
+    nuget Fake.Api.GitHub 5.20.4
+    nuget Fake.BuildServer.GitHubActions 5.20.4
     nuget Argu
-    nuget Octokit 13.0.1
+    nuget Octokit 0.48
+    nuget MSBuild.StructuredLogger ~> 2.1.176
 
 group Docs
     storage: none
@@ -65,8 +66,8 @@ group Docs
     framework: net6.0
 
     nuget Argu
-    nuget FSharp.Compiler.Service 41.0.1
-    nuget FSharp.Core 6.0.1
+    nuget FSharp.Compiler.Service 34.1.0
+    nuget FSharp.Core ~> 4.6
     nuget Fake.IO.FileSystem 5.20.4
     nuget FAKE.Core.Environment 5.20.4
     nuget Fake.DotNet.Cli 5.20.4
