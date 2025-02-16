@@ -14,12 +14,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     # Not specifying a version will attempt to install via global.json
     - name: Setup .NET Core SDK
-      uses: actions/setup-dotnet@v1.9.0
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '6.x'
+        dotnet-version: '8.0.x'
 
     - name: Build
       if: runner.os != 'Windows'
