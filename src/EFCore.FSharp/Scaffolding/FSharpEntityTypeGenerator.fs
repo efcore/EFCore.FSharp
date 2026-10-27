@@ -287,7 +287,9 @@ type FSharpEntityTypeGenerator
 
             let nameMatches =
                 let entityType = navigation.DeclaringEntityType
-                let targetName = inverseNavigation.DeclaringEntityType.Name
+
+                let targetName =
+                    inverseNavigation.DeclaringEntityType.Name
 
                 entityType.GetProperties()
                 |> Seq.exists (fun p -> p.Name = targetName)
@@ -426,7 +428,9 @@ type FSharpEntityTypeGenerator
 
                 let condition =
                     let entityType = navigation.DeclaringEntityType
-                    let targetName = inverseNavigation.DeclaringEntityType.Name
+
+                    let targetName =
+                        inverseNavigation.DeclaringEntityType.Name
 
                     entityType.GetProperties()
                     |> Seq.exists (fun p -> p.Name = targetName)

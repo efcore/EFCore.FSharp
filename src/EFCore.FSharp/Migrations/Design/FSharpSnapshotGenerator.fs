@@ -607,8 +607,7 @@ type FSharpSnapshotGenerator
 
                 if notNull schema
                    || (notNull schemaAnnotation && notNull tableName) then
-                    if isNull schema
-                       && not requiresTableBuilder then
+                    if isNull schema && not requiresTableBuilder then
                         sb.Append(sprintf ", (string %s)" (code.UnknownLiteral schema))
                         |> ignore
                     elif notNull schema then
@@ -627,13 +626,14 @@ type FSharpSnapshotGenerator
 
                     let body =
                         if calls.Count = 1 then
-                            calls[0]
+                            calls [ 0 ]
                         else
                             calls
                             |> Seq.map (fun c -> c + " |> ignore")
                             |> String.concat "; "
 
-                    sb.Append(sprintf ", (fun t -> %s)" body) |> ignore
+                    sb.Append(sprintf ", (fun t -> %s)" body)
+                    |> ignore
 
                 if notNull isExcludedAnnotation then
                     annotations.Remove(isExcludedAnnotation.Name)

@@ -37,8 +37,7 @@ type MockHistoryRepository() =
 
         member __.CreateAsync(cancellationToken: CancellationToken) = Task.CompletedTask
 
-        member __.get_LockReleaseBehavior() =
-            LockReleaseBehavior.Explicit
+        member __.get_LockReleaseBehavior() = LockReleaseBehavior.Explicit
 
         member __.AcquireDatabaseLock() = null
 
