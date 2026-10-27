@@ -199,10 +199,11 @@ let rec retryIfInCI times fn =
             fn ()
     | _ -> fn ()
 
-let failOnWrongBranch () =
-    if Git.Information.getBranchName ""
-       <> releaseBranch then
-        failwithf "Not on %s.  If you want to release please switch to this branch." releaseBranch
+let failOnWrongBranchIfNotCI () =
+    if not isCI.Value then
+        if Git.Information.getBranchName ""
+           <> releaseBranch then
+            failwithf "Not on %s.  If you want to release please switch to this branch." releaseBranch
 
 
 module dotnet =
@@ -290,7 +291,7 @@ module DocsTool =
             )
 
 let allReleaseChecks () =
-    failOnWrongBranch ()
+    failOnWrongBranchIfNotCI ()
     Changelog.failOnEmptyChangelog latestEntry
 
 
