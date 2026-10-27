@@ -40,7 +40,7 @@ jobs:
           CONFIGURATION: ${{ matrix.configuration }}
           ENABLE_COVERAGE: true
       - name: Test Report
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3.0.0
         if: always()
         with:
           name: Test Results (${{ matrix.os }}-${{ matrix.configuration }})
