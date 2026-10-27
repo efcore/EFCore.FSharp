@@ -89,7 +89,7 @@ type BuildSource =
         let errors, exitCode =
             lock compilerLock (fun () -> checker.Compile(args) |> Async.RunSynchronously)
 
-        if exitCode <> 0 then
+        if errors.Length <> 0 then
             let messages =
                 errors
                 |> Seq.map (fun e -> e.Message + Environment.NewLine)

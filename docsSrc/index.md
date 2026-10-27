@@ -22,7 +22,7 @@ This provides support for code-first and database-first use of EF Core in F#, in
         <p class="card-text">The basics of getting started with EFCore.FSharp. </p>
       </div>
       <div class="card-footer text-right   border-top-0">
-        <a href="{{siteBaseUrl}}/Tutorials/Getting_Started.html" class="btn btn-primary">Get started</a>
+        <a href="{{root}}Tutorials/Getting_Started.html" class="btn btn-primary">Get started</a>
       </div>
     </div>
   </div>
@@ -33,11 +33,11 @@ This provides support for code-first and database-first use of EF Core in F#, in
         <p class="card-text">Guides you through the steps involved in addressing key problems and use-cases. </p>
       </div>
       <div class="card-footer text-right border-top-0">
-        <a href="{{siteBaseUrl}}/How_Tos/Scaffold_As_Types.html" class="btn btn-primary">Scaffolding &amp; Code Generation</a>
-        <a href="{{siteBaseUrl}}/How_Tos/Use_DbContextHelpers.html" class="btn btn-primary">Using DbContext Helpers</a>
-        <a href="{{siteBaseUrl}}/How_Tos/Querying_Options.html" class="btn btn-primary">Querying option types</a>
-        <a href="{{siteBaseUrl}}/How_Tos/Using_Single_Case_unions.html" class="btn btn-primary">Single Case Unions</a>
-        <a href="{{siteBaseUrl}}/How_Tos/Many-To-Many_Relationships.html" class="btn btn-primary">Many-to-many relationships</a>
+        <a href="{{root}}How_Tos/Scaffold_As_Types.html" class="btn btn-primary">Scaffolding &amp; Code Generation</a>
+        <a href="{{root}}How_Tos/Use_DbContextHelpers.html" class="btn btn-primary">Using DbContext Helpers</a>
+        <a href="{{root}}How_Tos/Querying_Options.html" class="btn btn-primary">Querying option types</a>
+        <a href="{{root}}How_Tos/Using_Single_Case_unions.html" class="btn btn-primary">Single Case Unions</a>
+        <a href="{{root}}How_Tos/Many-To-Many_Relationships.html" class="btn btn-primary">Many-to-many relationships</a>
       </div>
     </div>
   </div>
@@ -48,7 +48,7 @@ This provides support for code-first and database-first use of EF Core in F#, in
         <p class="card-text">Discusses key topics and concepts at a fairly high level and provide useful background information and explanation..</p>
       </div>
       <div class="card-footer text-right   border-top-0">
-        <a href="{{siteBaseUrl}}/Explanations/Background.html" class="btn btn-primary">Dive Deeper</a>
+        <a href="{{root}}Explanations/Background.html" class="btn btn-primary">Dive Deeper</a>
       </div>
     </div>
   </div>
@@ -59,7 +59,7 @@ This provides support for code-first and database-first use of EF Core in F#, in
         <p class="card-text">Contain technical reference for APIs.</p>
       </div>
       <div class="card-footer text-right   border-top-0">
-        <a href="{{siteBaseUrl}}/Api_Reference/EFCore.FSharp/EFCore.FSharp.html" class="btn btn-primary">Read Api Docs</a>
+        <a href="{{root}}Api_Reference/EFCore.FSharp/EFCore.FSharp.html" class="btn btn-primary">Read Api Docs</a>
       </div>
     </div>
   </div>

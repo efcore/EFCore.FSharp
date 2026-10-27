@@ -1,4 +1,0 @@
-group Src
-FSharp.Core
-Microsoft.SourceLink.GitHub
-Microsoft.EntityFrameworkCore.Design

@@ -262,7 +262,6 @@ dist/
 # Test coverage files
 coverage.xml
 coverage.*.xml
-coverage/
 
 # Paket tool store
 .paket/.store
@@ -270,3 +269,11 @@ coverage/
 
 .fake
 .ionide
+
+# fsdocs generated
+tmp/
+temp/
+.fsdocs
+docs/
+
+.DS_Store

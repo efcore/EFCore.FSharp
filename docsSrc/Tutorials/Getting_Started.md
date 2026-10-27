@@ -7,12 +7,6 @@ This guide assumes:
 * You have created a project and added the `dotnet-ef` tool
 
 ## Installing the package
-paket
-
-    [lang=bash]
-    paket install EntityFrameworkCore.FSharp
-
-dotnet CLI
 
     [lang=bash]
     dotnet add package EntityFrameworkCore.FSharp
@@ -28,4 +22,4 @@ An example of where you would need to, would be if you were scaffolding a new co
 
 By default, scaffolded objects will be created as Record types objects where nullable columns of type `'a` are represented as types of `'a option`.
 
-If you want to change the deault behaviour to generate nullable columns as properties of type `Nullable<'a>` or to crete your entities as a C#-type class object, check out <a href="{{siteBaseUrl}}/How_Tos/Scaffold_As_Types.html" class="">Scaffolding Types</a>
+If you want to change the deault behaviour to generate nullable columns as properties of type `Nullable<'a>` or to crete your entities as a C#-type class object, check out <a href="{{root}}How_Tos/Scaffold_As_Types.html" class="">Scaffolding Types</a>

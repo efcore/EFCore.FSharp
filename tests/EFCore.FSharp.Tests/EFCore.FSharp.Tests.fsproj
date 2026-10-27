@@ -40,6 +40,21 @@
         <ProjectReference Include="../../src/EFCore.FSharp/EFCore.FSharp.fsproj" />
         <ProjectReference Include="../EFCore.FSharp.Tests.CSharpInterop/EFCore.FSharp.Tests.CSharpInterop.csproj" />
     </ItemGroup>
-    <Import Project="..\..\.paket\Paket.Restore.targets" />
+    <ItemGroup>
+        <PackageReference Include="altcover" />
+        <PackageReference Include="Expecto" />
+        <PackageReference Include="FSharp.Compiler.Service" />
+        <PackageReference Include="FSharp.Core" />
+        <PackageReference Include="Microsoft.CodeAnalysis" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Specification.Tests" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NetTopologySuite.IO.SqlServerBytes" />
+        <PackageReference Include="System.ComponentModel.Primitives" />
+        <PackageReference Include="System.Runtime.Numerics" />
+        <PackageReference Include="YoloDev.Expecto.TestSdk" />
+    </ItemGroup>
 </Project>
-

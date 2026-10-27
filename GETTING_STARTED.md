@@ -13,8 +13,6 @@ This guide assumes:
 
 ## Create a new dotnet project and install dotnet tools
 
-We will use `Paket` for package management, though you can apply the same principles with `NuGet`.
-
 1. Create a new folder for the project and open the directory
 
     ```
@@ -26,27 +24,14 @@ We will use `Paket` for package management, though you can apply the same princi
 
     `dotnet new console -lang F#`
 
-1. Add a tool manifest, then add the `Entity Framework` and `Paket` tools
+1. Add a tool manifest and the Entity Framework command-line tool
 
     ```
     dotnet new tool-manifest
     dotnet tool install dotnet-ef
-    dotnet tool install paket
     ```
 
-1. Convert the project to use `Paket`
-
-    `dotnet paket convert-from-nuget`
-
-## Installing the package
-paket
-
-```bash
-dotnet paket add Microsoft.EntityFrameworkCore.Sqlite
-dotnet paket add EntityFrameworkCore.FSharp
-```
-
-dotnet CLI
+## Installing the packages
 
 ```bash
 dotnet add package Microsoft.EntityFrameworkCore.Sqlite

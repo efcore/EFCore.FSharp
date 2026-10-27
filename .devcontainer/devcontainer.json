@@ -12,7 +12,6 @@
 				"ionide.ionide-fsharp",
 				"ms-dotnettools.csharp",
 				"editorconfig.editorconfig",
-				"ionide.ionide-paket",
 				"ionide.ionide-fake"
 			]
 		}

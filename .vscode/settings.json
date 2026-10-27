@@ -2,5 +2,11 @@
     "FSharp.enableAnalyzers": true,
     "FSharp.analyzersPath": [
         "./packages/analyzers"
-    ]
+    ],
+    "chat.tools.terminal.autoApprove": {
+        "/^dotnet --info$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }
