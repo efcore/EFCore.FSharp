@@ -143,13 +143,20 @@ module Fsdocs =
         |> StringBuilder.appendIfSome buildParams.Input (sprintf "--input %s")
         |> StringBuilder.appendIfSome
             buildParams.Projects
-            (fun projects -> sprintf "--projects %s" (projects |> String.concat " "))
+            (fun projects ->
+                sprintf
+                    "--projects %s"
+                    (projects
+                     |> String.concat " ")
+            )
         |> StringBuilder.appendIfSome buildParams.Output (sprintf "--output %s")
         |> StringBuilder.appendIfSome buildParams.NoApiDocs (fun _ -> "--noapidocs")
         |> StringBuilder.appendIfSome buildParams.Eval (fun _ -> "--eval")
         |> StringBuilder.appendIfSome buildParams.SaveImages (fun _ -> "--saveimages")
         |> StringBuilder.appendIfSome buildParams.LineNumbers (fun _ -> "--linenumbers")
-        |> StringBuilder.appendIfSome buildParams.Parameters (fun parameters -> buildSubstitutionParameters parameters)
+        |> StringBuilder.appendIfSome
+            buildParams.Parameters
+            (fun parameters -> buildSubstitutionParameters parameters)
         |> StringBuilder.appendIfSome buildParams.IgnoreProjects (fun _ -> "--ignoreprojects")
         |> StringBuilder.appendIfSome buildParams.Qualify (fun _ -> "--qualify")
         |> StringBuilder.appendIfSome buildParams.NoPublic (fun _ -> "--nonpublic")
@@ -177,7 +184,8 @@ module Fsdocs =
 
 
     let cleanCache (workingDirectory) =
-        Shell.cleanDirs [ workingDirectory </> ".fsdocs" ]
+        Shell.cleanDirs [ workingDirectory
+                          </> ".fsdocs" ]
 
     /// <summary>
     /// Build documentation using <c>fsdocs build</c> command
@@ -201,7 +209,8 @@ module Fsdocs =
         let result =
             DotNet.exec dotnetOptions "fsdocs build" formattedParameters
 
-        if 0 <> result.ExitCode then
+        if 0
+           <> result.ExitCode then
             failwithf "fsdocs build failed with exit code '%d'" result.ExitCode
 
     /// <summary>
@@ -226,5 +235,6 @@ module Fsdocs =
         let result =
             DotNet.exec dotnetOptions "fsdocs watch" formattedParameters
 
-        if 0 <> result.ExitCode then
+        if 0
+           <> result.ExitCode then
             failwithf "fsdocs watch failed with exit code '%d'" result.ExitCode

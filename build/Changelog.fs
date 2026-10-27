@@ -18,15 +18,22 @@ let tagFromVersionNumber versionNumber = sprintf "v%s" versionNumber
 
 let failOnEmptyChangelog (latestEntry: Changelog.ChangelogEntry) =
     let isEmpty =
-        (latestEntry.Changes |> Seq.forall isEmptyChange)
-        || latestEntry.Changes |> Seq.isEmpty
+        (latestEntry.Changes
+         |> Seq.forall isEmptyChange)
+        || latestEntry.Changes
+           |> Seq.isEmpty
 
     if isEmpty then
         failwith
             "No changes in CHANGELOG. Please add your changes under a heading specified in https://keepachangelog.com/"
 
-let mkLinkReference (newVersion: SemVerInfo) (changelog: Changelog.Changelog) (gitHubRepoUrl: string) =
-    if changelog.Entries |> List.isEmpty then
+let mkLinkReference
+    (newVersion: SemVerInfo)
+    (changelog: Changelog.Changelog)
+    (gitHubRepoUrl: string)
+    =
+    if changelog.Entries
+       |> List.isEmpty then
         // No actual changelog entries yet: link reference will just point to the Git tag
         sprintf
             "[%s]: %s/releases/tag/%s"
@@ -39,10 +46,10 @@ let mkLinkReference (newVersion: SemVerInfo) (changelog: Changelog.Changelog) (g
         // Changelog entries come already sorted, most-recent first, by the Changelog module
         let prevEntry =
             changelog.Entries
-            |> List.skipWhile
-                (fun entry ->
-                    entry.SemVer.PreRelease.IsSome
-                    || versionTuple entry.SemVer = versionTuple newVersion)
+            |> List.skipWhile (fun entry ->
+                entry.SemVer.PreRelease.IsSome
+                || versionTuple entry.SemVer = versionTuple newVersion
+            )
             |> List.tryHead
 
         let linkTarget =
@@ -53,7 +60,11 @@ let mkLinkReference (newVersion: SemVerInfo) (changelog: Changelog.Changelog) (g
                     gitHubRepoUrl
                     (tagFromVersionNumber entry.SemVer.AsString)
                     (tagFromVersionNumber newVersion.AsString)
-            | None -> sprintf "%s/releases/tag/%s" gitHubRepoUrl (tagFromVersionNumber newVersion.AsString)
+            | None ->
+                sprintf
+                    "%s/releases/tag/%s"
+                    gitHubRepoUrl
+                    (tagFromVersionNumber newVersion.AsString)
 
         sprintf "[%s]: %s" newVersion.AsString linkTarget
 
@@ -120,7 +131,8 @@ let mutable changelogBackupFilename = ""
 let updateChangelog changelogPath (changelog: Fake.Core.Changelog.Changelog) gitHubRepoUrl ctx =
 
     let verStr =
-        ctx |> getVersionNumber "RELEASE_VERSION"
+        ctx
+        |> getVersionNumber "RELEASE_VERSION"
 
     let description, unreleasedChanges =
         match changelog.Unreleased with
@@ -131,50 +143,53 @@ let updateChangelog changelogPath (changelog: Fake.Core.Changelog.Changelog) git
 
     changelog.Entries
     |> List.tryFind (fun entry -> entry.SemVer = newVersion)
-    |> Option.iter
-        (fun entry ->
-            Trace.traceErrorfn
-                "Version %s already exists in %s, released on %s"
-                verStr
-                changelogPath
-                (if entry.Date.IsSome then
-                     entry.Date.Value.ToString("yyyy-MM-dd")
-                 else
-                     "(no date specified)")
+    |> Option.iter (fun entry ->
+        Trace.traceErrorfn
+            "Version %s already exists in %s, released on %s"
+            verStr
+            changelogPath
+            (if entry.Date.IsSome then
+                 entry.Date.Value.ToString("yyyy-MM-dd")
+             else
+                 "(no date specified)")
 
-            failwith "Can't release with a duplicate version number")
+        failwith "Can't release with a duplicate version number"
+    )
 
     changelog.Entries
     |> List.tryFind (fun entry -> entry.SemVer > newVersion)
-    |> Option.iter
-        (fun entry ->
-            Trace.traceErrorfn
-                "You're trying to release version %s, but a later version %s already exists, released on %s"
-                verStr
-                entry.SemVer.AsString
-                (if entry.Date.IsSome then
-                     entry.Date.Value.ToString("yyyy-MM-dd")
-                 else
-                     "(no date specified)")
+    |> Option.iter (fun entry ->
+        Trace.traceErrorfn
+            "You're trying to release version %s, but a later version %s already exists, released on %s"
+            verStr
+            entry.SemVer.AsString
+            (if entry.Date.IsSome then
+                 entry.Date.Value.ToString("yyyy-MM-dd")
+             else
+                 "(no date specified)")
 
-            failwith "Can't release with a version number older than an existing release")
+        failwith "Can't release with a version number older than an existing release"
+    )
 
     let versionTuple version =
         (version.Major, version.Minor, version.Patch)
 
     let prereleaseEntries =
         changelog.Entries
-        |> List.filter
-            (fun entry ->
-                entry.SemVer.PreRelease.IsSome
-                && versionTuple entry.SemVer = versionTuple newVersion)
+        |> List.filter (fun entry ->
+            entry.SemVer.PreRelease.IsSome
+            && versionTuple entry.SemVer = versionTuple newVersion
+        )
 
     let prereleaseChanges =
         prereleaseEntries
-        |> List.collect
-            (fun entry ->
-                entry.Changes
-                |> List.filter (not << isEmptyChange))
+        |> List.collect (fun entry ->
+            entry.Changes
+            |> List.filter (
+                not
+                << isEmptyChange
+            )
+        )
         |> List.distinct
 
     let assemblyVersion, nugetVersion =
@@ -186,12 +201,19 @@ let updateChangelog changelogPath (changelog: Fake.Core.Changelog.Changelog) git
             nugetVersion.Value,
             Some System.DateTime.Today,
             description,
-            unreleasedChanges @ prereleaseChanges,
+            unreleasedChanges
+            @ prereleaseChanges,
             false
         )
 
     let newChangelog =
-        Changelog.Changelog.New(changelog.Header, changelog.Description, None, newEntry :: changelog.Entries)
+        Changelog.Changelog.New(
+            changelog.Header,
+            changelog.Description,
+            None,
+            newEntry
+            :: changelog.Entries
+        )
 
     // Save changelog to temporary file before making any edits
     changelogBackupFilename <- System.IO.Path.GetTempFileName()
@@ -201,17 +223,24 @@ let updateChangelog changelogPath (changelog: Fake.Core.Changelog.Changelog) git
 
     Target.activateFinal "DeleteChangelogBackupFile"
 
-    newChangelog |> Changelog.save changelogPath
+    newChangelog
+    |> Changelog.save changelogPath
 
     // Now update the link references at the end of the file
     let linkReferenceForLatestEntry =
         mkLinkReference newVersion changelog gitHubRepoUrl
 
     let linkReferenceForUnreleased =
-        sprintf "[Unreleased]: %s/compare/%s...%s" gitHubRepoUrl (tagFromVersionNumber newVersion.AsString) "HEAD"
+        sprintf
+            "[Unreleased]: %s/compare/%s...%s"
+            gitHubRepoUrl
+            (tagFromVersionNumber newVersion.AsString)
+            "HEAD"
 
     let tailLines =
-        File.read changelogPath |> List.ofSeq |> List.rev
+        File.read changelogPath
+        |> List.ofSeq
+        |> List.rev
 
     let isRef (line: string) =
         System.Text.RegularExpressions.Regex.IsMatch(line, @"^\[.+?\]:\s?[a-z]+://.*$")
@@ -227,24 +256,37 @@ let updateChangelog changelogPath (changelog: Fake.Core.Changelog.Changelog) git
         | [] ->
             [ linkReferenceForUnreleased
               linkReferenceForLatestEntry ]
-        | first :: rest when first |> String.startsWith "[Unreleased]:" ->
+        | first :: rest when
+            first
+            |> String.startsWith "[Unreleased]:"
+            ->
             linkReferenceForUnreleased
-            :: linkReferenceForLatestEntry :: rest
+            :: linkReferenceForLatestEntry
+               :: rest
         | first :: rest ->
             linkReferenceForUnreleased
-            :: linkReferenceForLatestEntry :: first :: rest
+            :: linkReferenceForLatestEntry
+               :: first
+                  :: rest
 
     let blankLineCount =
         tailLines
         |> Seq.takeWhile String.isNullOrWhiteSpace
         |> Seq.length
 
-    let linkRefCount = linkReferenceTargets |> List.length
+    let linkRefCount =
+        linkReferenceTargets
+        |> List.length
 
-    let skipCount = blankLineCount + linkRefCount
+    let skipCount =
+        blankLineCount
+        + linkRefCount
 
     let updatedLines =
-        List.rev (tailLines |> List.skip skipCount)
+        List.rev (
+            tailLines
+            |> List.skip skipCount
+        )
         @ newLinkReferenceTargets
 
     File.write false changelogPath updatedLines

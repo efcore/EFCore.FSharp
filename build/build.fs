@@ -13,13 +13,19 @@ open Fake.BuildServer
 open Argu
 
 let environVarAsBoolOrDefault varName defaultValue =
-    let truthyConsts = [ "1"; "Y"; "YES"; "T"; "TRUE" ]
+    let truthyConsts =
+        [ "1"
+          "Y"
+          "YES"
+          "T"
+          "TRUE" ]
 
     try
         let envvar =
             (Environment.environVar varName).ToUpper()
 
-        truthyConsts |> List.exists ((=) envvar)
+        truthyConsts
+        |> List.exists ((=) envvar)
     with
     | _ -> defaultValue
 
@@ -28,44 +34,76 @@ let environVarAsBoolOrDefault varName defaultValue =
 //-----------------------------------------------------------------------------
 
 let rootDirectory =
-    IO.Path.GetFullPath(__SOURCE_DIRECTORY__ </> "..")
+    IO.Path.GetFullPath(
+        __SOURCE_DIRECTORY__
+        </> ".."
+    )
 
 let productName = "EFCore.FSharp"
 
-let sln = rootDirectory </> "EFCore.FSharp.slnx"
+let sln =
+    rootDirectory
+    </> "EFCore.FSharp.slnx"
 
 let srcCodeGlob =
-    !!(rootDirectory </> "src/**/*.fs")
-    ++ (rootDirectory </> "src/**/*.fsx")
-    -- (rootDirectory </> "src/**/obj/**/*.fs")
+    !!(rootDirectory
+       </> "src/**/*.fs")
+    ++ (rootDirectory
+        </> "src/**/*.fsx")
+    -- (rootDirectory
+        </> "src/**/obj/**/*.fs")
 
 let testsCodeGlob =
-    !!(rootDirectory </> "tests/**/*.fs")
-    ++ (rootDirectory </> "tests/**/*.fsx")
-    -- (rootDirectory </> "tests/**/obj/**/*.fs")
+    !!(rootDirectory
+       </> "tests/**/*.fs")
+    ++ (rootDirectory
+        </> "tests/**/*.fsx")
+    -- (rootDirectory
+        </> "tests/**/obj/**/*.fs")
 
-let srcGlob = rootDirectory </> "src/**/*.??proj"
+let srcGlob =
+    rootDirectory
+    </> "src/**/*.??proj"
 
-let testsGlob = rootDirectory </> "tests/**/*.??proj"
+let testsGlob =
+    rootDirectory
+    </> "tests/**/*.??proj"
 
-let srcAndTest = !!srcGlob ++ testsGlob
+let srcAndTest =
+    !!srcGlob
+    ++ testsGlob
 
-let distDir = rootDirectory </> "dist"
+let distDir =
+    rootDirectory
+    </> "dist"
 
-let distGlob = distDir </> "*.nupkg"
+let distGlob =
+    distDir
+    </> "*.nupkg"
 
 let coverageThresholdPercent = 50
 
-let coverageReportDir = rootDirectory </> "docs" </> "coverage"
+let coverageReportDir =
+    rootDirectory
+    </> "docs"
+    </> "coverage"
 
 
-let docsDir = rootDirectory </> "docs"
+let docsDir =
+    rootDirectory
+    </> "docs"
 
-let docsSrcDir = rootDirectory </> "docsSrc"
+let docsSrcDir =
+    rootDirectory
+    </> "docsSrc"
 
-let temp = rootDirectory </> "temp"
+let temp =
+    rootDirectory
+    </> "temp"
 
-let watchDocsDir = temp </> "watch-docs"
+let watchDocsDir =
+    temp
+    </> "watch-docs"
 
 let gitOwner = "efcore"
 let gitRepoName = "EFCore.FSharp"
@@ -76,7 +114,7 @@ let gitHubRepoUrl =
 let documentationRootUrl =
     sprintf "https://%s.github.io/%s/" gitOwner gitRepoName
 
-let releaseBranch = "main"
+let releaseBranch = "master"
 let readme = "README.md"
 let changelogFile = "CHANGELOG.md"
 
@@ -86,7 +124,9 @@ let READMElink =
 let CHANGELOGlink =
     Uri(Uri(gitHubRepoUrl), $"blob/{releaseBranch}/{changelogFile}")
 
-let changelogPath = rootDirectory </> changelogFile
+let changelogPath =
+    rootDirectory
+    </> changelogFile
 
 
 let changelog = Fake.Core.Changelog.load changelogPath
@@ -135,8 +175,10 @@ let configuration (targets: Target list) =
     | config -> DotNet.BuildConfiguration.Custom config
 
 let failOnBadExitAndPrint (p: ProcessResult) =
-    if p.ExitCode <> 0 then
-        p.Errors |> Seq.iter Trace.traceError
+    if p.ExitCode
+       <> 0 then
+        p.Errors
+        |> Seq.iter Trace.traceError
 
         failwithf "failed with exitcode %d" p.ExitCode
 
@@ -158,7 +200,8 @@ let rec retryIfInCI times fn =
     | _ -> fn ()
 
 let failOnWrongBranch () =
-    if Git.Information.getBranchName "" <> releaseBranch then
+    if Git.Information.getBranchName ""
+       <> releaseBranch then
         failwithf "Not on %s.  If you want to release please switch to this branch." releaseBranch
 
 
@@ -243,7 +286,8 @@ module DocsTool =
             fsDocsDotnetOptions
             (fun p ->
                 { p with
-                      BuildCommandParams = Some(buildParams p.BuildCommandParams) })
+                      BuildCommandParams = Some(buildParams p.BuildCommandParams) }
+            )
 
 let allReleaseChecks () =
     failOnWrongBranch ()
@@ -276,28 +320,36 @@ let clean _ =
       coverageReportDir ]
     |> Shell.cleanDirs
 
-    !!srcGlob ++ testsGlob
-    |> Seq.collect
-        (fun p ->
-            [ "bin"; "obj" ]
-            |> Seq.map (fun sp -> IO.Path.GetDirectoryName p </> sp))
+    !!srcGlob
+    ++ testsGlob
+    |> Seq.collect (fun p ->
+        [ "bin"
+          "obj" ]
+        |> Seq.map (fun sp ->
+            IO.Path.GetDirectoryName p
+            </> sp
+        )
+    )
     |> Shell.cleanDirs
 
 let dotnetRestore _ =
     [ sln ]
-    |> Seq.map
-        (fun dir ->
-            fun () ->
-                let args = [] |> String.concat " "
+    |> Seq.map (fun dir ->
+        fun () ->
+            let args =
+                []
+                |> String.concat " "
 
-                DotNet.restore
-                    (fun c ->
-                        { c with
-                              MSBuildParams = disableBinLog c.MSBuildParams
-                              Common =
-                                  c.Common
-                                  |> DotNet.Options.withCustomParams (Some(args)) })
-                    dir)
+            DotNet.restore
+                (fun c ->
+                    { c with
+                          MSBuildParams = disableBinLog c.MSBuildParams
+                          Common =
+                              c.Common
+                              |> DotNet.Options.withCustomParams (Some(args)) }
+                )
+                dir
+    )
     |> Seq.iter (retryIfInCI 10)
 
 let updateChangelog ctx =
@@ -345,9 +397,12 @@ let dotnetBuild ctx =
             { c with
                   MSBuildParams = disableBinLog c.MSBuildParams
                   Configuration = configuration (ctx.Context.AllExecutingTargets)
-                  Common = c.Common |> DotNet.Options.withAdditionalArgs args
+                  Common =
+                      c.Common
+                      |> DotNet.Options.withAdditionalArgs args
 
-            })
+            }
+        )
         sln
 
 let fsharpAnalyzers _ =
@@ -355,17 +410,20 @@ let fsharpAnalyzers _ =
         ArgumentParser.Create<FSharpAnalyzers.Arguments>(programName = "fsharp-analyzers")
 
     !!srcGlob
-    |> Seq.iter
-        (fun proj ->
-            let args =
-                [ FSharpAnalyzers.Analyzers_Path(rootDirectory </> "packages/analyzers")
-                  FSharpAnalyzers.Arguments.Project proj
-                  FSharpAnalyzers.Arguments.Fail_On_Warnings [ "BDH0002" ]
-                  FSharpAnalyzers.Arguments.Ignore_Files [ "*AssemblyInfo.fs" ]
-                  FSharpAnalyzers.Verbose ]
-                |> argParser.PrintCommandLineArgumentsFlat
+    |> Seq.iter (fun proj ->
+        let args =
+            [ FSharpAnalyzers.Analyzers_Path(
+                rootDirectory
+                </> "packages/analyzers"
+              )
+              FSharpAnalyzers.Arguments.Project proj
+              FSharpAnalyzers.Arguments.Fail_On_Warnings [ "BDH0002" ]
+              FSharpAnalyzers.Arguments.Ignore_Files [ "*AssemblyInfo.fs" ]
+              FSharpAnalyzers.Verbose ]
+            |> argParser.PrintCommandLineArgumentsFlat
 
-            dotnet.fsharpAnalyzer id args)
+        dotnet.fsharpAnalyzer id args
+    )
 
 let dotnetTest ctx =
     let excludeCoverage =
@@ -383,7 +441,8 @@ let dotnetTest ctx =
 
     let args =
         [ "--no-build"
-          if enableCodeCoverage || isGenerateCoverageReport then
+          if enableCodeCoverage
+             || isGenerateCoverageReport then
               sprintf "/p:AltCover=true"
 
               if not isGenerateCoverageReport then
@@ -399,12 +458,16 @@ let dotnetTest ctx =
                   MSBuildParams = disableBinLog c.MSBuildParams
                   Configuration = configuration (ctx.Context.AllExecutingTargets)
                   Logger = Some "trx;LogFilePrefix=testResults"
-                  Common = c.Common |> DotNet.Options.withAdditionalArgs args })
+                  Common =
+                      c.Common
+                      |> DotNet.Options.withAdditionalArgs args }
+        )
         sln
 
 let generateCoverageReport _ =
     let coverageReports =
-        !! "tests/**/coverage*.xml" |> String.concat ";"
+        !! "tests/**/coverage*.xml"
+        |> String.concat ";"
 
     let sourceDirs =
         !!srcGlob
@@ -420,14 +483,17 @@ let generateCoverageReport _ =
           sprintf "-assemblyfilters:\"%s\"" "-*.Tests;-AltCover.Recorder.g"
           sprintf "-Reporttypes:%s" "Html" ]
 
-    let args = independentArgs |> String.concat " "
+    let args =
+        independentArgs
+        |> String.concat " "
 
     dotnet.reportgenerator id args
 
 let showCoverageReport _ =
     failOnCIBuild ()
 
-    coverageReportDir </> "index.html"
+    coverageReportDir
+    </> "index.html"
     |> Command.ShellCommand
     |> CreateProcess.fromCommand
     |> Proc.start
@@ -436,16 +502,17 @@ let showCoverageReport _ =
 
 let watchTests _ =
     !!testsGlob
-    |> Seq.map
-        (fun proj ->
-            fun () ->
-                dotnet.watch
-                    (fun opt ->
-                        opt
-                        |> DotNet.Options.withWorkingDirectory (IO.Path.GetDirectoryName proj))
-                    "test"
-                    ""
-                |> ignore)
+    |> Seq.map (fun proj ->
+        fun () ->
+            dotnet.watch
+                (fun opt ->
+                    opt
+                    |> DotNet.Options.withWorkingDirectory (IO.Path.GetDirectoryName proj)
+                )
+                "test"
+                ""
+            |> ignore
+    )
     |> Seq.iter (
         invokeAsync
         >> Async.Catch
@@ -478,7 +545,10 @@ let dotnetPack ctx =
                   MSBuildParams = disableBinLog c.MSBuildParams
                   Configuration = configuration (ctx.Context.AllExecutingTargets)
                   OutputPath = Some distDir
-                  Common = c.Common |> DotNet.Options.withAdditionalArgs args })
+                  Common =
+                      c.Common
+                      |> DotNet.Options.withAdditionalArgs args }
+        )
         sln
 
 let sourceLinkTest _ =
@@ -497,7 +567,8 @@ let publishToNuget _ =
                   PushParams =
                       { c.PushParams with
                             Source = Some publishUrl
-                            ApiKey = nugetToken } })
+                            ApiKey = nugetToken } }
+        )
         "*.nupkg"
 
     // If build fails after this point, we've pushed a release out with this version of CHANGELOG.md so we should keep it around
@@ -508,7 +579,8 @@ let gitRelease _ =
 
     let releaseNotesGitCommitFormat = latestEntry.ToString()
 
-    Git.Staging.stageFile "" "CHANGELOG.md" |> ignore
+    Git.Staging.stageFile "" "CHANGELOG.md"
+    |> ignore
 
     let msg =
         sprintf "Bump version to %s\n\n%s" latestEntry.NuGetVersion releaseNotesGitCommitFormat
@@ -546,8 +618,10 @@ let githubRelease _ =
         gitOwner
         gitRepoName
         (Changelog.tagFromVersionNumber latestEntry.NuGetVersion)
-        (latestEntry.SemVer.PreRelease <> None)
-        (releaseNotes |> Seq.singleton)
+        (latestEntry.SemVer.PreRelease
+         <> None)
+        (releaseNotes
+         |> Seq.singleton)
     |> GitHub.uploadFiles files
     |> GitHub.publishDraft
     |> Async.RunSynchronously
@@ -589,10 +663,14 @@ let initTargets () =
     BuildServer.install [ GitHubActions.Installer ]
 
     /// Defines a dependency - y is dependent on x. Finishes the chain.
-    let (==>!) x y = x ==> y |> ignore
+    let (==>!) x y =
+        x ==> y
+        |> ignore
 
     /// Defines a soft dependency. x must run before y, if it is present, but y does not require x to be run. Finishes the chain.
-    let (?=>!) x y = x ?=> y |> ignore
+    let (?=>!) x y =
+        x ?=> y
+        |> ignore
     //-----------------------------------------------------------------------------
     // Hide Secrets in Logger
     //-----------------------------------------------------------------------------
@@ -633,26 +711,36 @@ let initTargets () =
 
     // Only call Clean if DotnetPack was in the call chain
     // Ensure Clean is called before DotnetRestore
-    "Clean" ?=>! "DotnetRestore"
+    "Clean"
+    ?=>! "DotnetRestore"
 
-    "Clean" ==>! "DotnetPack"
+    "Clean"
+    ==>! "DotnetPack"
 
     // Ensure UpdateChangelog is called after DotnetRestore
-    "DotnetRestore" ?=>! "UpdateChangelog"
+    "DotnetRestore"
+    ?=>! "UpdateChangelog"
 
-    "CleanDocsCache" ==>! "BuildDocs"
+    "CleanDocsCache"
+    ==>! "BuildDocs"
 
-    "DotnetBuild" ?=>! "BuildDocs"
+    "DotnetBuild"
+    ?=>! "BuildDocs"
 
-    "DotnetBuild" ==>! "BuildDocs"
+    "DotnetBuild"
+    ==>! "BuildDocs"
 
 
-    "DotnetBuild" ==>! "WatchDocs"
+    "DotnetBuild"
+    ==>! "WatchDocs"
 
-    "DotnetTest" ==> "GenerateCoverageReport"
+    "DotnetTest"
+    ==> "GenerateCoverageReport"
     ==>! "ShowCoverageReport"
 
-    "UpdateChangelog" ==> "GitRelease" ==>! "Release"
+    "UpdateChangelog"
+    ==> "GitRelease"
+    ==>! "Release"
 
 
     "DotnetRestore"
@@ -664,7 +752,8 @@ let initTargets () =
     ==> "GitHubRelease"
     ==>! "Publish"
 
-    "DotnetRestore" ==>! "WatchTests"
+    "DotnetRestore"
+    ==>! "WatchTests"
 
 //-----------------------------------------------------------------------------
 // Target Start

@@ -95,9 +95,9 @@ src/EFCore.FSharp/bin/
 git init
 git add .
 git commit -m "Scaffold"
-git branch -M main
+git branch -M master
 git remote add origin https://github.com/efcore/EFCore.FSharp.git
-git push -u origin main
+git push -u origin master
 ```
 
 - [Create an Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#creating-an-environment) on your repository named `nuget`.
@@ -147,7 +147,7 @@ macOS/Linux Environment Variable:
 RELEASE_VERSION=0.2.0 ./build.sh Release
 ```
 
-- The [Github Action](https://github.com/efcore/EFCore.FSharp/blob/main/.github/workflows/publish.yml) will handle the new tag:
+- The [Github Action](https://github.com/efcore/EFCore.FSharp/blob/master/.github/workflows/publish.yml) will handle the new tag:
   - publish the package to NuGet
   - create a GitHub release for that git tag, upload release notes and NuGet packages to GitHub
 
@@ -155,4 +155,4 @@ RELEASE_VERSION=0.2.0 ./build.sh Release
 ### Releasing Documentation
 
 - Set Source for "Build and deployment" on [GitHub Pages](https://github.com/efcore/EFCore.FSharp/settings/pages) to `GitHub Actions`.
-- Documentation is auto-deployed via [Github Action](https://github.com/efcore/EFCore.FSharp/blob/main/.github/workflows/fsdocs-gh-pages.yml) to [Your GitHub Page](https://efcore.github.io/EFCore.FSharp/)
+- Documentation is auto-deployed via [Github Action](https://github.com/efcore/EFCore.FSharp/blob/master/.github/workflows/fsdocs-gh-pages.yml) to [Your GitHub Page](https://efcore.github.io/EFCore.FSharp/)
