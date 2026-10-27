@@ -4,18 +4,18 @@ open System.IO
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Scaffolding
-open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
 open EntityFrameworkCore.FSharp
 open EntityFrameworkCore.FSharp.EntityFrameworkExtensions
+open EntityFrameworkCore.FSharp.Scaffolding
 open EntityFrameworkCore.FSharp.SharedTypeExtensions
 
 
 type FSharpModelGenerator
     (
         dependencies: ModelCodeGeneratorDependencies,
-        contextGenerator: ICSharpDbContextGenerator,
-        entityTypeGenerator: ICSharpEntityTypeGenerator
+        contextGenerator: FSharpDbContextGenerator,
+        entityTypeGenerator: FSharpEntityTypeGenerator
     ) =
     inherit ModelCodeGenerator(dependencies)
 
@@ -98,14 +98,10 @@ type FSharpModelGenerator
             else
                 dbContextFileName
 
-        let contextFile =
-            ScaffoldedFile(Code = generatedCode, Path = path)
+        let contextFile = ScaffoldedFile(path, generatedCode)
 
         let resultingFiles =
             ScaffoldedModel(ContextFile = contextFile)
-
-        let domainFile = ScaffoldedFile()
-        domainFile.Path <- (domainFileName + fileExtension)
 
         let createEntityCode (entityType: IEntityType) =
             entityTypeGenerator.WriteCode(
@@ -130,7 +126,8 @@ type FSharpModelGenerator
                 entityCode
             }
 
-        domainFile.Code <- domainFileCode
+        let domainFile =
+            ScaffoldedFile((domainFileName + fileExtension), domainFileCode)
 
         resultingFiles.AdditionalFiles.Add(domainFile)
 

@@ -10,7 +10,7 @@ type FSharpMigrationsScaffolder(dependencies) =
     inherit MigrationsScaffolder(dependencies)
 
     // Copy of (modulo custom code changes) https://github.com/aspnet/EntityFrameworkCore/blob/d8b7ebbfabff3d2e8560c24b1ff14d1f4244ca6a/src/EFCore.Design/Migrations/Design/MigrationsScaffolder.cs#L365
-    override this.Save(projectDir, migration, outputDir) =
+    override this.Save(projectDir, migration: ScaffoldedMigration, outputDir, dryRun) =
         let lastMigrationFileName =
             migration.PreviousMigrationId
             + migration.FileExtension
@@ -51,11 +51,12 @@ type FSharpMigrationsScaffolder(dependencies) =
            A makeover of the API (GenerateMigration ... -> migrationCode: string * metadataCode: string) would be best
            That should include this Save method taking into account it sometimes can receive nothing for metadataCode
         *)
-        if migration.MigrationCode = "// intentionally empty" then
-            File.WriteAllText(migrationFile, migration.MetadataCode, Encoding.UTF8)
-        else
-            File.WriteAllText(migrationFile, migration.MigrationCode, Encoding.UTF8)
-            File.WriteAllText(migrationMetadataFile, migration.MetadataCode, Encoding.UTF8)
+        if not dryRun then
+            if migration.MigrationCode = "// intentionally empty" then
+                File.WriteAllText(migrationFile, (migration.MetadataCode: string), Encoding.UTF8)
+            else
+                File.WriteAllText(migrationFile, (migration.MigrationCode: string), Encoding.UTF8)
+                File.WriteAllText(migrationMetadataFile, (migration.MetadataCode: string), Encoding.UTF8)
         (* End custom code *)
 
         dependencies.OperationReporter.WriteVerbose(DesignStrings.WritingSnapshot(modelSnapshotFile))
@@ -63,7 +64,8 @@ type FSharpMigrationsScaffolder(dependencies) =
         Directory.CreateDirectory(modelSnapshotDirectory)
         |> ignore
 
-        File.WriteAllText(modelSnapshotFile, migration.SnapshotCode, Encoding.UTF8)
+        if not dryRun then
+            File.WriteAllText(modelSnapshotFile, (migration.SnapshotCode: string), Encoding.UTF8)
 
         MigrationFiles(
             MigrationFile = migrationFile,

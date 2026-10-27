@@ -469,7 +469,7 @@ let updateChangelog ctx =
         )
 
     let newChangelog =
-        Changelog.Changelog.New(changelog.Header, changelog.Description, None, newEntry :: changelog.Entries)
+        Changelog.Changelog.New(changelog.Header, changelog.Description, None, newEntry :: changelog.Entries, [])
 
     latestEntry <- newEntry
 
@@ -494,7 +494,7 @@ let updateChangelog ctx =
         |> List.ofSeq
         |> List.rev
 
-    let isRef line =
+    let isRef (line: string) =
         System.Text.RegularExpressions.Regex.IsMatch(line, @"^\[.+?\]:\s?[a-z]+://.*$")
 
     let linkReferenceTargets =

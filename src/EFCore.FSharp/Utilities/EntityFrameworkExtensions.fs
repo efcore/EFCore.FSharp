@@ -2,7 +2,7 @@ namespace EntityFrameworkCore.FSharp
 
 open System.Collections.Generic
 open System.Linq
-open Microsoft.EntityFrameworkCore.Design.Internal
+open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Metadata
 open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.EntityFrameworkCore
@@ -45,8 +45,6 @@ module internal EntityFrameworkExtensions =
     let findOwnership (e: IEntityType) = e.FindOwnership()
 
     let entityDbSetName (e: IEntityType) = e.GetDbSetName()
-
-    let modelEntityTypeErrors (m: IModel) = m.GetEntityTypeErrors()
 
     let toAnnotatable (a: IAnnotatable) = a
 

@@ -3,7 +3,6 @@ namespace EntityFrameworkCore.FSharp
 open Microsoft.EntityFrameworkCore.Design
 open Microsoft.EntityFrameworkCore.Migrations.Design
 open Microsoft.EntityFrameworkCore.Scaffolding
-open Microsoft.EntityFrameworkCore.Scaffolding.Internal
 open Microsoft.Extensions.DependencyInjection
 
 open EntityFrameworkCore.FSharp
@@ -30,8 +29,8 @@ type EFCoreFSharpServices(scaffoldOptions: ScaffoldOptions) =
                 .AddSingleton<ScaffoldOptions>(scaffoldOptions)
                 .AddSingleton<ICSharpHelper, FSharpHelper>()
                 .AddSingleton<IMigrationsModelDiffer, FSharpMigrationsModelDiffer>()
-                .AddSingleton<ICSharpEntityTypeGenerator, FSharpEntityTypeGenerator>()
-                .AddSingleton<ICSharpDbContextGenerator, FSharpDbContextGenerator>()
+                .AddSingleton<FSharpEntityTypeGenerator>()
+                .AddSingleton<FSharpDbContextGenerator>()
                 .AddSingleton<IModelCodeGenerator, FSharpModelGenerator>()
                 .AddSingleton<ICSharpMigrationOperationGenerator, FSharpMigrationOperationGenerator>()
                 .AddSingleton<ICSharpSnapshotGenerator, FSharpSnapshotGenerator>()

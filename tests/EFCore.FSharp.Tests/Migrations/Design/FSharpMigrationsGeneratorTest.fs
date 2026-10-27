@@ -143,10 +143,13 @@ module FSharpMigrationsGeneratorTest =
 
         try
             let snapshotType =
-                assembly.GetType(modelSnapshotTypeName, throwOnError = true, ignoreCase = false)
+                (assembly :> System.Reflection.Assembly)
+                    .GetType(modelSnapshotTypeName, true, false)
 
             let contextTypeAttribute =
-                System.Reflection.CustomAttributeExtensions.GetCustomAttribute<DbContextAttribute>(snapshotType)
+                System.Reflection.CustomAttributeExtensions.GetCustomAttribute<DbContextAttribute>(
+                    snapshotType :> System.Reflection.MemberInfo
+                )
 
             Expect.isNotNull contextTypeAttribute "Should not be null"
             Expect.equal contextTypeAttribute.ContextType.FullName typeof<MyContext>.FullName "Should be equal"
@@ -190,7 +193,8 @@ module FSharpMigrationsGeneratorTest =
         let sqlServerTypeMappingSource =
             SqlServerTypeMappingSource(
                 TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
-                TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()
+                TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>(),
+                Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal.SqlServerSingletonOptions()
             )
 
         let codeHelper = FSharpHelper(sqlServerTypeMappingSource)
@@ -217,6 +221,7 @@ module FSharpMigrationsGeneratorTest =
 
         let rlNames =
             (typeof<RelationalAnnotationNames>).GetFields()
+            |> Seq.filter (fun f -> f.FieldType = typeof<string>)
             |> Seq.toList
 
         let allAnnotations =
@@ -242,7 +247,7 @@ module FSharpMigrationsGeneratorTest =
 
                     metadataItem.SetAnnotation(annotationName, annotation)
 
-                    modelBuilder.FinalizeModel(designTime = true)
+                    modelBuilder.FinalizeModel(designTime = true, skipValidation = true)
                     |> ignore
 
                     try
@@ -326,6 +331,7 @@ module FSharpMigrationsGeneratorTest =
           UInt32: uint
           UInt64: uint64
           mutable privateSetter: int }
+
         member this.PrivateSetter
             with get () = this.privateSetter
             and private set v = this.privateSetter <- v
@@ -349,13 +355,31 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.ValueConverterType
                         CoreAnnotationNames.ValueComparer
                         CoreAnnotationNames.ValueComparerType
-                        CoreAnnotationNames.KeyValueComparer
-                        CoreAnnotationNames.StructuralValueComparer
                         CoreAnnotationNames.BeforeSaveBehavior
                         CoreAnnotationNames.AfterSaveBehavior
                         CoreAnnotationNames.ProviderClrType
                         CoreAnnotationNames.EagerLoaded
                         CoreAnnotationNames.DuplicateServiceProperties
+                        CoreAnnotationNames.Sentinel
+                        CoreAnnotationNames.ProviderValueComparer
+                        CoreAnnotationNames.ProviderValueComparerType
+                        CoreAnnotationNames.LazyLoadingEnabled
+                        CoreAnnotationNames.ReadOnlyModel
+                        CoreAnnotationNames.PreUniquificationName
+                        CoreAnnotationNames.InverseNavigationsNoAttribute
+                        CoreAnnotationNames.NavigationCandidatesNoAttribute
+                        CoreAnnotationNames.ComplexCandidates
+                        CoreAnnotationNames.DerivedTypes
+                        CoreAnnotationNames.AmbiguousField
+                        CoreAnnotationNames.FullChangeTrackingNotificationsRequired
+                        CoreAnnotationNames.AdHocModel
+                        CoreAnnotationNames.JsonValueReaderWriterType
+                        CoreAnnotationNames.ElementType
+                        CoreAnnotationNames.SkipNavigationBeingConfigured
+                        CoreAnnotationNames.UnsafeAccessors
+                        CoreAnnotationNames.NonNullableConventionState
+                        CoreAnnotationNames.DiscriminatorMappingComplete
+                        CoreAnnotationNames.EmbeddedDiscriminatorName
                         RelationalAnnotationNames.ColumnName
                         RelationalAnnotationNames.ColumnOrder
                         RelationalAnnotationNames.ColumnType
@@ -382,14 +406,37 @@ module FSharpMigrationsGeneratorTest =
                         RelationalAnnotationNames.CheckConstraints
                         RelationalAnnotationNames.DefaultSchema
                         RelationalAnnotationNames.Filter
-                        RelationalAnnotationNames.DbFunction
                         RelationalAnnotationNames.DbFunctions
                         RelationalAnnotationNames.MaxIdentifierLength
                         RelationalAnnotationNames.IsFixedLength
                         RelationalAnnotationNames.Collation
                         RelationalAnnotationNames.IsStored
                         RelationalAnnotationNames.RelationalModel
-                        RelationalAnnotationNames.ModelDependencies ]
+                        RelationalAnnotationNames.ModelDependencies
+                        RelationalAnnotationNames.DefaultConstraintName
+                        RelationalAnnotationNames.UseNamedDefaultConstraints
+                        RelationalAnnotationNames.DeleteStoredProcedure
+                        RelationalAnnotationNames.InsertStoredProcedure
+                        RelationalAnnotationNames.UpdateStoredProcedure
+                        RelationalAnnotationNames.MappingStrategy
+                        RelationalAnnotationNames.TpcMappingStrategy
+                        RelationalAnnotationNames.TphMappingStrategy
+                        RelationalAnnotationNames.TptMappingStrategy
+                        RelationalAnnotationNames.RelationalModelFactory
+                        RelationalAnnotationNames.InsertStoredProcedureMappings
+                        RelationalAnnotationNames.InsertStoredProcedureResultColumnMappings
+                        RelationalAnnotationNames.InsertStoredProcedureParameterMappings
+                        RelationalAnnotationNames.DeleteStoredProcedureMappings
+                        RelationalAnnotationNames.DeleteStoredProcedureParameterMappings
+                        RelationalAnnotationNames.UpdateStoredProcedureMappings
+                        RelationalAnnotationNames.UpdateStoredProcedureResultColumnMappings
+                        RelationalAnnotationNames.UpdateStoredProcedureParameterMappings
+                        RelationalAnnotationNames.MappingFragments
+                        RelationalAnnotationNames.FieldValueGetter
+                        RelationalAnnotationNames.ContainerColumnName
+                        RelationalAnnotationNames.ContainerColumnType
+                        RelationalAnnotationNames.JsonPropertyName
+                        RelationalAnnotationNames.StoreType ]
                       |> HashSet
 
                   let _toTable =
@@ -416,9 +463,8 @@ module FSharpMigrationsGeneratorTest =
                           + @"entityTypeBuilder.HasDiscriminator().HasValue(""MyDiscriminatorValue"") |> ignore"))
                         (RelationalAnnotationNames.Comment,
                          (box "My Comment",
-                          _toTable
-                          + @"entityTypeBuilder.HasComment(""My Comment"") |> ignore"))
-                        (CoreAnnotationNames.DefiningQuery, (box (Expression.Lambda(Expression.Constant(null))), ""))
+                          _nl
+                          + @"entityTypeBuilder.ToTable(""WithAnnotations"", (fun t -> t.HasComment(""My Comment""))) |> ignore"))
                         (RelationalAnnotationNames.ViewName,
                          (box "MyView",
                           _nl
@@ -447,13 +493,25 @@ module FSharpMigrationsGeneratorTest =
                         CoreAnnotationNames.NavigationAccessMode
                         CoreAnnotationNames.EagerLoaded
                         CoreAnnotationNames.QueryFilter
-                        CoreAnnotationNames.DefiningQuery
                         CoreAnnotationNames.DiscriminatorProperty
+                        CoreAnnotationNames.DiscriminatorMappingComplete
                         CoreAnnotationNames.DiscriminatorValue
+                        CoreAnnotationNames.EmbeddedDiscriminatorName
                         CoreAnnotationNames.InverseNavigations
+                        CoreAnnotationNames.InverseNavigationsNoAttribute
                         CoreAnnotationNames.NavigationCandidates
+                        CoreAnnotationNames.NavigationCandidatesNoAttribute
+                        CoreAnnotationNames.ComplexCandidates
+                        CoreAnnotationNames.DerivedTypes
                         CoreAnnotationNames.AmbiguousNavigations
+                        CoreAnnotationNames.AmbiguousField
                         CoreAnnotationNames.DuplicateServiceProperties
+                        CoreAnnotationNames.FullChangeTrackingNotificationsRequired
+                        CoreAnnotationNames.AdHocModel
+                        CoreAnnotationNames.ReadOnlyModel
+                        CoreAnnotationNames.SkipNavigationBeingConfigured
+                        CoreAnnotationNames.UnsafeAccessors
+                        CoreAnnotationNames.NonNullableConventionState
                         RelationalAnnotationNames.TableName
                         RelationalAnnotationNames.IsTableExcludedFromMigrations
                         RelationalAnnotationNames.ViewName
@@ -481,11 +539,34 @@ module FSharpMigrationsGeneratorTest =
                         RelationalAnnotationNames.SequencePrefix
                         RelationalAnnotationNames.CheckConstraints
                         RelationalAnnotationNames.Filter
-                        RelationalAnnotationNames.DbFunction
                         RelationalAnnotationNames.DbFunctions
                         RelationalAnnotationNames.MaxIdentifierLength
                         RelationalAnnotationNames.RelationalModel
-                        RelationalAnnotationNames.ModelDependencies ]
+                        RelationalAnnotationNames.ModelDependencies
+                        RelationalAnnotationNames.DefaultConstraintName
+                        RelationalAnnotationNames.UseNamedDefaultConstraints
+                        RelationalAnnotationNames.DeleteStoredProcedure
+                        RelationalAnnotationNames.InsertStoredProcedure
+                        RelationalAnnotationNames.UpdateStoredProcedure
+                        RelationalAnnotationNames.MappingStrategy
+                        RelationalAnnotationNames.TpcMappingStrategy
+                        RelationalAnnotationNames.TphMappingStrategy
+                        RelationalAnnotationNames.TptMappingStrategy
+                        RelationalAnnotationNames.RelationalModelFactory
+                        RelationalAnnotationNames.InsertStoredProcedureMappings
+                        RelationalAnnotationNames.InsertStoredProcedureResultColumnMappings
+                        RelationalAnnotationNames.InsertStoredProcedureParameterMappings
+                        RelationalAnnotationNames.DeleteStoredProcedureMappings
+                        RelationalAnnotationNames.DeleteStoredProcedureParameterMappings
+                        RelationalAnnotationNames.UpdateStoredProcedureMappings
+                        RelationalAnnotationNames.UpdateStoredProcedureResultColumnMappings
+                        RelationalAnnotationNames.UpdateStoredProcedureParameterMappings
+                        RelationalAnnotationNames.MappingFragments
+                        RelationalAnnotationNames.FieldValueGetter
+                        RelationalAnnotationNames.ContainerColumnName
+                        RelationalAnnotationNames.ContainerColumnType
+                        RelationalAnnotationNames.JsonPropertyName
+                        RelationalAnnotationNames.StoreType ]
                       |> HashSet
 
                   let columnMapping =
@@ -568,7 +649,8 @@ module FSharpMigrationsGeneratorTest =
                   let sqlServerTypeMappingSource =
                       SqlServerTypeMappingSource(
                           TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
-                          TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()
+                          TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>(),
+                          Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal.SqlServerSingletonOptions()
                       )
 
                   let codeHelper = FSharpHelper(sqlServerTypeMappingSource)
@@ -671,16 +753,14 @@ module FSharpMigrationsGeneratorTest =
 
                   let modelBuilder =
                       SqlServerTestHelpers.Instance.CreateConventionBuilder(
-                          configure = (fun c -> c.RemoveAllConventions())
+                          configureConventions = (fun c -> c.RemoveAllConventions())
                       )
 
-                  modelBuilder.HasAnnotation("Some:EnumValue", RegexOptions.Multiline)
+                  (modelBuilder: ModelBuilder)
+                      .HasAnnotation("Some:EnumValue", RegexOptions.Multiline)
                   |> ignore
 
-                  modelBuilder.HasAnnotation(
-                      RelationalAnnotationNames.DbFunctions,
-                      SortedDictionary<string, IDbFunction>()
-                  )
+                  modelBuilder.HasAnnotation(RelationalAnnotationNames.DbFunctions, Dictionary<string, IDbFunction>())
                   |> ignore
 
                   modelBuilder.Entity(
@@ -805,12 +885,14 @@ module FSharpMigrationsGeneratorTest =
                   let assembly = build.BuildInMemory(references)
 
                   let migrationType =
-                      assembly.GetType("MyNamespace.MyMigration", throwOnError = true, ignoreCase = false)
+                      (assembly :> System.Reflection.Assembly)
+                          .GetType("MyNamespace.MyMigration", true, false)
 
                   let attribute =
-                      migrationType.GetCustomAttributes(false)
+                      (migrationType :> System.Reflection.MemberInfo)
+                          .GetCustomAttributes(false)
                       |> Seq.choose
-                          (fun t ->
+                          (fun (t: obj) ->
                               match t with
                               | :? DbContextAttribute as a -> Some a
                               | _ -> None)
@@ -820,8 +902,8 @@ module FSharpMigrationsGeneratorTest =
                       Activator.CreateInstance(migrationType) :?> Migration
 
                   Expect.equal
-                      attribute.ContextType.FullName
-                      (typeof<MyContext>).FullName
+                      (attribute.ContextType.FullName)
+                      ((typeof<MyContext>).FullName)
                       $"Expected context type {nameof MyContext}"
 
                   Expect.equal migration.UpOperations.Count 4 "Expected 4 up operations"

@@ -28,6 +28,7 @@ open Microsoft.Extensions.DependencyInjection
 open EntityFrameworkCore.FSharp.Internal
 open EntityFrameworkCore.FSharp.Migrations.Design
 open EntityFrameworkCore.FSharp.Test.TestUtilities
+open Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal
 
 open Expecto
 open Microsoft.EntityFrameworkCore.Internal
@@ -56,7 +57,8 @@ module FSharpMigrationsScaffolderTest =
         let sqlServerTypeMappingSource =
             SqlServerTypeMappingSource(
                 TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
-                TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()
+                TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>(),
+                SqlServerSingletonOptions()
             )
 
         let sqlServerAnnotationCodeGenerator =
@@ -96,8 +98,8 @@ module FSharpMigrationsScaffolderTest =
                         TestServiceFactory.Instance.Create<RelationalTypeMappingSourceDependencies>()
                     ),
                     MigrationsAnnotationProvider(MigrationsAnnotationProviderDependencies()),
-                    services.GetRequiredService<IChangeDetector>(),
-                    services.GetRequiredService<IUpdateAdapterFactory>(),
+                    services.GetRequiredService<IRelationalAnnotationProvider>(),
+                    services.GetRequiredService<IRowIdentityMapFactory>(),
                     services.GetRequiredService<CommandBatchPreparerDependencies>()
                 ),
                 idGenerator,
@@ -137,7 +139,11 @@ module FSharpMigrationsScaffolderTest =
                     services.GetRequiredService<IModelRuntimeInitializer>(),
                     services.GetRequiredService<IDiagnosticsLogger<DbLoggerCategory.Migrations>>(),
                     services.GetRequiredService<IRelationalCommandDiagnosticsLogger>(),
-                    services.GetRequiredService<IDatabaseProvider>()
+                    services.GetRequiredService<IDatabaseProvider>(),
+                    services.GetRequiredService<IMigrationsModelDiffer>(),
+                    services.GetRequiredService<IDesignTimeModel>(),
+                    services.GetRequiredService<IDbContextOptions>(),
+                    services.GetRequiredService<IExecutionStrategy>()
                 )
             )
         )
@@ -209,7 +215,7 @@ module FSharpMigrationsScaffolderTest =
                       scaffolder.ScaffoldMigration("EmptyMigration", "WebApplication1")
 
                   let saveResult =
-                      scaffolder.Save(projectDir, migration, null)
+                      scaffolder.Save(projectDir, migration, null, false)
 
                   Expect.isTrue (File.Exists saveResult.MigrationFile) "MigrationFile should exist"
                   Expect.isTrue (File.Exists saveResult.MetadataFile) "MetadataFile should exist"

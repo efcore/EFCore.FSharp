@@ -585,7 +585,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             match arg with
             | :? NestedClosureCodeFragment as n ->
                 let f = this.buildNestedFragment (n, indent)
-                sb.AppendLine(f)
+                sb.AppendLine(f: string)
             | _ -> sb.Append(this.unknownLiteral arg)
 
         if typeQualified then
@@ -726,14 +726,68 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
 
     interface ICSharpHelper with
-        member this.Fragment(fragment: MethodCallCodeFragment, instanceIdentifer: string, typeQualified: bool) =
-            this.buildFragment (fragment, typeQualified, instanceIdentifer, 0)
+        member this.Fragment(fragment: IMethodCallCodeFragment, instanceIdentifier: string, typeQualified: bool) =
+            this.buildFragment (fragment :?> MethodCallCodeFragment, typeQualified, instanceIdentifier, 0)
+
+        member this.Fragment(fragment: IMethodCallCodeFragment, indent: int) =
+            this.buildFragment (fragment :?> MethodCallCodeFragment, false, null, indent)
+
+        member this.Fragment(fragment: NestedClosureCodeFragment, indent: int) =
+            this.buildNestedFragment (fragment, indent)
+
+        member this.Fragment(fragment: PropertyAccessorCodeFragment) =
+            let props =
+                fragment.Properties
+                |> Seq.map (fun p -> fragment.Parameter + "." + p)
+                |> join ", "
+
+            sprintf "(fun %s -> (%s) :> obj)" fragment.Parameter props
+
+        member this.Fragment(fragment: AttributeCodeFragment) =
+            let args =
+                fragment.Arguments
+                |> Seq.map this.unknownLiteral
+                |> join ", "
+
+            let namedArgs =
+                fragment.NamedArguments
+                |> Seq.map (fun kv -> sprintf "%s = %s" kv.Key (this.unknownLiteral kv.Value))
+                |> join ", "
+
+            let allArgs =
+                [ args; namedArgs ]
+                |> List.filter (String.IsNullOrEmpty >> not)
+                |> join ", "
+
+            if String.IsNullOrEmpty allArgs then
+                sprintf "[<%s>]" (this.ReferenceFullName fragment.Type false)
+            else
+                sprintf "[<%s(%s)>]" (this.ReferenceFullName fragment.Type false) allArgs
 
         member this.Identifier(name: string, scope: ICollection<string>, capitalize: Nullable<bool>) : string =
             if isNull scope then
                 this.IdentifierWithScope name [||]
             else
                 this.IdentifierWithScope name scope
+
+        member this.Identifier
+            (
+                name: string,
+                value: 'T,
+                scope: IDictionary<string, 'T>,
+                capitalize: Nullable<bool>
+            ) : string =
+            let identifier =
+                if isNull (scope :> obj) then
+                    this.IdentifierWithScope name [||]
+                else
+                    let keys = scope.Keys :> ICollection<string>
+                    this.IdentifierWithScope name keys
+
+            if notNull (scope :> obj) then
+                scope.[identifier] <- value
+
+            identifier
 
         member this.Lambda(properties: IReadOnlyList<string>, lambdaIdentifier: string) : string =
 
@@ -750,15 +804,38 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
             sprintf "(fun %s -> (%s) :> obj)" lambdaIdentifier' props
 
+        member this.Lambda
+            (
+                properties: System.Collections.Generic.IEnumerable<Microsoft.EntityFrameworkCore.Metadata.IProperty>,
+                lambdaIdentifier: string
+            ) : string =
+            let lambdaIdentifier' =
+                if String.IsNullOrEmpty lambdaIdentifier then
+                    "x"
+                else
+                    lambdaIdentifier
+
+            let props =
+                properties
+                |> Seq.map (fun p -> lambdaIdentifier' + "." + p.Name)
+                |> join ", "
+
+            sprintf "(fun %s -> (%s) :> obj)" lambdaIdentifier' props
+
         member this.Literal(values: obj [,]) : string = this.literalArray2D values
 
         member this.Literal(value: Nullable<'T>) : string = this.unknownLiteral value
+
+        member this.Literal(value: BigInteger) : string = this.literalBigInteger value
 
         member this.Literal(value: bool) : string = this.literalBoolean value
 
         member this.Literal(value: byte) : string = this.literalByte value
 
         member this.Literal(value: char) : string = this.literalChar value
+
+        member this.Literal(value: DateOnly) : string =
+            sprintf "DateOnly(%d, %d, %d)" value.Year value.Month value.Day
 
         member this.Literal(value: DateTime) : string = this.literalDateTime value
 
@@ -768,7 +845,7 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         member this.Literal(value: float) : string = this.literalDouble value
 
-        member this.Literal(value: Enum) : string = this.literalEnum value
+        member this.Literal(value: Enum, fullName: bool) : string = this.literalEnum value
 
         member this.Literal(value: float32) : string = this.literalFloat32 value
 
@@ -784,6 +861,18 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
 
         member this.Literal(value: string) : string = this.literalString value
 
+        member this.Literal(value: TimeOnly) : string =
+            let result =
+                if value.Millisecond = 0 then
+                    sprintf "TimeOnly(%d, %d, %d)" value.Hour value.Minute value.Second
+                else
+                    sprintf "TimeOnly(%d, %d, %d, %d)" value.Hour value.Minute value.Second value.Millisecond
+
+            if value.Ticks % 10_000L > 0L then
+                sprintf "%s.Add(TimeSpan.FromTicks(%dL))" result (value.Ticks % 10_000L)
+            else
+                result
+
         member this.Literal(value: TimeSpan) = this.literalTimeSpan value
 
         member this.Literal(value: UInt32) = this.literalUInt32 value
@@ -796,10 +885,21 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             let isObjType = typeof<'T> = typeof<obj>
             this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType
 
+        member this.Literal(values: System.Collections.Generic.List<'T>, vertical: bool) : string =
+            let isObjType = typeof<'T> = typeof<obj>
+            this.literalList (values |> Seq.cast<obj> |> ResizeArray) vertical isObjType
+
+        member this.Literal(values: System.Collections.Generic.Dictionary<'TKey, 'TValue>, vertical: bool) : string =
+            let entries =
+                values
+                |> Seq.map (fun kv -> sprintf "(%s, %s)" (this.unknownLiteral kv.Key) (this.unknownLiteral kv.Value))
+
+            sprintf "[| %s |]" (String.Join("; ", entries))
+
         member this.Literal(t: Type, fullName: Nullable<bool>) =
             this.ReferenceFullName t (fullName.GetValueOrDefault())
 
-        member this.Namespace(name: string []) : string =
+        member this.Namespace([<System.ParamArray>] name: string []) : string =
             let join (ns': string array) = String.Join(".", ns')
 
             let ns =
@@ -819,3 +919,36 @@ type FSharpHelper(relationalTypeMappingSource: IRelationalTypeMappingSource) =
             this.ReferenceFullName t (fullName.GetValueOrDefault())
 
         member this.UnknownLiteral(value: obj) : string = this.unknownLiteral value
+
+        member this.XmlComment(comment: string, indent: int) : string =
+            let lines =
+                comment.Split([| '\n' |], StringSplitOptions.None)
+
+            lines
+            |> Seq.map (fun l -> sprintf "/// %s" (l.TrimEnd()))
+            |> join "\n"
+
+        member this.Arguments(values: System.Collections.Generic.IEnumerable<obj>) : string =
+            values |> Seq.map this.unknownLiteral |> join ", "
+
+        member this.GetRequiredUsings(``type``: Type) : System.Collections.Generic.IEnumerable<string> = Seq.empty
+
+        member this.Statement
+            (
+                node,
+                collectedNamespaces,
+                unsafeAccessors,
+                constantReplacements,
+                memberAccessReplacements
+            ) : string =
+            raise (NotSupportedException "F# expression statements are not supported")
+
+        member this.Expression
+            (
+                node,
+                collectedNamespaces,
+                unsafeAccessors,
+                constantReplacements,
+                memberAccessReplacements
+            ) : string =
+            raise (NotSupportedException "F# expression generation is not supported")

@@ -102,7 +102,9 @@ type FSharpSnapshotGenerator
 
                     stringBuilder {
                         if leadingNewLine then ""
-                        (code.Fragment(c, builderName)) + " |> ignore"
+
+                        (code.Fragment(c, builderName, false))
+                        + " |> ignore"
                     }
 
             | None ->
@@ -587,26 +589,58 @@ type FSharpSnapshotGenerator
                 let isExcludedAnnotation =
                     tryGetAnnotationByName RelationalAnnotationNames.IsTableExcludedFromMigrations
 
+                let commentAnnotation =
+                    tryGetAnnotationByName RelationalAnnotationNames.Comment
+
+                let isExcluded =
+                    notNull isExcludedAnnotation
+                    && (isExcludedAnnotation.Value :?> Nullable<bool>)
+                        .GetValueOrDefault()
+
+                let comment =
+                    if annotationAndValueNotNull commentAnnotation then
+                        commentAnnotation.Value :?> string |> Option.ofObj
+                    else
+                        None
+
+                let requiresTableBuilder = isExcluded || comment.IsSome
+
                 if notNull schema
                    || (notNull schemaAnnotation && notNull tableName) then
                     if isNull schema
-                       && (notNull isExcludedAnnotation
-                           && (isExcludedAnnotation.Value :?> Nullable<bool>)
-                               .GetValueOrDefault()
-                              <> true) then
+                       && not requiresTableBuilder then
                         sb.Append(sprintf ", (string %s)" (code.UnknownLiteral schema))
                         |> ignore
                     elif notNull schema then
                         sb.Append(sprintf ", %s" (code.UnknownLiteral schema))
                         |> ignore
 
-                if notNull isExcludedAnnotation then
-                    if (isExcludedAnnotation.Value :?> Nullable<bool>)
-                        .GetValueOrDefault() then
-                        sb.Append ", (fun t -> t.ExcludeFromMigrations())"
-                        |> ignore
+                if requiresTableBuilder then
+                    let calls = ResizeArray<string>()
 
+                    if isExcluded then
+                        calls.Add("t.ExcludeFromMigrations()")
+
+                    match comment with
+                    | Some c -> calls.Add(sprintf "t.HasComment(%s)" (code.Literal c))
+                    | None -> ()
+
+                    let body =
+                        if calls.Count = 1 then
+                            calls[0]
+                        else
+                            calls
+                            |> Seq.map (fun c -> c + " |> ignore")
+                            |> String.concat "; "
+
+                    sb.Append(sprintf ", (fun t -> %s)" body) |> ignore
+
+                if notNull isExcludedAnnotation then
                     annotations.Remove(isExcludedAnnotation.Name)
+                    |> ignore
+
+                if notNull commentAnnotation then
+                    annotations.Remove(commentAnnotation.Name)
                     |> ignore
 
 

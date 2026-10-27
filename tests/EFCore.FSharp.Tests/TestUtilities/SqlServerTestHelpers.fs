@@ -15,4 +15,4 @@ type SqlServerTestHelpers private () =
 
     override _.UseProviderOptions optionsBuilder =
         optionsBuilder.UseSqlServer(new SqlConnection("Database=DummyDatabase"))
-        |> ignore
+        optionsBuilder

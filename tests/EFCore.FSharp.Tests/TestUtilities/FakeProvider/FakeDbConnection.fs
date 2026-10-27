@@ -376,28 +376,6 @@ and FakeSqlGenerator(dependencies) =
         _appendBatchHeaderCalls <- _appendBatchHeaderCalls + 1
         base.AppendBatchHeader(commandStringBuilder)
 
-    override this.AppendIdentityWhereCondition(commandStringBuilder, columnModification) =
-        commandStringBuilder
-            .Append(base.SqlGenerationHelper.DelimitIdentifier(columnModification.ColumnName))
-            .Append(" = ")
-            .Append("provider_specific_identity()")
-        |> ignore
-
-    override this.AppendSelectAffectedCountCommand(commandStringBuilder, name, schema, commandPosition) =
-        commandStringBuilder
-            .Append("SELECT provider_specific_rowcount();")
-            .Append(Environment.NewLine)
-            .Append(Environment.NewLine)
-        |> ignore
-
-        ResultSetMapping.LastInResultSet
-
-    override this.AppendRowsAffectedWhereCondition(commandStringBuilder, expectedRowsAffected) =
-        commandStringBuilder
-            .Append("provider_specific_rowcount() = ")
-            .Append(expectedRowsAffected)
-        |> ignore
-
 and [<AllowNullLiteral>] FakeDbTransaction(connection: FakeDbConnection, ?isolationLevel: IsolationLevel) =
     inherit DbTransaction()
 
@@ -583,7 +561,6 @@ and [<AllowNullLiteral>] FakeRelationalOptionsExtension =
                 .TryAdd<IUpdateSqlGenerator, FakeSqlGenerator>()
                 .TryAdd<IModificationCommandBatchFactory, TestModificationCommandBatchFactory>()
                 .TryAdd<IRelationalDatabaseCreator, FakeRelationalDatabaseCreator>()
-        //.TryAddProviderSpecificServices(Action<ServiceCollectionMap>(serviceMap))
 
 
         builder.TryAddCoreServices() |> ignore

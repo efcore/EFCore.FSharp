@@ -99,26 +99,27 @@ type ModelCodeGeneratorTestBase() =
         (additionalSources: string list)
         =
 
-        let designServices =
-            ServiceCollection() :> IServiceCollection
         // Add F# overrides
         let efCoreFSharpServices = EFCoreFSharpServices.Default
-        efCoreFSharpServices.ConfigureDesignTimeServices designServices
 
-        this.AddModelServices designServices
+        let addModelServices = this.AddModelServices
 
         let modelBuilder =
-            SqlServerTestHelpers.Instance.CreateConventionBuilder(customServices = designServices)
+            SqlServerTestHelpers.Instance.CreateConventionBuilder(
+                addServices =
+                    fun services ->
+                        efCoreFSharpServices.ConfigureDesignTimeServices services
+                        addModelServices services
+                        services
+            )
 
-        modelBuilder.Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion)
+        (modelBuilder: ModelBuilder)
+            .Model.RemoveAnnotation(CoreAnnotationNames.ProductVersion)
         |> ignore
 
         let _ = buildModel (modelBuilder)
 
-        let _ = modelBuilder.Model.GetEntityTypeErrors()
-
-        let model =
-            modelBuilder.FinalizeModel(designTime = true, skipValidation = true)
+        let model = modelBuilder.FinalizeModel()
 
         let services = createServices ()
         efCoreFSharpServices.ConfigureDesignTimeServices services
@@ -156,6 +157,8 @@ type ModelCodeGeneratorTestBase() =
         let assembly = build.BuildInMemory references
 
         let context =
-            assembly.CreateInstance("TestNamespace.TestDbContext") :?> DbContext
+            (assembly: System.Reflection.Assembly)
+                .CreateInstance("TestNamespace.TestDbContext")
+            :?> DbContext
 
         assertModel context.Model

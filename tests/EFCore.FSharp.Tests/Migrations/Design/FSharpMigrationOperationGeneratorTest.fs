@@ -25,6 +25,7 @@ open EntityFrameworkCore.FSharp.Internal
 open EntityFrameworkCore.FSharp.Migrations.Design
 open EntityFrameworkCore.FSharp.Test.TestUtilities
 open Microsoft.EntityFrameworkCore.Migrations
+open Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal
 open System.Text
 open System.Data
 open Microsoft.Data.SqlClient
@@ -159,7 +160,7 @@ type SqlServerGeometryTypeMapping<'geometry when 'geometry :> Geometry>
 
     override __.GetSrid value = (value :?> Geometry).SRID
 
-    override __.WKTReaderType = typeof<NetTopologySuite.IO.WKTReader>
+    override __.WktReaderType = typeof<NetTopologySuite.IO.WKTReader>
 
     override __.ConfigureParameter parameter =
         let t = parameter.GetType()
@@ -236,7 +237,11 @@ module FSharpMigrationOperationGeneratorTest =
 
         FSharpMigrationOperationGenerator(
             FSharpHelper(
-                SqlServerTypeMappingSource(typeMappingSourceDependencies, relationalTypeMappingSourceDependencies)
+                SqlServerTypeMappingSource(
+                    typeMappingSourceDependencies,
+                    relationalTypeMappingSourceDependencies,
+                    SqlServerSingletonOptions()
+                )
             )
         )
         :> ICSharpMigrationOperationGenerator
@@ -250,12 +255,18 @@ module FSharpMigrationOperationGeneratorTest =
                         TestServiceFactory.Instance.Create<TypeMappingSourceDependencies>(),
                         RelationalTypeMappingSourceDependencies(
                             [| SqlServerNetTopologySuiteTypeMappingSourcePlugin(NtsGeometryServices.Instance) |]
-                        )
+                        ),
+                        SqlServerSingletonOptions()
                     )
                 )
             )
 
         let builder = IndentedStringBuilder()
+
+        builder.AppendLine "namespace TestOperations"
+        |> ignore
+
+        builder.AppendLine "" |> ignore
 
         builder.AppendLine "open System" |> ignore
 
@@ -311,12 +322,19 @@ module FSharpMigrationOperationGeneratorTest =
         let assembly = build.BuildInMemory(references)
 
         let factoryType =
-            assembly.GetTypes()
-            |> Seq.find (fun m -> m.Name = "OperationsFactory")
+            (assembly :> System.Reflection.Assembly)
+                .GetTypes()
+            |> Seq.find (fun (m: System.Type) -> m.Name = "OperationsFactory")
 
-        let createMethod = factoryType.GetMethod("Create")
+        let createMethod =
+            (factoryType: System.Type).GetMethod("Create")
+
         let mb = MigrationBuilder(activeProvider = null)
-        createMethod.Invoke(null, [| mb |]) |> ignore
+
+        (createMethod: System.Reflection.MethodInfo)
+            .Invoke(null, [| mb |])
+        |> ignore
+
         let result = mb.Operations.Cast<'a>().Single()
 
         ``assert`` result

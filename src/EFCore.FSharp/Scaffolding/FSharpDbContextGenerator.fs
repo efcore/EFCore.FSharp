@@ -120,10 +120,10 @@ type FSharpDbContextGenerator
     let generateSequence (s: ISequence) =
 
         let methodName =
-            if s.ClrType = Sequence.DefaultClrType then
+            if s.Type = Sequence.DefaultClrType then
                 "HasSequence"
             else
-                sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName (s.ClrType))
+                sprintf "HasSequence<%s>" (FSharpUtilities.getTypeName (s.Type))
 
         let parameters =
             if (s.Schema |> String.IsNullOrEmpty)
@@ -901,7 +901,6 @@ type FSharpDbContextGenerator
             CoreAnnotationNames.ProductVersion
             RelationalAnnotationNames.MaxIdentifierLength
             ScaffoldingAnnotationNames.DatabaseName
-            ScaffoldingAnnotationNames.EntityTypeErrors
         }
         |> Seq.iter (annotations.Remove >> ignore)
 
@@ -987,10 +986,6 @@ type FSharpDbContextGenerator
 
                         ""
 
-                for e in model.GetEntityTypeErrors() do
-                    $"// {e.Value} Please see the warning messages."
-                    ""
-
                 generateOnConfiguring connectionString suppressOnConfiguring
 
                 generateOnModelCreating model useDataAnnotations
@@ -998,71 +993,70 @@ type FSharpDbContextGenerator
         }
 
 
-    interface ICSharpDbContextGenerator with
-        member this.WriteCode
-            (
-                model,
-                contextName,
-                connectionString,
-                contextNamespace,
-                modelNamespace,
-                useDataAnnotations,
-                useNullableReferenceTypes,
-                suppressConnectionStringWarning,
-                suppressOnConfiguring
-            ) =
+    member this.WriteCode
+        (
+            model,
+            contextName,
+            connectionString,
+            contextNamespace,
+            modelNamespace,
+            useDataAnnotations,
+            useNullableReferenceTypes,
+            suppressConnectionStringWarning,
+            suppressOnConfiguring
+        ) =
 
-            namespaces.Clear()
+        namespaces.Clear()
 
-            namespaces.Add "System" |> ignore
+        namespaces.Add "System" |> ignore
 
-            namespaces.Add "System.Collections.Generic"
-            |> ignore
+        namespaces.Add "System.Collections.Generic"
+        |> ignore
 
-            namespaces.Add "Microsoft.EntityFrameworkCore"
-            |> ignore
+        namespaces.Add "Microsoft.EntityFrameworkCore"
+        |> ignore
 
-            namespaces.Add "Microsoft.EntityFrameworkCore.Metadata"
-            |> ignore
+        namespaces.Add "Microsoft.EntityFrameworkCore.Metadata"
+        |> ignore
 
-            namespaces.Add "EntityFrameworkCore.FSharp.Extensions"
-            |> ignore
+        namespaces.Add "EntityFrameworkCore.FSharp.Extensions"
+        |> ignore
 
-            let finalContextNamespace =
-                if isNull contextNamespace then
-                    modelNamespace
-                else
-                    contextNamespace
+        let finalContextNamespace =
+            if isNull contextNamespace then
+                modelNamespace
+            else
+                contextNamespace
 
-            let finalCode =
-                generateClass model contextName connectionString useDataAnnotations suppressOnConfiguring
+        let finalCode =
+            generateClass model contextName connectionString useDataAnnotations suppressOnConfiguring
 
-            let mutable finalNamespaces =
-                namespaces
-                |> Seq.sortBy
-                    (fun n ->
-                        (match n with
-                         | "System" -> 1
-                         | x when x.StartsWith("System", StringComparison.Ordinal) -> 2
-                         | x when x.StartsWith("Microsoft", StringComparison.Ordinal) -> 3
-                         | x when x.StartsWith("EntityFrameworkCore.FSharp", StringComparison.Ordinal) -> 4
-                         | _ -> 5),
+        let mutable finalNamespaces =
+            namespaces
+            |> Seq.sortBy
+                (fun n ->
+                    (match n with
+                     | "System" -> 1
+                     | x when x.StartsWith("System", StringComparison.Ordinal) -> 2
+                     | x when x.StartsWith("Microsoft", StringComparison.Ordinal) -> 3
+                     | x when x.StartsWith("EntityFrameworkCore.FSharp", StringComparison.Ordinal) -> 4
+                     | _ -> 5),
 
-                        n)
+                    n)
 
-            if
-                finalContextNamespace <> modelNamespace
-                && not (String.IsNullOrEmpty modelNamespace)
-            then
-                finalNamespaces <- finalNamespaces |> Seq.append [ modelNamespace ]
+        if
+            finalContextNamespace <> modelNamespace
+            && not (String.IsNullOrEmpty modelNamespace)
+        then
+            finalNamespaces <- finalNamespaces |> Seq.append [ modelNamespace ]
 
-            stringBuilder {
-                $"namespace {finalContextNamespace}"
-                ""
+        stringBuilder {
+            $"namespace {finalContextNamespace}"
+            ""
 
-                for ns in finalNamespaces do
-                    $"open {ns}"
+            for ns in finalNamespaces do
+                $"open {ns}"
 
-                ""
-                finalCode
-            }
+            ""
+            finalCode
+        }

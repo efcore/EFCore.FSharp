@@ -15,7 +15,7 @@ type internal IntArrayTypeMapping =
 
     new(parameters) = { inherit RelationalTypeMapping(parameters) }
 
-    override this.Clone parameters =
+    override this.Clone(parameters: RelationalTypeMapping.RelationalTypeMappingParameters) =
         parameters |> IntArrayTypeMapping :> RelationalTypeMapping
 
 type internal TestStringTypeMapping(storeType, dbType, unicode, size, fixedLength) =
@@ -23,9 +23,7 @@ type internal TestStringTypeMapping(storeType, dbType, unicode, size, fixedLengt
 
 
 type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
-    inherit RelationalTypeMappingSource(dependencies, relationalDependencies)
-
-
+    inherit TestRelationalTypeMappingSourceBase(dependencies, relationalDependencies)
 
     let _string =
         StringTypeMapping("just_string(2000)", Nullable()) :> RelationalTypeMapping
@@ -197,7 +195,7 @@ type TestRelationalTypeMappingSource(dependencies, relationalDependencies) =
                     (not isStoreTypeNameNull)
                     && not (mapping.StoreType.Equals(storeTypeName, StringComparison.Ordinal))
                 then
-                    mapping.Clone(storeTypeName, mapping.Size)
+                    mapping.WithStoreTypeAndSize(storeTypeName, mapping.Size)
                 else
                     mapping
             | _ ->

@@ -6,11 +6,15 @@
 	"forwardPorts": [
 		0
 	],
-	"extensions": [
-		"ionide.ionide-fsharp",
-		"ms-dotnettools.csharp",
-		"editorconfig.editorconfig",
-		"ionide.ionide-paket",
-		"ionide.ionide-fake"
-	]
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ionide.ionide-fsharp",
+				"ms-dotnettools.csharp",
+				"editorconfig.editorconfig",
+				"ionide.ionide-paket",
+				"ionide.ionide-fake"
+			]
+		}
+	}
 }

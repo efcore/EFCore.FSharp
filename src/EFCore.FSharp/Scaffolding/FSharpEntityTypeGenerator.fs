@@ -286,8 +286,13 @@ type FSharpEntityTypeGenerator
                 AttributeWriter(nameof InversePropertyAttribute)
 
             let nameMatches =
-                navigation.DeclaringEntityType.GetPropertiesAndNavigations()
-                |> Seq.exists (fun m -> m.Name = inverseNavigation.DeclaringEntityType.Name)
+                let entityType = navigation.DeclaringEntityType
+                let targetName = inverseNavigation.DeclaringEntityType.Name
+
+                entityType.GetProperties()
+                |> Seq.exists (fun p -> p.Name = targetName)
+                || entityType.GetNavigations()
+                   |> Seq.exists (fun n -> n.Name = targetName)
 
             let param =
                 if nameMatches then
@@ -420,8 +425,13 @@ type FSharpEntityTypeGenerator
                     AttributeWriter(nameof InversePropertyAttribute)
 
                 let condition =
-                    navigation.DeclaringEntityType.GetPropertiesAndNavigations()
-                    |> Seq.exists (fun m -> m.Name = inverseNavigation.DeclaringEntityType.Name)
+                    let entityType = navigation.DeclaringEntityType
+                    let targetName = inverseNavigation.DeclaringEntityType.Name
+
+                    entityType.GetProperties()
+                    |> Seq.exists (fun p -> p.Name = targetName)
+                    || entityType.GetNavigations()
+                       |> Seq.exists (fun n -> n.Name = targetName)
 
                 if condition then
                     inversePropertyAttribute.AddParameter(code.Literal inverseNavigation.Name)
@@ -607,18 +617,17 @@ type FSharpEntityTypeGenerator
 
         generate entityType useDataAnnotation scaffoldNullableColumnsAs
 
-    interface ICSharpEntityTypeGenerator with
-        member this.WriteCode(entityType, ``namespace``, useDataAnnotations, useNullableReferenceTypes) =
-            let scaffoldTypesAs =
-                if notNull config then
-                    config.ScaffoldTypesAs
-                else
-                    RecordType
+    member this.WriteCode(entityType, ``namespace``, useDataAnnotations, useNullableReferenceTypes) =
+        let scaffoldTypesAs =
+            if notNull config then
+                config.ScaffoldTypesAs
+            else
+                RecordType
 
-            let scaffoldNullableColumnsAs =
-                if notNull config then
-                    config.ScaffoldNullableColumnsAs
-                else
-                    OptionTypes
+        let scaffoldNullableColumnsAs =
+            if notNull config then
+                config.ScaffoldNullableColumnsAs
+            else
+                OptionTypes
 
-            writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs
+        writeCode entityType useDataAnnotations scaffoldTypesAs scaffoldNullableColumnsAs

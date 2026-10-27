@@ -3,6 +3,7 @@ namespace EntityFrameworkCore.FSharp.Test.TestUtilities
 open System
 open System.IO
 open System.Numerics
+open System.Reflection
 open Microsoft.CodeAnalysis
 open Microsoft.Extensions.DependencyModel
 open FSharp.Compiler.CodeAnalysis
@@ -12,6 +13,7 @@ type BuildReference =
     { CopyLocal: bool
       References: MetadataReference seq
       Path: string }
+
     static member ByName name copyLocal path =
         let references =
             DependencyContext.Default.CompileLibraries
@@ -55,44 +57,52 @@ type BuildSource =
     { TargetDir: string
       Sources: string list }
 
+    static let checker = FSharpChecker.Create()
+    static let compilerLock = obj ()
+
     member this.BuildInMemory(references: string array) =
         let projectName = "TestProject"
-
-        let checker = FSharpChecker.Create()
 
         let source =
             String.Join(Environment.NewLine, this.Sources)
 
-        let sourceText = SourceText.ofString source
+        let tmpDir =
+            Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
 
-        let options =
-            { FSharpParsingOptions.Default with
-                  SourceFiles = [| "empty.fs" |] }
+        Directory.CreateDirectory(tmpDir) |> ignore
 
-        let parseResult =
-            checker.ParseFile("empty.fs", sourceText, options)
-            |> Async.RunSynchronously
+        let sourceFile = Path.Combine(tmpDir, "source.fs")
+        File.WriteAllText(sourceFile, source)
 
-        let input = parseResult.ParseTree
+        let outputDll =
+            Path.Combine(tmpDir, projectName + ".dll")
 
-        let errors, _, assemblyOpt =
-            checker.CompileToDynamicAssembly(
-                [ input ],
-                projectName,
-                (List.ofArray references),
-                None,
-                noframework = true
-            )
-            |> Async.RunSynchronously
+        let args =
+            [| yield "fsc.exe"
+               yield "--noframework"
+               yield "--target:library"
+               yield sprintf "--out:%s" outputDll
+               for r in references do
+                   yield sprintf "-r:%s" r
+               yield sourceFile |]
 
-        let assembly =
-            match assemblyOpt with
-            | Some a -> a
-            | None ->
-                let messages =
-                    errors
-                    |> Seq.map (fun e -> e.Message + Environment.NewLine)
+        let errors, exitCode =
+            lock compilerLock (fun () -> checker.Compile(args) |> Async.RunSynchronously)
 
-                invalidOp (String.Join(Environment.NewLine, messages))
+        if exitCode <> 0 then
+            let messages =
+                errors
+                |> Seq.map (fun e -> e.Message + Environment.NewLine)
+
+            invalidOp (String.Join(Environment.NewLine, messages))
+
+        let assemblyBytes = File.ReadAllBytes(outputDll)
+        let assembly = Assembly.Load(assemblyBytes)
+
+        // Clean up temp files
+        try
+            Directory.Delete(tmpDir, true)
+        with
+        | _ -> ()
 
         assembly

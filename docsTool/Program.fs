@@ -217,7 +217,7 @@ module GenerateDocs =
                     (fun opts ->
                         { opts with
                               OutputPath = Some cfg.PublishPath.FullName
-                              Framework = Some "net6.0" })
+                              Framework = Some "net10.0" })
                     p)
 
     let generateAPI (cfg: Configuration) =

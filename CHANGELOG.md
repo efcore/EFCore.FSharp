@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [10.0.0] - 2026-04-05
+
+### Changed
+- Migrated to .NET 10 / EF Core 10
+- Updated all dependencies: FSharp.Core 6→9, FSharp.Compiler.Service 41→43, paket 6→10, fantomas 4→6, FAKE 5→6
+- Adapted to EF Core 10 breaking changes (removed/renamed APIs, new interface members, constructor changes)
+- Updated CI workflow to .NET 10 with latest GitHub Actions
+- Added C# interop project for TestRelationalTypeMappingSource (F# cannot handle covariant return types)
+- Updated devcontainer to Debian bookworm and .NET 10
+- Relaxed FSharp.Core dependency constraint (>= 9.0.100 instead of exact)
+- Replaced deprecated PackageLicenseUrl with PackageLicenseExpression (MIT)
+- Updated documentation (README, Getting Started, docsSrc) for .NET 10
+
 ## [6.0.7] - 2022-06-26
 
 ### Fixed
@@ -68,7 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic registration of DesignTimeServices - https://github.com/efcore/EFCore.FSharp/pull/86
 - DbContextHelpers - curried functions for interacting with DbContext to allow for a more 'native' F# experience
 
-[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.7...HEAD
+[Unreleased]: https://github.com/efcore/EFCore.FSharp/compare/v10.0.0...HEAD
+[10.0.0]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.7...v10.0.0
 [6.0.7]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.6...v6.0.7
 [6.0.6]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.5...v6.0.6
 [6.0.5]: https://github.com/efcore/EFCore.FSharp/compare/v6.0.4...v6.0.5

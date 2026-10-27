@@ -6,7 +6,7 @@ This guide is for a simple single-project setup rather than a production-ready t
 
 This guide assumes:
 
-- You have the `.NET Core SDK` installed (tested with version 3.1, though it may work with other versions)
+- You have the `.NET SDK` installed (version 10.0 or higher)
 - You have `SQLite` installed and a basic knowledge of how to explore a SQLite database
 
 # Setup

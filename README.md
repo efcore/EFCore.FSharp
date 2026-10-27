@@ -45,7 +45,7 @@ This can then be referenced as usual.
 
 Make sure the following **requirements** are installed on your system:
 
-- [dotnet SDK](https://www.microsoft.com/net/download/core) 5.0 or higher
+- [dotnet SDK](https://dotnet.microsoft.com/en-us/download) 10.0 or higher
 
 or
 

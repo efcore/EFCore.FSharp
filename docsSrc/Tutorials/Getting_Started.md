@@ -3,7 +3,7 @@
 ## Prerequisites
 This guide assumes:
 
-* You have the .NET 5.0 SDK installed
+* You have the .NET 10.0 SDK installed
 * You have created a project and added the `dotnet-ef` tool
 
 ## Installing the package
