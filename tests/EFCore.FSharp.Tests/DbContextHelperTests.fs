@@ -40,14 +40,20 @@ type MyContext() =
     override __.OnModelCreating(modelBuilder) =
         modelBuilder
             .Entity<CompositeType>()
-            .HasKey([| "Key1"; "Key2" |])
+            .HasKey(
+                [| "Key1"
+                   "Key2" |]
+            )
         |> ignore
 
 let createContext () =
     let ctx = new MyContext()
 
-    ctx.Database.EnsureDeleted() |> ignore
-    ctx.Database.EnsureCreated() |> ignore
+    ctx.Database.EnsureDeleted()
+    |> ignore
+
+    ctx.Database.EnsureCreated()
+    |> ignore
 
     ctx
 
@@ -103,7 +109,13 @@ let DbContextHelperTests =
                   { original with
                         Value = "My New Content" }
 
-              updateEntity ctx (fun b -> [ box b.Key1; box b.Key2 ]) modified
+              updateEntity
+                  ctx
+                  (fun b ->
+                      [ box b.Key1
+                        box b.Key2 ]
+                  )
+                  modified
               |> ignore
 
               let expected =
@@ -111,7 +123,9 @@ let DbContextHelperTests =
                     Key2 = 2
                     Value = "My New Content" }
 
-              let key: obj [] = [| original.Key1; original.Key2 |]
+              let key: obj [] =
+                  [| original.Key1
+                     original.Key2 |]
 
               let found = tryFindEntity<CompositeType> ctx key
 
@@ -170,8 +184,13 @@ let DbContextHelperTests =
 
               let found =
                   async {
-                      do! addEntityTaskAsync ctx original |> Async.AwaitTask
-                      do! saveChangesTaskAsync ctx |> Async.AwaitTask
+                      do!
+                          addEntityTaskAsync ctx original
+                          |> Async.AwaitTask
+
+                      do!
+                          saveChangesTaskAsync ctx
+                          |> Async.AwaitTask
 
                       let modified = { original with Title = "My New Title" }
 
@@ -225,7 +244,8 @@ let DbSetTests =
               saveChanges ctx
 
               let result =
-                  toListAsync ctx.Blogs |> Async.RunSynchronously
+                  toListAsync ctx.Blogs
+                  |> Async.RunSynchronously
 
               Expect.equal [ blog ] result "Should be same"
           }
@@ -243,7 +263,8 @@ let DbSetTests =
               saveChanges ctx
 
               let result =
-                  tryFirstAsync ctx.Blogs |> Async.RunSynchronously
+                  tryFirstAsync ctx.Blogs
+                  |> Async.RunSynchronously
 
               let actual = Expect.wantSome result "should have one"
               Expect.equal blog actual "Should be same"
@@ -253,7 +274,8 @@ let DbSetTests =
               use ctx = createContext ()
 
               let result =
-                  tryFirstAsync ctx.Blogs |> Async.RunSynchronously
+                  tryFirstAsync ctx.Blogs
+                  |> Async.RunSynchronously
 
               Expect.isNone result "should have none"
           }
