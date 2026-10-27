@@ -626,7 +626,7 @@ type FSharpSnapshotGenerator
 
                     let body =
                         if calls.Count = 1 then
-                            calls [ 0 ]
+                            calls |> Seq.head
                         else
                             calls
                             |> Seq.map (fun c -> c + " |> ignore")
