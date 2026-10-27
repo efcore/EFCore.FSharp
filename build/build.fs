@@ -754,7 +754,7 @@ let githubRelease _ =
     allReleaseChecks ()
 
     let token =
-        match githubToken with
+        match githubToken with  
         | Some s -> s
         | _ ->
             failwith
